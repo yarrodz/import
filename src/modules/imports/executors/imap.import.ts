@@ -1,17 +1,15 @@
-import ImportProcess from '../../import-processes/import-process.schema';
 import { IImportProcessModel } from '../../import-processes/import-process.schema';
 import { IImportModel } from '../import.schema';
 import { chunkArray } from '../helpers/chunk-array';
-import { transformDatasets } from '../helpers/transform-datasets';
-import { transferDatasets } from '../helpers/transfer-datasets';
 import { ImportStatus } from '../../import-processes/enums/import-status.enum';
 import { ImapConnection } from '../../../utils/imap/imap.connection';
 import { parseEmails } from '../helpers/parse-emails';
+import { chunkImport } from '../helpers/chunk-import';
 
 // To avoid ssl sertificate requirement for imap, will be removed
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-const LIMIT = 50;
+const CHUNK_SIZE = 50;
 
 export async function imapImport(
   imp: IImportModel,
@@ -28,45 +26,22 @@ export async function imapImport(
     let parsedEmails = await parseEmails(rawEmails);
 
     await importProcess.updateOne({
-      datasetsCount: parseEmails.length
+      datasetsCount: parsedEmails.length
     });
 
     const { processedDatasetsCount } = importProcess;
-    parsedEmails = parsedEmails.slice(
+    let emailesToImport = parsedEmails.slice(
       processedDatasetsCount,
       parsedEmails.length
     );
 
     const chunkedEmails = JSON.parse(
-      JSON.stringify(chunkArray(parsedEmails, LIMIT))
+      JSON.stringify(chunkArray(emailesToImport, CHUNK_SIZE))
     ) as object[][];
     parsedEmails = null;
+    emailesToImport = null;
 
-    while (chunkedEmails.length) {
-      let reloadedImportProcess = await ImportProcess.findById(
-        importProcess._id
-      );
-      if (reloadedImportProcess.status === ImportStatus.PAUSED) {
-        return;
-      }
-      const chunk = chunkedEmails.shift();
-      const transormedDatasets = await transformDatasets(
-        imp,
-        importProcess,
-        chunk,
-        idColumn
-      );
-
-      await transferDatasets(transormedDatasets);
-
-      await importProcess.updateOne({
-        attempts: 0,
-        $inc: {
-          processedDatasetsCount: chunk.length,
-          transferedDatasetsCount: transormedDatasets.length
-        }
-      });
-    }
+    await chunkImport(chunkedEmails, imp, importProcess, idColumn);
 
     imapConnection.disconnect();
     await importProcess.updateOne({

@@ -1,15 +1,15 @@
 import ImportProcess from '../../import-processes/import-process.schema';
+import { IImportModel } from '../import.schema';
+import { IImportProcessModel } from '../../import-processes/import-process.schema';
+import { ImportStatus } from '../../import-processes/enums/import-status.enum';
+import { PostgresConnection } from '../../../utils/postgres/postgres.connection';
 import {
   createSelectCountQuery,
   createSelectDataQuery
 } from '../../../utils/postgres/postgres.query-builder';
-import { PostgresConnection } from '../../../utils/postgres/postgres.connection';
-import { ImportStatus } from '../../import-processes/enums/import-status.enum';
-import { IImportProcessModel } from '../../import-processes/import-process.schema';
 import { createRequestedFields } from '../helpers/create-requested-fields';
 import { transferDatasets } from '../helpers/transfer-datasets';
 import { transformDatasets } from '../helpers/transform-datasets';
-import { IImportModel } from '../import.schema';
 
 const LIMIT = 100;
 

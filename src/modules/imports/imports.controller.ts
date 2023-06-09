@@ -1,45 +1,49 @@
 import { Request, Response } from 'express';
 
-import * as importsService from './imports.service';
+import ImportsService from './imports.service';
 
-export async function connect(req: Request, res: Response) {
-  const data = req.body;
-  const columns = await importsService.connect(data);
+export class ImportsController {
+  async connect(req: Request, res: Response) {
+    const data = req.body;
+    const columns = await ImportsService.connect(data);
 
-  res.send(columns);
+    res.send(columns);
+  }
+
+  async setFields(req: Request, res: Response) {
+    const { id, fields } = req.body;
+    await ImportsService.setFields(id, fields);
+
+    res.send('ok');
+  }
+
+  async start(req: Request, res: Response) {
+    const id = req.body.id;
+    await ImportsService.start(id);
+
+    res.send('ok');
+  }
+
+  async pause(req: Request, res: Response) {
+    const processId = req.body.processId;
+    await ImportsService.pause(processId);
+
+    res.send('ok');
+  }
+
+  async reload(req: Request, res: Response) {
+    const processId = req.body.processId;
+    await ImportsService.reload(processId);
+
+    res.send('ok');
+  }
+
+  async retry(req: Request, res: Response) {
+    const processId = req.body.processId;
+    await ImportsService.retry(processId);
+
+    res.send('ok');
+  }
 }
 
-export async function setFields(req: Request, res: Response) {
-  const { importId, fields } = req.body;
-  await importsService.setFields(importId, fields);
-
-  res.send('ok');
-}
-
-export async function start(req: Request, res: Response) {
-  const importId = req.body.importId;
-  await importsService.start(importId);
-
-  res.send('ok');
-}
-
-export async function pause(req: Request, res: Response) {
-  const importProcessId = req.body.importProcessId;
-  await importsService.pause(importProcessId);
-
-  res.send('ok');
-}
-
-export async function reload(req: Request, res: Response) {
-  const importProcessId = req.body.importProcessId;
-  await importsService.reload(importProcessId);
-
-  res.send('ok');
-}
-
-export async function retry(req: Request, res: Response) {
-  const importProcessId = req.body.importProcessId;
-  await importsService.retry(importProcessId);
-
-  res.send('ok');
-}
+export default new ImportsController();

@@ -1,14 +1,14 @@
 import { Router } from 'express';
 
-import * as importsController from './imports.controller';
+import ImportsController from './imports.controller';
 
 const router = Router();
 
-router.post('/connect', importsController.connect);
-router.post('/setFields', importsController.setFields);
-router.post('/start', importsController.start);
-router.post('/pause', importsController.pause);
-router.post('/reload', importsController.reload);
-router.post('/retry', importsController.retry);
+router.post('/connect', ImportsController.connect);
+router.post('/setFields', ImportsController.setFields);
+router.post('/start', ImportsController.start);
+router.post('/pause', ImportsController.pause);
+router.post('/reload', ImportsController.reload);
+router.post('/retry', ImportsController.retry);
 
 export default router;

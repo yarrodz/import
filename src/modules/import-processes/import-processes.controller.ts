@@ -1,5 +1,13 @@
-import { Request } from 'express';
+// import { Request, Response } from 'express';
 
-// export async function connect(ws: ws, req: Request) {
-//   console.log('connected');
+// export class ImportProcessesController {
+//   async connect(req: Request, res: Response) {
+//     const data = req.body;
+//     const columns = await ImportsService.connect(data);
+
+//     res.send(columns);
+//   }
+
 // }
+
+// export default new ImportProcessesController();

@@ -1,15 +1,16 @@
 import axios from 'axios';
 
 import ImportProcess from '../../import-processes/import-process.schema';
-import { IImportProcessModel } from '../../import-processes/import-process.schema';
 import { IImportModel } from '../import.schema';
-import { chunkArray } from '../helpers/chunk-array';
-import { transformDatasets } from '../helpers/transform-datasets';
-import { transferDatasets } from '../helpers/transfer-datasets';
+import { IImportProcessModel } from '../../import-processes/import-process.schema';
 import { ImportStatus } from '../../import-processes/enums/import-status.enum';
 import { resolvePath } from '../helpers/resolve-path';
+import { chunkArray } from '../helpers/chunk-array';
+import { chunkImport } from '../helpers/chunk-import';
+import { transformDatasets } from '../helpers/transform-datasets';
+import { transferDatasets } from '../helpers/transfer-datasets';
 
-const LIMIT = 50;
+const CHUNK_SIZE = 50;
 
 export async function apiImport(
   imp: IImportModel,
@@ -27,16 +28,18 @@ export async function apiImport(
   });
 
   const { processedDatasetsCount } = importProcess;
-  retrievedDatasets = retrievedDatasets.slice(
+  let datasetsToImport = retrievedDatasets.slice(
     processedDatasetsCount,
     retrievedDatasets.length
   );
 
   let chunkedDatasets = JSON.parse(
-    JSON.stringify(chunkArray(retrievedDatasets, LIMIT))
+    JSON.stringify(chunkArray(datasetsToImport, CHUNK_SIZE))
   ) as object[][];
   retrievedDatasets = null;
+  datasetsToImport = null;
 
+  // await chunkImport(chunkedDatasets, imp, importProcess, idColumn);
   while (chunkedDatasets.length) {
     let reloadedImportProcess = await ImportProcess.findById(importProcess._id);
     if (reloadedImportProcess.status === ImportStatus.PAUSED) {
@@ -55,6 +58,7 @@ export async function apiImport(
 
     await importProcess.updateOne({
       attempts: 0,
+      errorMessage: null,
       $inc: {
         processedDatasetsCount: chunk.length,
         transferedDatasetsCount: transormedDatasets.length

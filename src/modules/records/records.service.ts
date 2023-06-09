@@ -8,5 +8,5 @@ export async function createMany(createRecordInputs: CreateRecordInput[]) {
 }
 
 export async function archiveRecords(dataset: Types.ObjectId) {
-    return await Record.updateMany({ dataset }, { archived: true });
+  return await Record.updateMany({ dataset }, { archived: true });
 }
