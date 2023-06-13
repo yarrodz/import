@@ -1,14 +1,10 @@
 import axios from 'axios';
 
-import ImportProcess from '../../import-processes/import-process.schema';
 import { IImportModel } from '../import.schema';
 import { IImportProcessModel } from '../../import-processes/import-process.schema';
-import { ImportStatus } from '../../import-processes/enums/import-status.enum';
 import { resolvePath } from '../helpers/resolve-path';
 import { chunkArray } from '../helpers/chunk-array';
 import { chunkImport } from '../helpers/chunk-import';
-import { transformDatasets } from '../helpers/transform-datasets';
-import { transferDatasets } from '../helpers/transfer-datasets';
 
 const CHUNK_SIZE = 50;
 
@@ -39,33 +35,5 @@ export async function apiImport(
   retrievedDatasets = null;
   datasetsToImport = null;
 
-  // await chunkImport(chunkedDatasets, imp, importProcess, idColumn);
-  while (chunkedDatasets.length) {
-    let reloadedImportProcess = await ImportProcess.findById(importProcess._id);
-    if (reloadedImportProcess.status === ImportStatus.PAUSED) {
-      return;
-    }
-
-    const chunk = chunkedDatasets.shift();
-    const transormedDatasets = await transformDatasets(
-      imp,
-      importProcess,
-      chunk,
-      idColumn
-    );
-
-    await transferDatasets(transormedDatasets);
-
-    await importProcess.updateOne({
-      attempts: 0,
-      errorMessage: null,
-      $inc: {
-        processedDatasetsCount: chunk.length,
-        transferedDatasetsCount: transormedDatasets.length
-      }
-    });
-  }
-  await importProcess.updateOne({
-    status: ImportStatus.COMPLETED
-  });
+  await chunkImport(chunkedDatasets, imp, importProcess, idColumn);
 }

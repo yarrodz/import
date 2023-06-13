@@ -2,35 +2,36 @@ import express from 'express';
 import { createServer } from 'http';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-// import Websocket from './utils/websocket/websocket';
+import 'reflect-metadata';
 
-import DatasetsRouter from './modules/datasets/datasets.router';
 import ImportsRouter from './modules/imports/imports.router';
-// import ImportProcessesRouter from './modules/import-processes/import-processes.router';
-
-const app = express();
-app.use(express.json());
-
-app.use('/datasets', DatasetsRouter);
-app.use('/imports', ImportsRouter);
-// app.use('/import-processes', ImportProcessesRouter);
-
-// const httpServer = createServer(app);
-// Websocket.getInstance(httpServer);
+import Websocket from './utils/websocket/websocket';
+import ImportProcessesSocket from './modules/import-processes/import-processes.socket';
 
 dotenv.config();
 const PORT = process.env.PORT;
 const MONGO_URL = process.env.MONGO_URL;
 
+const app = express();
+app.use(express.json());
+app.use('/imports', ImportsRouter);
+
+const httpServer = createServer(app);
+
+const io = Websocket.getInstance(httpServer);
+io.initializeHandlers([
+  { path: '/processes', handler: new ImportProcessesSocket() }
+]);
+
 async function start() {
   try {
     await mongoose.connect(MONGO_URL);
-    app.listen(PORT, () =>
+    httpServer.listen(PORT, () =>
       console.log(`Server listening on port: ${PORT}`)
     );
   } catch (error) {
     console.error(error);
   }
 }
- 
+
 start();

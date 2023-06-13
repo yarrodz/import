@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import { validate } from 'class-validator';
 
 import Import from './import.schema';
 import ImportProcess from '../import-processes/import-process.schema';
@@ -13,26 +14,90 @@ import { imapImport } from './executors/imap.import';
 import { IColumn } from './intefaces/column.interface';
 import { receivePostgresColumns } from './columns/postgres.columns';
 import { receiveApiColumns } from './columns/api.columns';
+import ResponseHandler from '../../utils/response-handler/response-handler';
+import { ConnectInput } from './inputs/connect.input';
+import { FieldInput } from './inputs/field.input';
+import { formatValidationErrors } from '../../utils/format-validation-errors/format-validation-errors';
 
 const MAX_ATTEMPTS = 5;
-const ATTEMPT_DELAY = 5000;
+const ATTEMPT_DELAY_TIME = 5000;
 
 class ImportsService {
-  async connect(data: any) {
-    const imp = await Import.create(data);
-    const columns = await this.receiveColums(imp);
-    return {
-      id: imp._id,
-      columns
-    };
+  async connect(connectInput: ConnectInput): Promise<ResponseHandler> {
+    const responseHandler = new ResponseHandler();
+    try {
+      const errors = await validate(connectInput);
+      if (errors.length) {
+        responseHandler.setError(400, formatValidationErrors(errors));
+        return responseHandler;
+      }
+
+      const imp = await Import.create(connectInput);
+      const columns = await this.receiveColums(imp);
+      responseHandler.setSuccess(200, {
+        id: imp._id,
+        columns
+      });
+      return responseHandler;
+    } catch (error) {
+      responseHandler.setError(500, error.message);
+      return responseHandler;
+    }
   }
 
-  async setFields(id: Types.ObjectId, fields: IFieldModel[]) {
-    await Import.findByIdAndUpdate(id, { fields });
+  async setFields(
+    id: Types.ObjectId,
+    fieldInputs: FieldInput[]
+  ): Promise<ResponseHandler> {
+    const responseHandler = new ResponseHandler();
+    try {
+      const imp = await Import.findById(id);
+      if (!imp) {
+        responseHandler.setError(404, 'Import not found');
+        return responseHandler;
+      }
+
+      const errorsArray = await Promise.all(
+        fieldInputs.map(async (fieldInput) => {
+          return await validate(fieldInput);
+        })
+      );
+      for (let errors of errorsArray) {
+        if (errors.length) {
+          responseHandler.setError(400, formatValidationErrors(errors));
+          return responseHandler;
+        }
+      }
+
+      await Import.updateOne({ fields: fieldInputs });
+      responseHandler.setSuccess(200, 'Fields for import are set');
+      return responseHandler;
+    } catch (error) {
+      responseHandler.setError(500, error.message);
+      return responseHandler;
+    }
   }
 
-  async start(id: Types.ObjectId) {
+  async start(id: Types.ObjectId): Promise<ResponseHandler> {
+    const responseHandler = new ResponseHandler();
     const imp = await Import.findById(id);
+    if (!imp) {
+      responseHandler.setError(404, 'Import not found');
+      return responseHandler;
+    }
+
+    const pendingImport = await ImportProcess.findOne({
+      unit: imp.unit,
+      status: ImportStatus.PENDING
+    });
+    if (pendingImport) {
+      responseHandler.setError(
+        409,
+        'This unit is currently processing another import'
+      );
+      return responseHandler;
+    }
+
     const importProcess = await ImportProcess.create({
       unit: imp.unit,
       import: imp._id
@@ -40,38 +105,91 @@ class ImportsService {
 
     try {
       await this.run(imp, importProcess);
+      responseHandler.setSuccess(200, 'Import complete or paused');
+      return responseHandler;
     } catch (error) {
       await this.catchError(error, importProcess);
+      responseHandler.setError(500, error.message);
+      return responseHandler;
     }
   }
 
   async pause(processId: Types.ObjectId) {
-    await ImportProcess.updateOne(
-      { _id: processId },
-      { status: ImportStatus.PAUSED }
-    );
+    const responseHandler = new ResponseHandler();
+    try {
+      const importProcess = await ImportProcess.findById(processId);
+      if (!importProcess) {
+        responseHandler.setError(404, 'Import process not found');
+        return responseHandler;
+      }
+      await importProcess.updateOne({ status: ImportStatus.PAUSED });
+      responseHandler.setSuccess(200, 'Import paused by user');
+      return responseHandler;
+    } catch (error) {
+      responseHandler.setError(500, error.message);
+      return responseHandler;
+    }
   }
 
   async reload(processId: Types.ObjectId) {
+    const responseHandler = new ResponseHandler();
     const importProcess = await ImportProcess.findById(processId);
+    if (!importProcess) {
+      responseHandler.setError(404, 'Import process not found');
+      return responseHandler;
+    }
+
     const imp = await Import.findById(importProcess.import);
+    if (!imp) {
+      responseHandler.setError(404, 'Import not found');
+      return responseHandler;
+    }
+
+    const pendingImport = await ImportProcess.findOne({
+      unit: imp.unit,
+      status: ImportStatus.PENDING
+    });
+    if (pendingImport) {
+      responseHandler.setError(
+        409,
+        'This unit is currently processing another import'
+      );
+      return responseHandler;
+    }
+
     await importProcess.updateOne({
       status: ImportStatus.PENDING
     });
 
     try {
       await this.run(imp, importProcess);
+      responseHandler.setSuccess(200, 'Import paused by user or complete');
+      return responseHandler;
     } catch (error) {
       await this.catchError(error, importProcess);
+      responseHandler.setError(500, error.message);
+      return responseHandler;
     }
   }
 
   async retry(processId: Types.ObjectId) {
-    await ImportProcess.findByIdAndUpdate(processId, {
-      attempts: 0,
-      status: ImportStatus.PENDING
-    });
-    await this.reload(processId);
+    const responseHandler = new ResponseHandler();
+    try {
+      const importProcess = await ImportProcess.findById(processId);
+      if (!importProcess) {
+        responseHandler.setError(404, 'Import process not found');
+        return responseHandler;
+      }
+      await importProcess.updateOne({
+        attempts: 0,
+        status: ImportStatus.PENDING,
+        errorMessage: null
+      });
+      return await this.reload(processId);
+    } catch (error) {
+      responseHandler.setError(500, error.message);
+      return responseHandler;
+    }
   }
 
   private async receiveColums(imp: IImportModel) {
@@ -110,7 +228,7 @@ class ImportsService {
   private async catchError(error: Error, importProcess: IImportProcessModel) {
     if (importProcess.attempts !== MAX_ATTEMPTS) {
       await importProcess.updateOne({ $inc: { attempts: 1 } });
-      await this.sleep();
+      await this.delayAttempt();
       return await this.reload(importProcess._id);
     } else {
       await importProcess.updateOne({
@@ -120,9 +238,9 @@ class ImportsService {
     }
   }
 
-  private sleep() {
+  private delayAttempt() {
     return new Promise((resolve) => {
-      setTimeout(() => resolve(true), ATTEMPT_DELAY);
+      setTimeout(() => resolve(true), ATTEMPT_DELAY_TIME);
     });
   }
 }

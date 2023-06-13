@@ -1,9 +1,8 @@
 import { IImportProcessModel } from '../../import-processes/import-process.schema';
 import { IImportModel } from '../import.schema';
-import { chunkArray } from '../helpers/chunk-array';
-import { ImportStatus } from '../../import-processes/enums/import-status.enum';
 import { ImapConnection } from '../../../utils/imap/imap.connection';
 import { parseEmails } from '../helpers/parse-emails';
+import { chunkArray } from '../helpers/chunk-array';
 import { chunkImport } from '../helpers/chunk-import';
 
 // To avoid ssl sertificate requirement for imap, will be removed
@@ -24,6 +23,7 @@ export async function imapImport(
     await imapConnection.connect();
     const rawEmails = await imapConnection.receiveEmails();
     let parsedEmails = await parseEmails(rawEmails);
+    imapConnection.disconnect();
 
     await importProcess.updateOne({
       datasetsCount: parsedEmails.length
@@ -42,11 +42,6 @@ export async function imapImport(
     emailesToImport = null;
 
     await chunkImport(chunkedEmails, imp, importProcess, idColumn);
-
-    imapConnection.disconnect();
-    await importProcess.updateOne({
-      status: ImportStatus.COMPLETED
-    });
   } catch (error) {
     imapConnection.disconnect();
     throw error;

@@ -10,6 +10,8 @@ import {
 import { createRequestedFields } from '../helpers/create-requested-fields';
 import { transferDatasets } from '../helpers/transfer-datasets';
 import { transformDatasets } from '../helpers/transform-datasets';
+import emitProgress from '../helpers/emit-progress';
+import Websocket from '../../../utils/websocket/websocket';
 
 const LIMIT = 100;
 
@@ -17,6 +19,8 @@ export async function postgresImport(
   imp: IImportModel,
   importProcess: IImportProcessModel
 ) {
+  const io = Websocket.getInstance();
+  const unit = imp.unit.toString();
   const config = imp.database.config;
   const table = imp.database.table;
   const fields = imp.fields;
@@ -35,6 +39,7 @@ export async function postgresImport(
     if (reloadedImportProcess.status === ImportStatus.PAUSED) {
       return;
     }
+    emitProgress(io, unit, reloadedImportProcess);
 
     const rowsQuery = createSelectDataQuery(
       table,
@@ -62,8 +67,13 @@ export async function postgresImport(
       }
     });
   }
-
-  await importProcess.updateOne({
-    status: ImportStatus.COMPLETED
-  });
+  const completedProcess = await ImportProcess.findOneAndUpdate(
+    importProcess._id,
+    {
+      status: ImportStatus.COMPLETED,
+      errorMessage: null
+    },
+    { new: true }
+  );
+  emitProgress(io, unit, completedProcess);
 }

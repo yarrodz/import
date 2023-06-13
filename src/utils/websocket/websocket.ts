@@ -1,4 +1,4 @@
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { Server as HttpServer } from 'http';
 
 const WEBSOCKET_CORS = {
@@ -19,8 +19,19 @@ class Websocket extends Server {
     if (!Websocket.io) {
       Websocket.io = new Websocket(httpServer);
     }
-
     return Websocket.io;
+  }
+
+  initializeHandlers(socketHandlers: Array<any>) {
+    socketHandlers.forEach((element) => {
+      let namespace = Websocket.io.of(element.path, (socket: Socket) => {
+        element.handler.handleConnection(socket);
+      });
+
+      if (element.handler.middlewareImplementation) {
+        namespace.use(element.handler.middlewareImplementation);
+      }
+    });
   }
 }
 

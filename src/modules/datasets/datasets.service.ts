@@ -22,10 +22,3 @@ export async function findBySourceDatasetId(id: string) {
     sourceDatasetId: id
   });
 }
-
-// export async function findOne(req: Request, res: Response) {
-//     const id = req.params.id;
-//     const dataset = await Dataset.findById(id);
-
-//     res.status(200).json(dataset);
-// }

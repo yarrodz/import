@@ -1,48 +1,48 @@
 import { Request, Response } from 'express';
+import { plainToInstance } from 'class-transformer';
 
 import ImportsService from './imports.service';
+import { ConnectInput } from './inputs/connect.input';
+import { FieldInput } from './inputs/field.input';
 
 export class ImportsController {
   async connect(req: Request, res: Response) {
-    const data = req.body;
-    const columns = await ImportsService.connect(data);
-
-    res.send(columns);
+    const connectInput = plainToInstance(ConnectInput, req.body);
+    const responseHandler = await ImportsService.connect(connectInput);
+    responseHandler.send(res);
   }
 
   async setFields(req: Request, res: Response) {
-    const { id, fields } = req.body;
-    await ImportsService.setFields(id, fields);
-
-    res.send('ok');
+    const id = req.body.id;
+    const fieldInputs = req.body.fields.map((field) => {
+      return plainToInstance(FieldInput, field);
+    });
+    const responseHandler = await ImportsService.setFields(id, fieldInputs);
+    responseHandler.send(res);
   }
 
   async start(req: Request, res: Response) {
     const id = req.body.id;
-    await ImportsService.start(id);
-
-    res.send('ok');
+    const responseHandler = await ImportsService.start(id);
+    responseHandler.send(res);
   }
 
   async pause(req: Request, res: Response) {
     const processId = req.body.processId;
-    await ImportsService.pause(processId);
-
-    res.send('ok');
+    const responseHandler = await ImportsService.pause(processId);
+    responseHandler.send(res);
   }
 
   async reload(req: Request, res: Response) {
     const processId = req.body.processId;
-    await ImportsService.reload(processId);
-
-    res.send('ok');
+    const responseHandler = await ImportsService.reload(processId);
+    responseHandler.send(res);
   }
 
   async retry(req: Request, res: Response) {
     const processId = req.body.processId;
-    await ImportsService.retry(processId);
-
-    res.send('ok');
+    const responseHandler = await ImportsService.retry(processId);
+    responseHandler.send(res);
   }
 }
 

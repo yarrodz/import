@@ -4,6 +4,8 @@ import { IImportProcessModel } from '../../import-processes/import-process.schem
 import { ImportStatus } from '../../import-processes/enums/import-status.enum';
 import { transformDatasets } from './transform-datasets';
 import { transferDatasets } from './transfer-datasets';
+import Websocket from '../../../utils/websocket/websocket';
+import emitProgress from './emit-progress';
 
 export async function chunkImport(
   chunkedDatasets: object[][],
@@ -11,14 +13,18 @@ export async function chunkImport(
   importProcess: IImportProcessModel,
   idColumn: string
 ) {
+  const io = Websocket.getInstance();
+  const unit = imp.unit.toString();
   while (chunkedDatasets.length) {
-    let reloadedImportProcess = await ImportProcess.findById(importProcess._id);
+    const reloadedImportProcess = await ImportProcess.findById(
+      importProcess._id
+    );
     if (reloadedImportProcess.status === ImportStatus.PAUSED) {
       return;
     }
+    emitProgress(io, unit, reloadedImportProcess);
 
     const chunk = chunkedDatasets.shift();
-    console.log(chunk.length);
     const transormedDatasets = await transformDatasets(
       imp,
       importProcess,
@@ -37,8 +43,14 @@ export async function chunkImport(
       }
     });
   }
-  await importProcess.updateOne({
-    status: ImportStatus.COMPLETED,
-    errorMessage: null
-  });
+
+  const completedProcess = await ImportProcess.findOneAndUpdate(
+    importProcess._id,
+    {
+      status: ImportStatus.COMPLETED,
+      errorMessage: null
+    },
+    { new: true }
+  );
+  emitProgress(io, unit, completedProcess);
 }
