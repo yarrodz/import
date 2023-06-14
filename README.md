@@ -42,6 +42,8 @@ npm i
     http://localhost:3000/processes
     Next, we need to send a 'join' event including the unitId of the import that has executed or will be executed (646cd1accef0e54e78f8aec0).
     We will receive updated import process data when it changes.
+    Screenshot of socket.io request (https://github.com/yarrodz/import/assets/135201284/c510743a-1259-4350-bee8-4ebbc8140270)
+
      
     connect
     http://localhost:3000/imports/connect
