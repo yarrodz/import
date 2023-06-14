@@ -23,68 +23,85 @@ npm i
 
 #### Postman collection links:
 
-##### There are two links with working request collections for postgresql and api import
+##### There are two links with working request collections for postgresql imports
 
 ##### Open Postman, click on Import, choose 'Link' and paste the link
 
-    Postgresql:
-    https://api.postman.com/collections/14672581-7a1c6a69-f792-474c-8a71-e8a1869e2505?access_key=PMAT-01H2GMPPA7P8650BK3G1P17S76
+    Postgresql for table provided:
+    https://api.postman.com/collections/27480704-ca221d33-7aa8-4e30-800d-1b30330aa049?access_key=PMAT-01H2X2WQ3WFBZF9FRP3V1XTBMG
 
-    Api:
-    https://api.postman.com/collections/14672581-11f4b0aa-aa80-4e68-a5a6-3344a0d573b4?access_key=PMAT-01H2GMNK88K19CY8DJB5TJWHBE
+    Postgresql for customSelect provided:
+    https://api.postman.com/collections/27480704-ed077ebc-5a92-4c92-9dcd-05126f2b140f?access_key=PMAT-01H2X30C1EGV7YSJ5B2ASVM6M7
 
 ####
 
-#### There are 5 requests:
-
+#### There are 8 requests:
+    There is currently no way to share a socket.io request in Postman, so it cannot be added to a Postman collection. I have tested it using a socket.io request in Postman.
+    
+    First, we need to connect to the socket.  
+    http://localhost:3000/processes
+    Next, we need to send a 'join' event including the unitId of the import that has executed or will be executed (646cd1accef0e54e78f8aec0).
+    We will receive updated import process data when it changes.
+     
     connect
     http://localhost:3000/imports/connect
     accepts:
     {
-        "unit": "64835bd65cafe862fc0d323a", --we can pass any mongodb OjectId
-        "source": "API", -- "API" or "PostgreSQL"
-        "api": {  -- api config, postgresql config stored in the postgresql collection of requests
-        "config": { -- that will be passed to axios function
-            "method": "get",
-            "url": "https://api.publicapis.org/entries"
+        "unit": "646cd1accef0e54e78f8aec0", - id of unit, can be any mongodb objectid
+        "source": "PostgreSQL", - source resource for import
+        "database": {
+            "config": { - configuration for database
+                "host": "localhost",
+                "port": "5432",
+                "user": "postgres",
+                "password": "1111",
+                "database": "budget3"
+            },
+            "table": "operations" - name of table
         },
-        "path": "data.entries" -- Response contains a lot of data. We need to specify the path to the data that will be imported.
-        },
-        "idColumn": "Link" -- id column for imported data
+        "idColumn": "id" - id column name for table
     }
     returns: id of created import(data for import) and information about columns(name and type).
 
-We connect to the resource and receive information about the columns.
+When we retrieve columns from the table, we can then set the fields for the import.
 
     Setting fields for import
     http://localhost:3000/imports/setFields
     accepts:
     {
-        "id": "648361be35867ac7d6141bec", -- id of import
-        "fields": [ -- fields that will be imported
+        "id": "6489c1da04fb52eb7561b962", - id of import
+        "fields": [ - fields for import
             {
-                "feature": {  -- feature for record
+                "feature": { - it used for setting id of feature for the record and parsing value for the record
                     "name": "name",
                     "type": "text",
-                    "id": "64835bd65cafe862fc0d323a"
+                    "_id": "64835bd65cafe862fc0d323a"
                 },
-                "source": "Description" -- column from where will be imported value for record
+                "source": "name" - it is a column from where we receive value for record 
+            },
+            {
+                "feature": {
+                    "name": "date",
+                    "type": "date",
+                    "_id": "64835bd65cafe862fc0d323b"
+                },
+                "source": "created_at"
             }
         ]
     }
-    returns: "ok"
+    returns: "Fields for import are set"
 
-.
+Once we've configured the fields for importing, we can start the import.
 
     start
     http://localhost:3000/imports/start
     accepts:
     {
-        "id": "648361be35867ac7d6141bec", -- id of created import
+        "id": "648361be35867ac7d6141bec", - id of import
     }
-    returns: "ok"
+    returns: "Import complete or paused by user"
 
-It generates an import process that stores information about the execution of the import. We can observe the importing process within the 'importprocesses' table. We can see that the number of data in the 'datasets' table increases after we refresh it. At the end of the import, process status will be changed to 'Completed'.
+It generates an import process that stores information about the execution of the import process which can be observed in the 'importprocesses' table or socket.io request. During import, the properties 'processedDatasetsCount' and 'transferredDatasetsCount' increase their values. The import process has a status that can be 'Pending', 'Paused', 'Complete' or 'Failed'. The result of the import process is transferred datasets and records which can be viewed in the tables. In case any error occurs during import, there are limited attempts(5) that will retry to reload the import every period of time(5 seconds). Once all attempts have been exhausted, the process status will be set to "Failed", and an error message will be set.
 
     pause
     http://localhost:3000/imports/pause
@@ -92,9 +109,9 @@ It generates an import process that stores information about the execution of th
     {
         "processId": "648361be35867ac7d6141bec", -- id of process
     }
-    returns "ok"
+    returns "Import paused by user"
 
-When we started an import, we can observe the importing process within the 'importprocesses' table. During the import, the import process status equals to 'Pending'. After refreshing the table, we will notice an increase in the values of 'processedDatasetsCount' and 'transferrdDatasetsCount'. When we send a pause request, the import process will be stopped and the process status will be changed to 'Paused' and the numbers for 'processedDatasetsCount' and 'transferredDatasetsCount' will stop increasing too.
+We can pause an import. The status of the import process will change to "Paused", and import execution will stop.
 
     reload
     http://localhost:3000/imports/reload
@@ -102,9 +119,9 @@ When we started an import, we can observe the importing process within the 'impo
     {
         "processId": "648361be35867ac7d6141bec", -- id of process
     }
-    returns: "ok"
+    returns: "Import complete or paused by user"
 
-We can reload that import. We have to pass the id of the paused process. The process status will be changed to 'Pending', and the 'processedDatasetsCount' and 'transferredDatasetsCount' properties values will start increasing too.
+We can reload that import. We have to pass the id of the paused process. The process status will be changed to 'Pending' and import will be reloaded from the point it paused.
 
     retry
     http://localhost:3000/imports/retry
@@ -112,14 +129,25 @@ We can reload that import. We have to pass the id of the paused process. The pro
     {
         "processId": "648361be35867ac7d6141bec", -- id of process
     }
-    returns: "ok"
+    returns: "Import complete or paused by user"
 
-When something goes wrong during import, there are limited attempts(5) that will retry to reload the import every period of time(5 seconds). When all attempts have been wasted, the process status is set to "Failed" and an error message is set too. Then if we want to retry this import we can send this request. Attempts will be reseted.
+We can create a situation where the password or table name in the database configuration is invalid by editing the import statement for the table. Then import process will be failed.
 
-We can create a situation where the password in the database config is invalid or the api url is wrong by modifying them in the 'imports' table and than send start request. Import will be failed.
+Then we can modify them to their correct values and send a retry request. This will reset the attempts and error message, and start the import from the point it failed.
 
-And than we can modify them back to their correct values and then send a retry request.
+    imports
+    http://localhost:3000/imports/646cd1accef0e54e78f8aec0
+    accepts:
+    param /:unitId
+    returns: "List of imports by unitId"
+
+.
+
+    processes
+    http://localhost:3000/imports/processes/646cd1accef0e54e78f8aec0
+    accepts:
+    param /:unitId
+    returns: "List of import processes by unitId"
 
 ###
 
-##### Be careful not to confuse the id of the import with the id of the process. There are currently no checks for this, so if you make a mistake, you have to restart the server.
