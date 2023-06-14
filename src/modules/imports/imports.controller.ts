@@ -6,6 +6,18 @@ import { ConnectInput } from './inputs/connect.input';
 import { FieldInput } from './inputs/field.input';
 
 export class ImportsController {
+  async findAll(req: Request, res: Response) {
+    const unitId = req.params.unitId;
+    const responseHandler = await ImportsService.findAll(unitId);
+    responseHandler.send(res);
+  }
+
+  async findAllProcesses(req: Request, res: Response) {
+    const unitId = req.params.unitId;
+    const responseHandler = await ImportsService.findAllProcesses(unitId);
+    responseHandler.send(res);
+  }
+
   async connect(req: Request, res: Response) {
     const connectInput = plainToInstance(ConnectInput, req.body);
     const responseHandler = await ImportsService.connect(connectInput);

@@ -3,6 +3,7 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 import { ImportStatus } from './enums/import-status.enum';
 
 export interface IImportProcess {
+  unit: Types.ObjectId;
   import: Types.ObjectId;
   status: ImportStatus;
   datasetsCount: number;
@@ -16,7 +17,8 @@ export interface IImportProcess {
 export interface IImportProcessModel extends IImportProcess, Document {}
 
 export const ImportProcessSchema = new Schema({
-  import: { type: mongoose.Schema.Types.ObjectId, ref: 'Synchronization' },
+  unit: { type: mongoose.Schema.Types.ObjectId, ref: 'Unit' },
+  import: { type: mongoose.Schema.Types.ObjectId, ref: 'Import' },
   status: {
     type: String,
     enum: Object.values(ImportStatus),

@@ -4,6 +4,8 @@ import ImportsController from './imports.controller';
 
 const router = Router();
 
+router.get('/:unitId', ImportsController.findAll);
+router.get('/processes/:unitId', ImportsController.findAllProcesses);
 router.post('/connect', ImportsController.connect);
 router.post('/setFields', ImportsController.setFields);
 router.post('/start', ImportsController.start);

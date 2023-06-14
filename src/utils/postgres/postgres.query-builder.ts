@@ -16,7 +16,7 @@ export function createSelectDataQuery(
   if (!requestedFields) {
     query += '*';
   } else {
-    const fields = requestedFields.map((field) => `${field}`).join(', ');
+    const fields = requestedFields.map((field) => `"${field}"`).join(', ');
     query += fields;
   }
 
@@ -30,6 +30,17 @@ export function createSelectDataQuery(
   }
 
   return query;
+}
+
+export function paginateQuery(query: string, limit: number, offset: number) {
+  let paginatedQuery = query.trim();
+  if (paginatedQuery.endsWith(';')) {
+    paginatedQuery = paginatedQuery.slice(0, -1);
+  }
+  paginatedQuery += ` LIMIT ${limit}`;
+  paginatedQuery += ` OFFSET ${offset}`;
+
+  return paginatedQuery;
 }
 
 export function createSelectCountQuery(table: string) {

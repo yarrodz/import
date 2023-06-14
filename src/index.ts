@@ -1,6 +1,7 @@
 import express from 'express';
 import { createServer } from 'http';
 import dotenv from 'dotenv';
+import cors from 'cors';
 import mongoose from 'mongoose';
 import 'reflect-metadata';
 
@@ -13,11 +14,11 @@ const PORT = process.env.PORT;
 const MONGO_URL = process.env.MONGO_URL;
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 app.use('/imports', ImportsRouter);
 
 const httpServer = createServer(app);
-
 const io = Websocket.getInstance(httpServer);
 io.initializeHandlers([
   { path: '/processes', handler: new ImportProcessesSocket() }

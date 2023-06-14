@@ -1,12 +1,14 @@
 import axios from 'axios';
 
-import { IImportModel } from '../import.schema';
 import { resolvePath } from '../helpers/resolve-path';
 import { IColumn } from '../intefaces/column.interface';
+import { ConnectInput } from '../inputs/connect.input';
 
-export async function receiveApiColumns(imp: IImportModel): Promise<IColumn[]> {
-  const config = imp.api.config;
-  const path = imp.api.path;
+export async function receiveApiColumns(
+  connectInput: ConnectInput
+): Promise<IColumn[]> {
+  const config = connectInput.api.config;
+  const path = connectInput.api.path;
 
   const data = await axios(config);
   const dataset = resolvePath(data, path)[0] as object;

@@ -54,6 +54,10 @@ export class DatabaseInput {
   @IsString()
   @Length(1, 4096)
   customSelect?: string;
+
+  @IsOptional()
+  @IsInt()
+  datasetsCount?: number;
 }
 
 export class ApiInput {
