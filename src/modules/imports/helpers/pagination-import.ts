@@ -20,7 +20,7 @@ export async function paginationImport(
   ...paginationFunctionParams: any[]
 ) {
   const io = Websocket.getInstance();
-  const unit = imp.unit.toString();
+  const processId = importProcess._id.toString();
   while (offset < datasetsCount) {
     const reloadedImportProcess = await ImportProcess.findById(
       importProcess._id
@@ -28,7 +28,7 @@ export async function paginationImport(
     if (reloadedImportProcess.status === ImportStatus.PAUSED) {
       return;
     }
-    emitProgress(io, unit, reloadedImportProcess);
+    emitProgress(io, processId, reloadedImportProcess);
 
     const retrievedDatasets = await paginationFunction(
       offset,
@@ -64,5 +64,5 @@ export async function paginationImport(
     },
     { new: true }
   );
-  emitProgress(io, unit, completedProcess);
+  emitProgress(io, processId, completedProcess);
 }

@@ -5,8 +5,8 @@ import ISocket from '../../utils/websocket/socket.interface';
 
 class ImportProcessesSocket implements ISocket {
   handleConnection(socket: Socket) {
-    socket.on('join', (unit: string) => {
-      socket.join(unit.trim());
+    socket.on('join', (processId: string) => {
+      socket.join(processId.trim());
     });
   }
 

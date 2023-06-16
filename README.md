@@ -36,13 +36,14 @@ npm i
 ####
 
 #### There are 8 requests:
+
     There is currently no way to share a socket.io request in Postman, so it cannot be added to a Postman collection. I have tested it using a socket.io request in Postman.
-    
-    First, we need to connect to the socket.  
+
+    First, we need to connect to the socket.
     http://localhost:3000/processes
-    Next, we need to send a 'join' event including the unitId of the import that has executed or will be executed (646cd1accef0e54e78f8aec0).
+    Next, we need to send a 'join' event including the processId of the import that has executed (646cd1accef0e54e78f8aec0).
     We will receive updated import process data when it changes.
-     
+
     connect
     http://localhost:3000/imports/connect
     accepts:
@@ -77,7 +78,7 @@ When we retrieve columns from the table, we can then set the fields for the impo
                     "type": "text",
                     "_id": "64835bd65cafe862fc0d323a"
                 },
-                "source": "name" - it is a column from where we receive value for record 
+                "source": "name" - it is a column from where we receive value for record
             },
             {
                 "feature": {
@@ -150,4 +151,3 @@ Then we can modify them to their correct values and send a retry request. This w
     returns: "List of import processes by unitId"
 
 ###
-

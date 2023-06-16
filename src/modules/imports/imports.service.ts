@@ -6,11 +6,9 @@ import { IImportModel } from './import.schema';
 import { IImportProcessModel } from '../import-processes/import-process.schema';
 import { ImportSource } from './enums/import-source.enum';
 import { ImportStatus } from '../import-processes/enums/import-status.enum';
-import { postgresImport } from './executors/postgres.import';
 import { apiImport } from './executors/api.import';
 import { imapImport } from './executors/imap.import';
 import { IColumn } from './intefaces/column.interface';
-import { receivePostgresColumns } from './columns/postgres.columns';
 import { receiveApiColumns } from './columns/api.columns';
 import ResponseHandler from '../../utils/response-handler/response-handler';
 import { ConnectInput } from './inputs/connect.input';
@@ -18,9 +16,11 @@ import { FieldInput } from './inputs/field.input';
 import { formatValidationErrors } from '../../utils/format-validation-errors/format-validation-errors';
 import Websocket from '../../utils/websocket/websocket';
 import emitProgress from './helpers/emit-progress';
+import { querySqlTableColumns } from './columns/sql.columns';
+import { sqlImport } from './executors/sql.import';
 
 const MAX_ATTEMPTS = 5;
-const ATTEMPT_DELAY_TIME = 5000;
+const ATTEMPT_DELAY_TIME = 1000;
 
 class ImportsService {
   async findAll(unit: string): Promise<ResponseHandler> {
@@ -143,7 +143,7 @@ class ImportsService {
         { status: ImportStatus.PAUSED },
         { new: true }
       );
-      emitProgress(io, importProcess.unit.toString(), pausedProcess);
+      emitProgress(io, importProcess._id.toString(), pausedProcess);
       responseHandler.setSuccess(200, 'Import paused by user');
       return responseHandler;
     } catch (error) {
@@ -177,9 +177,12 @@ class ImportsService {
       return responseHandler;
     }
 
-    const reloadedImportProcess = await ImportProcess.findByIdAndUpdate(processId, {
-      status: ImportStatus.PENDING
-    });
+    const reloadedImportProcess = await ImportProcess.findByIdAndUpdate(
+      processId,
+      {
+        status: ImportStatus.PENDING
+      }
+    );
 
     return await this.run(imp, reloadedImportProcess);
   }
@@ -217,25 +220,36 @@ class ImportsService {
   private async receiveColums(connectInput: ConnectInput) {
     let columns: IColumn[] = [];
     switch (connectInput.source) {
+      case ImportSource.MYSQL:
       case ImportSource.POSTGRESQL:
-        columns = await receivePostgresColumns(connectInput);
+      case ImportSource.MICROSOFT_SQL_SERVER:
+      case ImportSource.SQLITE:
+        columns = await querySqlTableColumns(connectInput);
         break;
       case ImportSource.API:
         columns = await receiveApiColumns(connectInput);
         break;
       case ImportSource.IMAP:
-        throw new Error('Not implemented');
+        throw new Error('Not implemented imap columns');
       default:
-        throw new Error('Unexpected import source');
+        throw new Error(
+          `Unexpected import source for receiving columns: ${connectInput.source}`
+        );
     }
     return columns;
   }
 
-  private async run(imp: IImportModel, importProcess: IImportProcessModel): Promise<ResponseHandler> {
+  private async run(
+    imp: IImportModel,
+    importProcess: IImportProcessModel
+  ): Promise<ResponseHandler> {
     try {
       switch (imp.source) {
+        case ImportSource.MYSQL:
         case ImportSource.POSTGRESQL:
-          await postgresImport(imp, importProcess);
+        case ImportSource.MICROSOFT_SQL_SERVER:
+        case ImportSource.SQLITE:
+          await sqlImport(imp, importProcess);
           break;
         case ImportSource.API:
           await apiImport(imp, importProcess);
@@ -276,7 +290,7 @@ class ImportsService {
       );
 
       const io = Websocket.getInstance();
-      emitProgress(io, imp.unit.toString(), failedProcess);
+      emitProgress(io, importProcess._id.toString(), failedProcess);
 
       const responseHandler = new ResponseHandler();
       responseHandler.setError(500, error.message);

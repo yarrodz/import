@@ -1,20 +1,22 @@
 import { IImportModel } from '../import.schema';
 import { IImportProcessModel } from '../../import-processes/import-process.schema';
-import { PostgresConnection } from '../../../utils/postgres/postgres.connection';
+import { createRequestedFields } from '../helpers/create-requested-fields';
+import { paginationImport } from '../helpers/pagination-import';
+import { SqlConnection } from '../../../utils/sql/sql.connection';
+import { dialectMap } from '../../../utils/sql/dialect.map';
 import {
   createSelectCountQuery,
   createSelectDataQuery,
   paginateQuery
-} from '../../../utils/postgres/postgres.query-builder';
-import { createRequestedFields } from '../helpers/create-requested-fields';
-import { paginationImport } from '../helpers/pagination-import';
+} from '../../../utils/sql/sql.query-builder';
 
 const LIMIT = 100;
 
-export async function postgresImport(
+export async function sqlImport(
   imp: IImportModel,
   importProcess: IImportProcessModel
 ) {
+  const dialect = imp.source;
   const config = imp.database.config;
   const fields = imp.fields;
   const idColumn = imp.idColumn;
@@ -22,14 +24,24 @@ export async function postgresImport(
   const customSelect = imp.database.customSelect;
   const datasetsCount = imp.database.datasetsCount;
 
-  const postgresConnection = new PostgresConnection(config);
-  await postgresConnection.checkConnection();
+  const sqlConnection = new SqlConnection(
+    config.database,
+    config.user,
+    config.password,
+    {
+      host: config.host,
+      port: config.port,
+      dialect: dialectMap[dialect]
+    }
+  );
+  await sqlConnection.connect();
   const offset = importProcess.processedDatasetsCount;
 
   if (table) {
     const requestedFields = createRequestedFields(fields, idColumn);
     const countQuery = createSelectCountQuery(table);
-    const datasetsCount = await postgresConnection.queryCount(countQuery);
+    const datasetsCount = await sqlConnection.queryCount(countQuery);
+    console.log(datasetsCount);
     await importProcess.updateOne({ datasetsCount });
 
     await paginationImport(
@@ -40,8 +52,10 @@ export async function postgresImport(
       offset,
       LIMIT,
       tablePaginationFunction,
-      postgresConnection,
+      sqlConnection,
+      dialect,
       table,
+      idColumn,
       requestedFields
     );
   } else {
@@ -55,34 +69,50 @@ export async function postgresImport(
       offset,
       LIMIT,
       customSelectPaginationFunction,
-      postgresConnection,
-      customSelect
+      sqlConnection,
+      dialect,
+      customSelect,
+      idColumn
     );
   }
+  sqlConnection.disconnect();
 }
 
 async function tablePaginationFunction(
   offset: number,
   limit: number,
-  postgresConnection: PostgresConnection,
+  sqlConnection: SqlConnection,
+  dialect: string,
   table: string,
+  idColumn: string,
   requestedFields: string[]
 ): Promise<object[]> {
   const rowsQuery = createSelectDataQuery(
+    dialect,
     table,
+    idColumn,
     requestedFields,
-    limit,
-    offset
+    offset,
+    limit
   );
-  return await postgresConnection.queryRows(rowsQuery);
+  return await sqlConnection.queryRows(rowsQuery);
 }
 
 async function customSelectPaginationFunction(
   offset: number,
   limit: number,
-  postgresConnection: PostgresConnection,
-  customSelect: string
+  sqlConnection: SqlConnection,
+  dialect: string,
+  customSelect: string,
+  idColumn: string
 ): Promise<object[]> {
-  const paginatedQuery = paginateQuery(customSelect, limit, offset);
-  return await postgresConnection.queryRows(paginatedQuery);
+  const paginatedQuery = paginateQuery(
+    dialect,
+    customSelect,
+    idColumn,
+    offset,
+    limit
+  );
+  console.log(paginatedQuery)
+  return await sqlConnection.queryRows(paginatedQuery);
 }

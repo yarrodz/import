@@ -4,8 +4,8 @@ import { IImportProcessModel } from '../../import-processes/import-process.schem
 
 export default function emitProgress(
   io: Websocket,
-  unit: string,
+  processId: string,
   importProcess: IImportProcessModel
 ) {
-  io.of('processes').to(unit).emit('progress', { data: importProcess });
+  io.of('processes').to(processId).emit('progress', { data: importProcess });
 }
