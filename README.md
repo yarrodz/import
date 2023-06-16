@@ -43,7 +43,6 @@ npm i
     http://localhost:3000/processes
     Next, we need to send a 'join' event including the processId of the import that has executed (646cd1accef0e54e78f8aec0).
     We will receive updated import process data when it changes.
-
     connect
     http://localhost:3000/imports/connect
     accepts:
