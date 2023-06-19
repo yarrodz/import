@@ -2,8 +2,8 @@ import { NextFunction } from 'express';
 import { Socket } from 'socket.io';
 
 interface ISocket {
-  handleConnection(socket: Socket);
-  middlewareImplementation?(soccket: Socket, next: NextFunction);
+  handleConnection(socket: Socket): void;
+  middlewareImplementation?(soccket: Socket, next: NextFunction): void;
 }
 
 export default ISocket;

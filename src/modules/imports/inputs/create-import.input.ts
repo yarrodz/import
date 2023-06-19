@@ -10,10 +10,14 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
+import { IImport } from '../import.schema';
+import { IDatabase, IDatabaseConnection } from '../sub-schemas/database.schema';
+import { IApi, IApiRequestConfig } from '../sub-schemas/api.schema';
+import { IImap, IImapConnection } from '../sub-schemas/imap.schema';
 import { ImportSource } from '../enums/import-source.enum';
 import { RequestMethod } from '../enums/request-method.enum';
 
-export class ConnectInput {
+export class CreateImportInput implements Omit<IImport, 'fields'> {
   @IsString()
   @Length(24, 24)
   unit: string;
@@ -22,12 +26,12 @@ export class ConnectInput {
   source: ImportSource;
 
   @IsOptional()
-  @ValidateNested({ each: true })
+  @ValidateNested()
   @Type(() => DatabaseInput)
   database?: DatabaseInput;
 
   @IsOptional()
-  @ValidateNested({ each: true })
+  @ValidateNested()
   @Type(() => ApiInput)
   api?: ApiInput;
 
@@ -38,21 +42,23 @@ export class ConnectInput {
 
   @IsOptional()
   @IsString()
-  @Length(1, 64)
   idColumn: string;
 }
 
-export class DatabaseInput {
-  config: any;
+export class DatabaseInput implements IDatabase {
+  @ValidateNested()
+  @Type(() => DatabaseConnectionInput)
+  connection: DatabaseConnectionInput;
+
+  @IsString()
+  idColumn: string;
 
   @IsOptional()
   @IsString()
-  @Length(1, 128)
   table?: string;
 
   @IsOptional()
   @IsString()
-  @Length(1, 4096)
   customSelect?: string;
 
   @IsOptional()
@@ -60,23 +66,40 @@ export class DatabaseInput {
   datasetsCount?: number;
 }
 
-export class ApiInput {
-  @ValidateNested({ each: true })
-  @Type(() => ApiConfigInput)
-  config: ApiConfigInput;
-
-  @IsOptional()
+export class DatabaseConnectionInput implements IDatabaseConnection {
   @IsString()
-  @Length(1, 256)
-  path?: string;
+  username: string;
+
+  @IsString()
+  password: string;
+
+  @IsString()
+  database: string;
+
+  @IsString()
+  host: string;
+
+  @IsInt()
+  port: number;
 }
 
-export class ApiConfigInput {
+export class ApiInput implements IApi {
+  @ValidateNested()
+  @Type(() => ApiRequestConfigInput)
+  requestConfig: ApiRequestConfigInput;
+
+  @IsString()
+  idColumn: string;
+
+  @IsString()
+  path: string;
+}
+
+export class ApiRequestConfigInput implements IApiRequestConfig {
   @IsIn(Object.values(RequestMethod))
   method: RequestMethod;
 
   @IsString()
-  @Length(1, 512)
   url: string;
 
   @IsOptional()
@@ -92,23 +115,20 @@ export class ApiConfigInput {
   params?: object;
 }
 
-export class ImapInput {
+export class ImapInput implements IImap {
   @ValidateNested()
-  @Type(() => ImapConigInput)
-  config: ImapConigInput;
+  @Type(() => ImapConnectionInput)
+  connection: ImapConnectionInput;
 }
 
-export class ImapConigInput {
+export class ImapConnectionInput implements IImapConnection {
   @IsString()
-  @Length(1, 128)
   user: string;
 
   @IsString()
-  @Length(1, 128)
   password: string;
 
   @IsString()
-  @Length(1, 128)
   host: string;
 
   @IsInt()

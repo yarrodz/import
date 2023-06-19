@@ -1,25 +1,28 @@
-import { ConnectInput } from '../inputs/connect.input';
+import { IImport } from '../import.schema';
 import { IColumn } from '../intefaces/column.interface';
 import { SqlConnection } from '../../../utils/sql/sql.connection';
 import { dialectMap } from '../../../utils/sql/dialect.map';
-import { createSelectColumnsQuery, paginateQuery } from '../../../utils/sql/sql.query-builder';
+import {
+  createSelectColumnsQuery,
+  paginateQuery
+} from '../../../utils/sql/sql.query-builder';
 
-export async function querySqlTableColumns(
-  connectInput: ConnectInput
+export async function receiveSqlTableColumns(
+  impt: Omit<IImport, 'fields'>
 ): Promise<IColumn[]> {
-  const source = connectInput.source;
-  const config = connectInput.database.config;
-  const idColumn = connectInput.idColumn;
-  const table = connectInput.database.table;
-  const customSelect = connectInput.database.customSelect;
+  const source = impt.source;
+  const connection = impt.database.connection;
+  const idColumn = impt.database.idColumn;
+  const table = impt.database.table;
+  const customSelect = impt.database.customSelect;
 
   const sqlConnection = new SqlConnection(
-    config.database,
-    config.user,
-    config.password,
+    connection.database,
+    connection.username,
+    connection.password,
     {
-      host: config.host,
-      port: config.port,
+      host: connection.host,
+      port: connection.port,
       dialect: dialectMap[source]
     }
   );

@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import 'reflect-metadata';
 
 import ImportsRouter from './modules/imports/imports.router';
+import ImportProcessesRouter from './modules/import-processes/import-processes.router';
 import Websocket from './utils/websocket/websocket';
 import ImportProcessesSocket from './modules/import-processes/import-processes.socket';
 
@@ -17,6 +18,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use('/imports', ImportsRouter);
+app.use('/import-processes', ImportProcessesRouter);
 
 const httpServer = createServer(app);
 const io = Websocket.getInstance(httpServer);

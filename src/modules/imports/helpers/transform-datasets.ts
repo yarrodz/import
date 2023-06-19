@@ -1,16 +1,16 @@
-import { IImportProcessModel } from '../../import-processes/import-process.schema';
-import { IImportModel } from '../import.schema';
-
+import ImportProcessesRepository from '../../import-processes/import-processes.repository';
+import { IImportProcessDocument } from '../../import-processes/import-process.schema';
+import { IImportDocument } from '../import.schema';
 import { transformRecords } from './transform-records';
 
 export async function transformDatasets(
-  imp: IImportModel,
-  importProcess: IImportProcessModel,
+  impt: IImportDocument,
+  process: IImportProcessDocument,
   retrievedDatasets: object[],
   idColumn: string
 ) {
-  const unit = imp.unit;
-  const fields = imp.fields;
+  const unit = impt.unit;
+  const fields = impt.fields;
 
   const datasets = [];
   retrievedDatasets.forEach(async (retrievedDataset) => {
@@ -24,17 +24,18 @@ export async function transformDatasets(
 
       datasets.push({
         unit,
-        import: imp._id,
+        import: impt._id,
         sourceDatasetId: sourceDatasetId,
         records
       });
     } catch (error) {
-      await importProcess.updateOne({
-        $push: {
-          log: `Cannot parse dataset: '${JSON.stringify(
-            retrievedDataset
-          )}', Error: '${error.message}'`
-        }
+      const log = `Cannot parse dataset: '${JSON.stringify(
+        retrievedDataset
+      )}', Error: '${error.message}'`;
+      const logs = process.log;
+      logs.push(log);
+      await ImportProcessesRepository.update(process.id, {
+        log: logs
       });
     }
   });

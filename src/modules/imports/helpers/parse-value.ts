@@ -1,7 +1,7 @@
 import { FeatureType } from '../../features/enums/feature-type.enum';
-import { IFeatureModel } from '../../features/feature.schema';
+import { IFeature } from '../../features/feature.schema';
 
-export function parseValue(feature: IFeatureModel, value: any) {
+export function parseValue(feature: IFeature, value: any) {
   try {
     let parsedValue;
     switch (feature.type) {

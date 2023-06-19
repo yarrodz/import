@@ -1,15 +1,14 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 import { FeatureType } from './enums/feature-type.enum';
 
 export interface IFeature {
+  _id: Types.ObjectId | string;
   name: string;
   type: FeatureType;
 }
 
-export interface IFeatureModel extends IFeature, Document {}
-
-export const FeatureSchema = new Schema({
+export const FeatureSchema = new Schema<IFeature>({
   name: { type: String, required: true },
   type: {
     type: String,

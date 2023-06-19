@@ -22,8 +22,7 @@ export function createSelectDataQuery(
   if (dialect !== 'Microsoft SQL Server') {
     query += ` FROM ${table} ORDER BY ${idColumn} LIMIT ${limit} OFFSET ${offset}`;
   } else {
-    query +=
-      ` FROM ${table} ORDER BY ${idColumn} OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY`;
+    query += ` FROM ${table} ORDER BY ${idColumn} OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY`;
   }
 
   return query;
@@ -44,8 +43,7 @@ export function paginateQuery(
   if (dialect !== 'Microsoft SQL Server') {
     paginatedQuery += ` LIMIT ${limit} OFFSET ${offset}`;
   } else {
-    paginatedQuery +=
-      ` ORDER BY ${idColumn} OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY`;
+    paginatedQuery += ` ORDER BY ${idColumn} OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY`;
   }
 
   return paginatedQuery;

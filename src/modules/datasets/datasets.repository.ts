@@ -3,8 +3,8 @@ import Record from '../records/record.schema';
 import { CreateDatasetInput } from './inputs/create-dataset.input';
 
 export async function create(input: CreateDatasetInput) {
-  const { unit, imp, sourceDatasetId, records } = input;
-  const dataset = await Dataset.create({ unit, import: imp, sourceDatasetId });
+  const { unit, impt, sourceDatasetId, records } = input;
+  const dataset = await Dataset.create({ unit, import: impt, sourceDatasetId });
 
   const recordsToCreate = records.map((record) => {
     return {
@@ -17,8 +17,12 @@ export async function create(input: CreateDatasetInput) {
   await dataset.updateOne({ records: createdRecords });
 }
 
-export async function findBySourceDatasetId(id: string) {
+export async function findByImportAndSourceDatasetId(
+  importId: string,
+  sourceDatasetId: string
+) {
   return await Dataset.findOne({
-    sourceDatasetId: id
+    import: importId,
+    sourceDatasetId
   });
 }

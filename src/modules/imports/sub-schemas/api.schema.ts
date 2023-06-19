@@ -1,24 +1,46 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import { Schema } from 'mongoose';
+import { AxiosRequestConfig } from 'axios';
+
 import { RequestMethod } from '../enums/request-method.enum';
 
-export interface IApiConfig {
+export interface IApiRequestConfig extends AxiosRequestConfig {
   method: RequestMethod;
   url: string;
-  headers: object;
-  params: object;
-  data: object;
+  headers?: object;
+  params?: object;
+  data?: object;
 }
 
-interface IApi {
-  config: IApiConfig;
+export const ApiRequestConfigSchema = new Schema<IApiRequestConfig>(
+  {
+    method: {
+      type: String,
+      enum: Object.values(RequestMethod),
+      required: true
+    },
+    url: { type: String, default: 'data' },
+    headers: { type: Object, default: 'data' },
+    params: { type: Object, default: 'data' },
+    data: { type: Object, default: 'data' }
+  },
+  {
+    _id: false
+  }
+);
+
+export interface IApi {
+  requestConfig: IApiRequestConfig;
+  idColumn: string;
   path: string;
 }
 
-export interface IApiModel extends IApi, Document {}
-
-export const ApiSchema = new Schema({
-  config: { type: Schema.Types.Mixed, required: true },
-  path: { type: String, default: 'data' }
-});
-
-export default mongoose.model<IApi>('Api', ApiSchema);
+export const ApiSchema = new Schema<IApi>(
+  {
+    requestConfig: { type: ApiRequestConfigSchema, required: true },
+    idColumn: { type: String, required: true },
+    path: { type: String, required: true }
+  },
+  {
+    _id: false
+  }
+);

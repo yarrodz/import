@@ -1,6 +1,6 @@
-import ImportProcess from '../../import-processes/import-process.schema';
-import { IImportModel } from '../import.schema';
-import { IImportProcessModel } from '../../import-processes/import-process.schema';
+import ImportProcessesRepository from '../../import-processes/import-processes.repository';
+import { IImportProcessDocument } from '../../import-processes/import-process.schema';
+import { IImportDocument } from '../import.schema';
 import { ImportStatus } from '../../import-processes/enums/import-status.enum';
 import { transformDatasets } from './transform-datasets';
 import { transferDatasets } from './transfer-datasets';
@@ -9,48 +9,44 @@ import emitProgress from './emit-progress';
 
 export async function chunkImport(
   chunkedDatasets: object[][],
-  imp: IImportModel,
-  importProcess: IImportProcessModel,
+  impt: IImportDocument,
+  process: IImportProcessDocument,
   idColumn: string
 ) {
   const io = Websocket.getInstance();
-  const unit = imp.unit.toString();
+  const unit = impt.unit as string;
   while (chunkedDatasets.length) {
-    const reloadedImportProcess = await ImportProcess.findById(
-      importProcess._id
+    const refreshedProcess = await ImportProcessesRepository.findById(
+      process._id
     );
-    if (reloadedImportProcess.status === ImportStatus.PAUSED) {
+    if (refreshedProcess.status === ImportStatus.PAUSED) {
       return;
     }
-    emitProgress(io, unit, reloadedImportProcess);
+    emitProgress(io, unit, refreshedProcess);
 
     const chunk = chunkedDatasets.shift();
     const transormedDatasets = await transformDatasets(
-      imp,
-      importProcess,
+      impt,
+      process,
       chunk,
       idColumn
     );
 
-    await transferDatasets(transormedDatasets);
+    await transferDatasets(impt._id, transormedDatasets);
 
-    await importProcess.updateOne({
+    await ImportProcessesRepository.update(process._id, {
       attempts: 0,
       errorMessage: null,
-      $inc: {
-        processedDatasetsCount: chunk.length,
-        transferedDatasetsCount: transormedDatasets.length
-      }
+      processedDatasetsCount:
+        refreshedProcess.processedDatasetsCount + chunk.length,
+      transferedDatasetsCount:
+        refreshedProcess.processedDatasetsCount + transormedDatasets.length
     });
   }
 
-  const completedProcess = await ImportProcess.findOneAndUpdate(
-    importProcess._id,
-    {
-      status: ImportStatus.COMPLETED,
-      errorMessage: null
-    },
-    { new: true }
-  );
+  const completedProcess = await ImportProcessesRepository.update(process._id, {
+    status: ImportStatus.COMPLETED,
+    errorMessage: null
+  });
   emitProgress(io, unit, completedProcess);
 }

@@ -1,24 +1,23 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
 import { ImportSource } from './enums/import-source.enum';
-import { DatabaseSchema, IDatabaseModel } from './sub-schemas/database.schema';
-import { FieldSchema, IFieldModel } from './sub-schemas/field.schema';
-import { ApiSchema, IApiModel } from './sub-schemas/api.schema';
-import { IImapModel, ImapSchema } from './sub-schemas/imap.schema';
+import { DatabaseSchema, IDatabase } from './sub-schemas/database.schema';
+import { FieldSchema, IField } from './sub-schemas/field.schema';
+import { ApiSchema, IApi } from './sub-schemas/api.schema';
+import { IImap, ImapSchema } from './sub-schemas/imap.schema';
 
 export interface IImport {
-  unit: Types.ObjectId;
+  unit: Types.ObjectId | string;
   source: ImportSource;
-  database?: IDatabaseModel;
-  api?: IApiModel;
-  imap?: IImapModel;
-  fields: IFieldModel[];
-  idColumn: string;
+  database?: IDatabase;
+  api?: IApi;
+  imap?: IImap;
+  fields: IField[];
 }
 
-export interface IImportModel extends IImport, Document {}
+export interface IImportDocument extends IImport, Document {}
 
-const Import = new Schema({
+const ImportSchema = new Schema<IImport>({
   unit: { type: Schema.Types.ObjectId, ref: 'Unit', required: true },
   source: {
     type: String,
@@ -28,8 +27,7 @@ const Import = new Schema({
   database: { type: DatabaseSchema, required: false },
   api: { type: ApiSchema, required: false },
   imap: { type: ImapSchema, requred: false },
-  fields: [{ type: FieldSchema }],
-  idColumn: { type: String, required: false }
+  fields: [{ type: FieldSchema }]
 });
 
-export default mongoose.model<IImport>('Import', Import);
+export default mongoose.model<IImportDocument>('Import', ImportSchema);

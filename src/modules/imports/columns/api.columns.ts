@@ -1,16 +1,16 @@
 import axios from 'axios';
 
+import { IImport } from '../import.schema';
 import { resolvePath } from '../helpers/resolve-path';
 import { IColumn } from '../intefaces/column.interface';
-import { ConnectInput } from '../inputs/connect.input';
 
 export async function receiveApiColumns(
-  connectInput: ConnectInput
+  impt: Omit<IImport, 'fields'>
 ): Promise<IColumn[]> {
-  const config = connectInput.api.config;
-  const path = connectInput.api.path;
+  const requestConfig = impt.api.requestConfig;
+  const path = impt.api.path;
 
-  const data = await axios(config);
+  const data = await axios(requestConfig);
   const dataset = resolvePath(data, path)[0] as object;
 
   const columns: IColumn[] = Object.entries(dataset).map(([key, value]) => {

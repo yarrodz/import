@@ -4,7 +4,7 @@
 // import { resolvePath } from "../helpers/resolve-path";
 // import { IColumn } from "../intefaces/column.interface";
 
-// export async function receiveImapColumns(imp: IImportModel): IColumn[] {
+// export async function receiveImapColumns(impt: IImportModel): IColumn[] {
 //     const columns: IColumn[] = [
 //         {attachments: string[];}
 //         {headers: Headers;}

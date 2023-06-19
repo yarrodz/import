@@ -1,24 +1,26 @@
-import mongoose, { Document, Schema } from 'mongoose';
-
+import { Schema } from 'mongoose';
 import { Config as ImapConfig } from 'imap';
 
-interface IImap {
-  config: ImapConfig;
+export interface IImapConnection extends ImapConfig {
+  user: string;
+  password: string;
+  host?: string;
+  port?: number;
+  tls?: boolean;
 }
 
-export interface IImapModel extends IImap, Document {}
-
-export const ImapSchema = new Schema({
-  config: {
-    type: {
-      user: { type: String, required: true },
-      password: { type: String, required: true },
-      host: { type: String, required: true },
-      port: { type: Number, required: true },
-      tls: { type: Boolean, required: true }
-    },
-    required: true
-  }
+export const ImapConnectionSchema = new Schema<IImapConnection>({
+  user: { type: String, required: true },
+  password: { type: String, required: true },
+  host: { type: String, required: true },
+  port: { type: Number, required: true },
+  tls: { type: Boolean, required: true }
 });
 
-export default mongoose.model<IImap>('Imap', ImapSchema);
+export interface IImap {
+  connection: IImapConnection;
+}
+
+export const ImapSchema = new Schema<IImap>({
+  connection: { type: ImapConnectionSchema, required: true }
+});

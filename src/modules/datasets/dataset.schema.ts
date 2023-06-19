@@ -1,20 +1,20 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
-import { RecordSchema } from '../records/record.schema';
 
-export interface IDataset {
+import { IRecord, RecordSchema } from '../records/record.schema';
+
+export interface IDataset extends Document {
   unit: Types.ObjectId;
-  syncronization?: Types.ObjectId;
+  records: IRecord[];
+  import?: Types.ObjectId;
   sourceDatasetId?: string;
 }
 
-export interface IDatasetModel extends IDataset, Document {}
-
-const DatasetSchema = new Schema({
+const DatasetSchema = new Schema<IDataset>({
   unit: { type: Schema.Types.ObjectId, ref: 'Unit', required: true },
   records: [{ type: RecordSchema }],
-  syncronization: {
+  import: {
     type: Schema.Types.ObjectId,
-    ref: 'Syncronization',
+    ref: 'Import',
     required: false
   },
   sourceDatasetId: { type: Schema.Types.String, index: true, required: false }

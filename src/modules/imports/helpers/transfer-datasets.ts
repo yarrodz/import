@@ -1,17 +1,21 @@
 import { CreateDatasetInput } from '../../datasets/inputs/create-dataset.input';
-import * as datasetsService from '../../datasets/datasets.service';
+import * as DatasetsRepository from '../../datasets/datasets.repository';
 import * as recordsService from '../../records/records.service';
 
-export async function transferDatasets(datasets: CreateDatasetInput[]) {
+export async function transferDatasets(
+  importId: string,
+  datasets: CreateDatasetInput[]
+) {
   try {
     await Promise.all(
       datasets.map(async (datasetInput) => {
-        const dataset = await datasetsService.findBySourceDatasetId(
+        const dataset = await DatasetsRepository.findByImportAndSourceDatasetId(
+          importId,
           datasetInput.sourceDatasetId
         );
 
         if (!dataset) {
-          await datasetsService.create(datasetInput);
+          await DatasetsRepository.create({ impt: importId, ...datasetInput });
         } else {
           const records = datasetInput.records.map((record) => {
             return {

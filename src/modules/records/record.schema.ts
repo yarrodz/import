@@ -1,15 +1,13 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
 
-export interface IRecord {
+export interface IRecord extends Document {
   value: any;
   archived: boolean;
   feature: Types.ObjectId;
   dataset: Types.ObjectId;
 }
 
-export interface IRecordModel extends IRecord, Document {}
-
-export const RecordSchema = new Schema({
+export const RecordSchema = new Schema<IRecord>({
   value: { type: Schema.Types.Mixed, required: true },
   archived: { type: Boolean, default: false, index: true },
   feature: { type: Schema.Types.ObjectId, ref: 'Feature', required: true },

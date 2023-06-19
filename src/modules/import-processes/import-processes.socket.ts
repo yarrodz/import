@@ -11,7 +11,7 @@ class ImportProcessesSocket implements ISocket {
   }
 
   middlewareImplementation(socket: Socket, next: NextFunction) {
-    return next();
+    next();
   }
 }
 

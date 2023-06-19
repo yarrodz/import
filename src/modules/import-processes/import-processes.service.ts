@@ -1,17 +1,140 @@
-// import { Types } from 'mongoose';
+import ImportProcessesRepository from './import-processes.repository';
+import ImportsRepository from '../imports/imports.repository';
+import ResponseHandler from '../../utils/response-handler/response-handler';
+import Websocket from '../../utils/websocket/websocket';
+import emitProgress from '../imports/helpers/emit-progress';
+import { ImportStatus } from './enums/import-status.enum';
+import runImport from '../imports/import-runners/run-import';
 
-// import ImportProcess, { IImportProcess, IImportProcessModel } from './import-process.schema';
-// import Websocket from '../../utils/websocket/websocket';
+class ImportProcessesService {
+  async findAll(unit: string): Promise<ResponseHandler> {
+    const responseHandler = new ResponseHandler();
+    try {
+      const processes = await ImportProcessesRepository.findAll(unit);
+      responseHandler.setSuccess(200, processes);
+      return responseHandler;
+    } catch (error) {
+      responseHandler.setError(500, error.message);
+      return responseHandler;
+    }
+  }
 
-// class ImportProcessesService {
-//   async update(id: Types.ObjectId, attrs: Partial<IImportProcess>) {
-//     const process = await ImportProcess.findByIdAndUpdate(id, attrs);
-//   }
+  async pause(processId: string) {
+    const responseHandler = new ResponseHandler();
+    try {
+      const io = Websocket.getInstance();
+      const process = await ImportProcessesRepository.findById(processId);
+      if (!process) {
+        responseHandler.setError(404, 'Import process not found');
+        return responseHandler;
+      }
 
-//   private async updateSocket(process: IImportProcessModel) {
-//     const io = Websocket.getInstance();
-//     io.of('orders').emit('process_updated', { data: process });
-//   }
-// }
+      if (process.status !== ImportStatus.PENDING) {
+        responseHandler.setError(
+          409,
+          'Only pending import process can be paused'
+        );
+        return responseHandler;
+      }
 
-// export default new ImportProcessesService();
+      const pausedProcess = await ImportProcessesRepository.update(processId, {
+        status: ImportStatus.PAUSED
+      });
+      emitProgress(io, process._id as string, pausedProcess);
+
+      responseHandler.setSuccess(200, 'Import paused by user');
+      return responseHandler;
+    } catch (error) {
+      responseHandler.setError(500, error.message);
+      return responseHandler;
+    }
+  }
+
+  async reload(processId: string) {
+    const responseHandler = new ResponseHandler();
+    try {
+      const process = await ImportProcessesRepository.findById(processId);
+      if (!process) {
+        responseHandler.setError(404, 'Import process not found');
+        return responseHandler;
+      }
+
+      if (process.status !== ImportStatus.PAUSED) {
+        responseHandler.setError(
+          409,
+          'Only paused import process can be reloaded'
+        );
+        return responseHandler;
+      }
+
+      const impt = await ImportsRepository.findById(process.import as string);
+      if (!impt) {
+        responseHandler.setError(404, 'Import not found');
+        return responseHandler;
+      }
+
+      const pendingImport = await ImportProcessesRepository.findPendingByUnit(
+        impt.unit as string
+      );
+      if (pendingImport) {
+        responseHandler.setError(
+          409,
+          'This unit is currently processing another import'
+        );
+        return responseHandler;
+      }
+
+      const reloadedProcess = await ImportProcessesRepository.update(
+        processId,
+        { status: ImportStatus.PENDING }
+      );
+
+      runImport(impt, reloadedProcess);
+      responseHandler.setSuccess(200, process._id);
+      return responseHandler;
+    } catch (error) {
+      responseHandler.setError(500, error.message);
+      return responseHandler;
+    }
+  }
+
+  async retry(processId: string) {
+    const responseHandler = new ResponseHandler();
+    try {
+      const process = await ImportProcessesRepository.findById(processId);
+      if (!process) {
+        responseHandler.setError(404, 'Import process not found');
+        return responseHandler;
+      }
+
+      if (process.status !== ImportStatus.FAILED) {
+        responseHandler.setError(
+          409,
+          'Only failed import process can be retried'
+        );
+        return responseHandler;
+      }
+
+      const impt = await ImportsRepository.findById(process.import as string);
+      if (!impt) {
+        responseHandler.setError(404, 'Import not found');
+        return responseHandler;
+      }
+
+      const retriedProcess = await ImportProcessesRepository.update(processId, {
+        attempts: 0,
+        status: ImportStatus.PENDING,
+        errorMessage: null
+      });
+
+      runImport(impt, retriedProcess);
+      responseHandler.setSuccess(200, process._id);
+      return responseHandler;
+    } catch (error) {
+      responseHandler.setError(500, error.message);
+      return responseHandler;
+    }
+  }
+}
+
+export default new ImportProcessesService();
