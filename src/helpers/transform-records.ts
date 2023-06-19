@@ -1,4 +1,4 @@
-import { IField } from '../sub-schemas/field.schema';
+import { IField } from '../modules/imports/sub-schemas/field.schema';
 import { parseValue } from './parse-value';
 
 export function transformRecords(fields: IField[], sourceDataset: object) {

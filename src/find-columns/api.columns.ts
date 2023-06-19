@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-import { IImport } from '../import.schema';
+import { IImport } from '../modules/imports/import.schema';
 import { resolvePath } from '../helpers/resolve-path';
-import { IColumn } from '../intefaces/column.interface';
+import { IColumn } from '../modules/imports/intefaces/column.interface';
 
 export async function receiveApiColumns(
   impt: Omit<IImport, 'fields'>

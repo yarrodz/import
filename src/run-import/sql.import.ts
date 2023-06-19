@@ -1,15 +1,15 @@
 import { createRequestedFields } from '../helpers/create-requested-fields';
 import { paginationImport } from '../helpers/pagination-import';
-import { SqlConnection } from '../../../utils/sql/sql.connection';
-import { dialectMap } from '../../../utils/sql/dialect.map';
+import { SqlConnection } from '../utils/sql/sql.connection';
+import { dialectMap } from '../utils/sql/dialect.map';
 import {
   createSelectCountQuery,
   createSelectDataQuery,
   paginateQuery
-} from '../../../utils/sql/sql.query-builder';
-import { IImportDocument } from '../import.schema';
-import { IImportProcessDocument } from '../../import-processes/import-process.schema';
-import ImportProcessesRepository from '../../import-processes/import-processes.repository';
+} from '../utils/sql/sql.query-builder';
+import { IImportDocument } from '../modules/imports/import.schema';
+import { IImportProcessDocument } from '../modules/import-processes/import-process.schema';
+import ImportProcessesRepository from '../modules/import-processes/import-processes.repository';
 
 const LIMIT = 100;
 

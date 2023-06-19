@@ -1,12 +1,12 @@
-import ImportProcessesRepository from '../../import-processes/import-processes.repository';
-import { IImportProcessDocument } from '../../import-processes/import-process.schema';
-import { ImportStatus } from '../../import-processes/enums/import-status.enum';
-import Websocket from '../../../utils/websocket/websocket';
+import ImportProcessesRepository from '../modules/import-processes/import-processes.repository';
+import { IImportProcessDocument } from '../modules/import-processes/import-process.schema';
+import { ImportStatus } from '../modules/import-processes/enums/import-status.enum';
+import Websocket from '../utils/websocket/websocket';
 import emitProgress from './emit-progress';
-import { IPaginationFunction } from '../intefaces/pagination-function.interface';
+import { IPaginationFunction } from '../modules/imports/intefaces/pagination-function.interface';
 import { transformDatasets } from './transform-datasets';
 import { transferDatasets } from './transfer-datasets';
-import { IImportDocument } from '../import.schema';
+import { IImportDocument } from '../modules/imports/import.schema';
 
 export async function paginationImport(
   impt: IImportDocument,

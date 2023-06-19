@@ -2,9 +2,9 @@ import ImportProcessesRepository from './import-processes.repository';
 import ImportsRepository from '../imports/imports.repository';
 import ResponseHandler from '../../utils/response-handler/response-handler';
 import Websocket from '../../utils/websocket/websocket';
-import emitProgress from '../imports/helpers/emit-progress';
+import emitProgress from '../../helpers/emit-progress';
 import { ImportStatus } from './enums/import-status.enum';
-import runImport from '../imports/import-runners/run-import';
+import runImport from '../../run-import/run-import';
 
 class ImportProcessesService {
   async findAll(unit: string): Promise<ResponseHandler> {

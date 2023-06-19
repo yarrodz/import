@@ -1,11 +1,11 @@
-import { IImport } from '../import.schema';
-import { IColumn } from '../intefaces/column.interface';
-import { SqlConnection } from '../../../utils/sql/sql.connection';
-import { dialectMap } from '../../../utils/sql/dialect.map';
+import { IImport } from '../modules/imports/import.schema';
+import { IColumn } from '../modules/imports/intefaces/column.interface';
+import { SqlConnection } from '../utils/sql/sql.connection';
+import { dialectMap } from '../utils/sql/dialect.map';
 import {
   createSelectColumnsQuery,
   paginateQuery
-} from '../../../utils/sql/sql.query-builder';
+} from '../utils/sql/sql.query-builder';
 
 export async function receiveSqlTableColumns(
   impt: Omit<IImport, 'fields'>

@@ -1,6 +1,6 @@
-import { CreateDatasetInput } from '../../datasets/inputs/create-dataset.input';
-import * as DatasetsRepository from '../../datasets/datasets.repository';
-import * as recordsService from '../../records/records.service';
+import { CreateDatasetInput } from '../modules/datasets/inputs/create-dataset.input';
+import * as DatasetsRepository from '../modules/datasets/datasets.repository';
+import * as recordsService from '../modules/records/records.service';
 
 export async function transferDatasets(
   importId: string,

@@ -1,12 +1,12 @@
-import ImportProcessesRepository from '../../import-processes/import-processes.repository';
-import { IImportProcessDocument } from '../../import-processes/import-process.schema';
-import { ImportSource } from '../enums/import-source.enum';
-import { IImportDocument } from '../import.schema';
+import ImportProcessesRepository from '../modules/import-processes/import-processes.repository';
+import { IImportProcessDocument } from '../modules/import-processes/import-process.schema';
+import { ImportSource } from '../modules/imports/enums/import-source.enum';
+import { IImportDocument } from '../modules/imports/import.schema';
 import { apiImport } from './api.import';
 import { imapImport } from './imap.import';
 import { sqlImport } from './sql.import';
-import { ImportStatus } from '../../import-processes/enums/import-status.enum';
-import Websocket from '../../../utils/websocket/websocket';
+import { ImportStatus } from '../modules/import-processes/enums/import-status.enum';
+import Websocket from '../utils/websocket/websocket';
 import emitProgress from '../helpers/emit-progress';
 
 const MAX_ATTEMPTS = 5;

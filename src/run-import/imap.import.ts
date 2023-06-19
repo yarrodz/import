@@ -1,10 +1,10 @@
-import { ImapConnection } from '../../../utils/imap/imap.connection';
+import { ImapConnection } from '../utils/imap/imap.connection';
 import { parseEmails } from '../helpers/parse-emails';
 import { chunkArray } from '../helpers/chunk-array';
 import { chunkImport } from '../helpers/chunk-import';
-import { IImportDocument } from '../import.schema';
-import { IImportProcessDocument } from '../../import-processes/import-process.schema';
-import ImportProcessesRepository from '../../import-processes/import-processes.repository';
+import { IImportDocument } from '../modules/imports/import.schema';
+import { IImportProcessDocument } from '../modules/import-processes/import-process.schema';
+import ImportProcessesRepository from '../modules/import-processes/import-processes.repository';
 
 // To avoid ssl sertificate requirement for imap, will be removed
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';

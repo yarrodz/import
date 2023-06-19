@@ -1,6 +1,6 @@
-import ImportProcessesRepository from '../../import-processes/import-processes.repository';
-import { IImportProcessDocument } from '../../import-processes/import-process.schema';
-import { IImportDocument } from '../import.schema';
+import ImportProcessesRepository from '../modules/import-processes/import-processes.repository';
+import { IImportProcessDocument } from '../modules/import-processes/import-process.schema';
+import { IImportDocument } from '../modules/imports/import.schema';
 import { transformRecords } from './transform-records';
 
 export async function transformDatasets(

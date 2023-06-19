@@ -1,11 +1,11 @@
 import axios from 'axios';
 
-import { IImportDocument } from '../import.schema';
-import { IImportProcessDocument } from '../../import-processes/import-process.schema';
+import { IImportDocument } from '../modules/imports/import.schema';
+import { IImportProcessDocument } from '../modules/import-processes/import-process.schema';
 import { resolvePath } from '../helpers/resolve-path';
 import { chunkArray } from '../helpers/chunk-array';
 import { chunkImport } from '../helpers/chunk-import';
-import ImportProcessesRepository from '../../import-processes/import-processes.repository';
+import ImportProcessesRepository from '../modules/import-processes/import-processes.repository';
 
 const CHUNK_SIZE = 50;
 

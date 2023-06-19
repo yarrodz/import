@@ -1,5 +1,5 @@
-import { FeatureType } from '../../features/enums/feature-type.enum';
-import { IFeature } from '../../features/feature.schema';
+import { FeatureType } from '../modules/features/enums/feature-type.enum';
+import { IFeature } from '../modules/features/feature.schema';
 
 export function parseValue(feature: IFeature, value: any) {
   try {

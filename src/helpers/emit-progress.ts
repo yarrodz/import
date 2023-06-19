@@ -1,5 +1,5 @@
-import Websocket from '../../../utils/websocket/websocket';
-import { IImportProcessDocument } from '../../import-processes/import-process.schema';
+import Websocket from '../utils/websocket/websocket';
+import { IImportProcessDocument } from '../modules/import-processes/import-process.schema';
 
 export default function emitProgress(
   io: Websocket,

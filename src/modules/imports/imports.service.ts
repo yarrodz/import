@@ -6,8 +6,8 @@ import ResponseHandler from '../../utils/response-handler/response-handler';
 import { FieldInput } from './inputs/field.input';
 import { formatValidationErrors } from '../../utils/format-validation-errors/format-validation-errors';
 import { CreateImportInput } from './inputs/create-import.input';
-import runImport from './import-runners/run-import';
-import findColumns from './columns/find-columns';
+import runImport from '../../run-import/run-import';
+import findColumns from '../../find-columns/find-columns';
 
 class ImportsService {
   async findAll(unit: string): Promise<ResponseHandler> {

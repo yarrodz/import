@@ -1,10 +1,10 @@
-import ImportProcessesRepository from '../../import-processes/import-processes.repository';
-import { IImportProcessDocument } from '../../import-processes/import-process.schema';
-import { IImportDocument } from '../import.schema';
-import { ImportStatus } from '../../import-processes/enums/import-status.enum';
+import ImportProcessesRepository from '../modules/import-processes/import-processes.repository';
+import { IImportProcessDocument } from '../modules/import-processes/import-process.schema';
+import { IImportDocument } from '../modules/imports/import.schema';
+import { ImportStatus } from '../modules/import-processes/enums/import-status.enum';
 import { transformDatasets } from './transform-datasets';
 import { transferDatasets } from './transfer-datasets';
-import Websocket from '../../../utils/websocket/websocket';
+import Websocket from '../utils/websocket/websocket';
 import emitProgress from './emit-progress';
 
 export async function chunkImport(
