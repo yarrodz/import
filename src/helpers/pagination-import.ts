@@ -19,7 +19,7 @@ export async function paginationImport(
   ...paginationFunctionParams: any[]
 ) {
   const io = Websocket.getInstance();
-  const processId = process._id as string;
+  const processId = process._id.toString();
   while (offset < datasetsCount) {
     const refreshedProcess = await ImportProcessesRepository.findById(
       process._id

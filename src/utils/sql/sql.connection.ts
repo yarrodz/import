@@ -7,9 +7,9 @@ export class SqlConnection {
     database: string,
     username: string,
     password: string,
-    opions: Options
+    options: Options
   ) {
-    this.connection = new Sequelize(database, username, password, opions);
+    this.connection = new Sequelize(database, username, password, options);
   }
 
   async connect(): Promise<void> {
@@ -29,7 +29,6 @@ export class SqlConnection {
       const result = await this.connection.query(str, {
         type: QueryTypes.SELECT
       });
-      console.log(result);
       return result;
     } catch (error) {
       throw new Error(`Error while quering data: ${error.message}`);

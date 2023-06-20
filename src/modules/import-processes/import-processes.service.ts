@@ -40,7 +40,7 @@ class ImportProcessesService {
       const pausedProcess = await ImportProcessesRepository.update(processId, {
         status: ImportStatus.PAUSED
       });
-      emitProgress(io, process._id as string, pausedProcess);
+      emitProgress(io, process._id.toString(), pausedProcess);
 
       responseHandler.setSuccess(200, 'Import paused by user');
       return responseHandler;
@@ -67,7 +67,7 @@ class ImportProcessesService {
         return responseHandler;
       }
 
-      const impt = await ImportsRepository.findById(process.import as string);
+      const impt = await ImportsRepository.findById(process.import.toString());
       if (!impt) {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
@@ -115,7 +115,7 @@ class ImportProcessesService {
         return responseHandler;
       }
 
-      const impt = await ImportsRepository.findById(process.import as string);
+      const impt = await ImportsRepository.findById(process.import.toString());
       if (!impt) {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;

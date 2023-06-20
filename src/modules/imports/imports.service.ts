@@ -103,34 +103,39 @@ class ImportsService {
 
   async start(id: string): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
-    const impt = await ImportsRepository.findById(id);
-    if (!impt) {
-      responseHandler.setError(404, 'Import not found');
-      return responseHandler;
-    }
+    try {
+      const impt = await ImportsRepository.findById(id);
+      if (!impt) {
+        responseHandler.setError(404, 'Import not found');
+        return responseHandler;
+      }
 
-    const pendingImport = await ImportProcessesRepository.findPendingByUnit(
-      impt.unit as string
-    );
-    if (pendingImport) {
-      responseHandler.setError(
-        409,
-        'This unit is currently processing another import'
+      const pendingImport = await ImportProcessesRepository.findPendingByUnit(
+        impt.unit.toString()
       );
+      if (pendingImport) {
+        responseHandler.setError(
+          409,
+          'This unit is currently processing another import'
+        );
+        return responseHandler;
+      }
+
+      const process = await ImportProcessesRepository.create({
+        unit: impt.unit as string,
+        import: impt._id
+      });
+
+      // We dont need to wait till import executes,
+      // We send of id import process
+      // Client send websocket request and then sends event 'join' with processId
+      runImport(impt, process);
+      responseHandler.setSuccess(200, process._id);
+      return responseHandler;
+    } catch (error) {
+      responseHandler.setError(500, error.message);
       return responseHandler;
     }
-
-    const process = await ImportProcessesRepository.create({
-      unit: impt.unit as string,
-      import: impt._id
-    });
-
-    // We dont need to wait till import executes,
-    // We send of id import process
-    // Client send websocket request and then sends event 'join' with processId
-    runImport(impt, process);
-    responseHandler.setSuccess(200, process._id);
-    return responseHandler;
   }
 }
 

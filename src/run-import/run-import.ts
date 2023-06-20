@@ -17,30 +17,36 @@ export default async function runImport(
   process: IImportProcessDocument
 ): Promise<void> {
   try {
-    switch (impt.source) {
-      case ImportSource.MYSQL:
-      case ImportSource.POSTGRESQL:
-      case ImportSource.MICROSOFT_SQL_SERVER:
-      case ImportSource.SQLITE:
-      case ImportSource.MARIADB:
-      case ImportSource.ORACLE:
-        await sqlImport(impt, process);
-        break;
-      case ImportSource.API:
-        await apiImport(impt, process);
-        break;
-      case ImportSource.IMAP:
-        await imapImport(impt, process);
-        break;
-      default:
-        throw new Error('Unexpected import source');
-    }
+    await run(impt, process);
   } catch (error) {
-    return handleImportFailures(error, impt, process);
+    return handleImportFailure(error, impt, process);
   }
 }
 
-async function handleImportFailures(
+async function run(
+  impt: IImportDocument,
+  process: IImportProcessDocument
+): Promise<void> {
+  switch (impt.source) {
+    case ImportSource.MYSQL:
+    case ImportSource.POSTGRESQL:
+    case ImportSource.MICROSOFT_SQL_SERVER:
+    case ImportSource.ORACLE:
+    case ImportSource.MARIADB:
+      await sqlImport(impt, process);
+      break;
+    case ImportSource.API:
+      await apiImport(impt, process);
+      break;
+    case ImportSource.IMAP:
+      await imapImport(impt, process);
+      break;
+    default:
+      throw new Error('Unexpected import source');
+  }
+}
+
+async function handleImportFailure(
   error: Error,
   impt: IImportDocument,
   process: IImportProcessDocument
@@ -62,11 +68,7 @@ async function handleImportFailures(
     });
 
     const io = Websocket.getInstance();
-    emitProgress(io, process._id as string, failedProcess);
-
-    throw new Error(
-      `Import after trying to rerun ${MAX_ATTEMPTS} times returned an error: ${error.message}`
-    );
+    emitProgress(io, process._id.toString(), failedProcess);
   }
 }
 
