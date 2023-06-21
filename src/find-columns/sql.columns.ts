@@ -4,6 +4,7 @@ import { SqlConnection } from '../utils/sql/sql.connection';
 import { dialectMap } from '../utils/sql/dialect.map';
 import {
   createSelectColumnsQuery,
+  createSelectDataQuery,
   paginateQuery
 } from '../utils/sql/sql.query-builder';
 
@@ -33,33 +34,16 @@ export async function findSqlTableColumns(
 
     let columns: IColumn[] = [];
     if (table) {
-      const columnsQuery = createSelectColumnsQuery(table, source);
-      const retrievedColumns = await sqlConnection.queryRows(columnsQuery);
-      columns = retrievedColumns.map((column) => {
-        return {
-          name: Object.values(column)[0],
-          type: Object.values(column)[1]
-        };
-      });
-    } else {
-      const paginatedQuery = paginateQuery(
-        source,
-        customSelect,
-        idColumn,
-        0,
-        1
-      );
-      const retrievedDatasets = await sqlConnection.queryRows(paginatedQuery);
-      if (retrievedDatasets.length === 0) {
-        throw new Error('Error while quering columns, table is empty');
+      try {
+        columns = await selectColumnsFromSchema(sqlConnection, table, source);
+        //Maybe user have no access to information schema then we receive columns from dataset
+      } catch (error) {
+        const query = createSelectDataQuery(source, table, idColumn, 0, 1);
+        columns = await selectColumnsFromDataset(sqlConnection, query);
       }
-      const dataset = retrievedDatasets[0];
-      columns = Object.entries(dataset).map(([key, value]) => {
-        return {
-          name: key,
-          type: typeof value
-        };
-      });
+    } else {
+      const query = paginateQuery(source, customSelect, idColumn, 0, 1);
+      columns = await selectColumnsFromDataset(sqlConnection, query);
     }
     sqlConnection.disconnect();
     return columns;
@@ -67,4 +51,36 @@ export async function findSqlTableColumns(
     sqlConnection.disconnect();
     throw error;
   }
+}
+
+async function selectColumnsFromSchema(
+  sqlConnection: SqlConnection,
+  table: string,
+  dialect: string
+): Promise<IColumn[]> {
+  const columnsQuery = createSelectColumnsQuery(table, dialect);
+  const retrievedColumns = await sqlConnection.queryRows(columnsQuery);
+  return retrievedColumns.map((column) => {
+    return {
+      name: column['column_name'] || column['COLUMN_NAME'],
+      type: column['data_type'] || column['DATA_TYPE']
+    };
+  });
+}
+
+async function selectColumnsFromDataset(
+  sqlConnection: SqlConnection,
+  query: string
+): Promise<IColumn[]> {
+  const retrievedDatasets = await sqlConnection.queryRows(query);
+  if (retrievedDatasets.length === 0) {
+    throw new Error('Error while quering columns, table is empty');
+  }
+  const dataset = retrievedDatasets[0];
+  return Object.entries(dataset).map(([key, value]) => {
+    return {
+      name: key,
+      type: typeof value
+    };
+  });
 }

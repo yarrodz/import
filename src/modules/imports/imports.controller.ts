@@ -18,6 +18,14 @@ export class ImportsController {
     responseHandler.send(res);
   }
 
+  async update(req: Request, res: Response) {
+    const id = req.body.id;
+    const impt = req.body.impt;
+    const updateImportInput = plainToInstance(CreateImportInput, impt);
+    const responseHandler = await ImportsService.update(id, updateImportInput);
+    responseHandler.send(res);
+  }
+
   async connect(req: Request, res: Response) {
     const id = req.body.id;
     const responseHandler = await ImportsService.connect(id);
@@ -36,6 +44,12 @@ export class ImportsController {
   async start(req: Request, res: Response) {
     const id = req.body.id;
     const responseHandler = await ImportsService.start(id);
+    responseHandler.send(res);
+  }
+
+  async delete(req: Request, res: Response) {
+    const id = req.params.id;
+    const responseHandler = await ImportsService.delete(id);
     responseHandler.send(res);
   }
 }

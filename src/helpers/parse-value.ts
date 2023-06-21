@@ -5,14 +5,20 @@ export function parseValue(feature: IFeature, value: any) {
   try {
     let parsedValue;
     switch (feature.type) {
+      case FeatureType.TIME:
       case FeatureType.TEXT:
+      case FeatureType.LONG_TEXT:
         parsedValue = String(value);
         break;
+      case FeatureType.DATE:
+      case FeatureType.DATETIME:
+        parsedValue = new Date(value);
+        break;
+      case FeatureType.BOOLEAN:
+        parsedValue = Boolean(value);
+        break;    
       case FeatureType.NUMBER:
         parsedValue = Number(value);
-        break;
-      case FeatureType.DATE:
-        parsedValue = new Date(value);
         break;
       default:
         break;

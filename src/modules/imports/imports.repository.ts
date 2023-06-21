@@ -1,3 +1,4 @@
+import { UpdateQuery } from 'mongoose';
 import Import, { IImport, IImportDocument } from './import.schema';
 import { CreateImportInput } from './inputs/create-import.input';
 
@@ -30,10 +31,10 @@ class ImportsRepository {
 
   async update(
     id: string,
-    updateAttrs: Partial<IImportDocument>
+    updateQuery: UpdateQuery<IImport>
   ): Promise<IImport> {
     try {
-      return await Import.findByIdAndUpdate(id, updateAttrs, { new: true });
+      return await Import.findByIdAndUpdate(id, updateQuery, { new: true });
     } catch (error) {
       throw new error(
         `Error while query for updating import: ${error.message}`

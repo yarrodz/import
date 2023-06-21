@@ -18,14 +18,18 @@ export function createSelectDataQuery(
   dialect: string,
   table: string,
   idColumn: string,
-  requestedFields: string[],
   offset: number,
-  limit: number
+  limit: number,
+  requestedFields?: string[]
 ) {
   let query = 'SELECT ';
 
-  const fields = requestedFields.map((field) => `${field}`).join(', ');
-  query += fields;
+  if (requestedFields) {
+    const fields = requestedFields.map((field) => `${field}`).join(', ');
+    query += fields;
+  } else {
+    query += '*';
+  }
 
   if (dialect === 'Microsoft SQL Server' || dialect === 'Oracle') {
     query += ` FROM ${table} ORDER BY ${idColumn} OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY`;
@@ -51,7 +55,7 @@ export function paginateQuery(
   if (dialect === 'Microsoft SQL Server' || dialect === 'Oracle') {
     paginatedQuery += ` ORDER BY ${idColumn} OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY`;
   } else {
-    paginatedQuery += ` LIMIT ${limit} OFFSET ${offset}`;
+    paginatedQuery += ` ORDER BY ${idColumn} LIMIT ${limit} OFFSET ${offset}`;
   }
 
   return paginatedQuery;

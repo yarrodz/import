@@ -45,6 +45,52 @@ class ImportsService {
     }
   }
 
+  async update(id: string, updateImportInput: CreateImportInput): Promise<ResponseHandler> {
+    const responseHandler = new ResponseHandler();
+    try {
+      const impt = await ImportsRepository.findById(id);
+      if (!impt) {
+        responseHandler.setError(404, 'Import not found');
+        return responseHandler;
+      }
+
+      const errors = await validate(updateImportInput);
+      if (errors.length) {
+        responseHandler.setError(400, formatValidationErrors(errors));
+        return responseHandler;
+      }
+
+      const columns = await findColumns(updateImportInput);
+      await ImportsRepository.update(id, updateImportInput);
+
+      responseHandler.setSuccess(200, {
+        importId: impt._id,
+        columns
+      });
+      return responseHandler;
+    } catch (error) {
+      responseHandler.setError(500, error.message);
+      return responseHandler;
+    }
+  }
+  
+  async delete(id: string): Promise<ResponseHandler> {
+    const responseHandler = new ResponseHandler();
+    try {
+      const impt = await ImportsRepository.findById(id);
+      if (!impt) {
+        responseHandler.setError(404, 'Import not found');
+        return responseHandler;
+      }
+      await ImportsRepository.delete(id);
+      responseHandler.setSuccess(200, 'Deleted');
+      return responseHandler;
+    } catch (error) {
+      responseHandler.setError(500, error.message);
+      return responseHandler;
+    }
+  }
+
   async connect(id: string): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {

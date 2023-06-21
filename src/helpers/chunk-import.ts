@@ -32,7 +32,7 @@ export async function chunkImport(
       idColumn
     );
 
-    await transferDatasets(impt._id, transormedDatasets);
+    await transferDatasets(transormedDatasets);
 
     await ImportProcessesRepository.update(process._id, {
       attempts: 0,

@@ -7,7 +7,7 @@ import { IImportProcessDocument } from '../modules/import-processes/import-proce
 import ImportProcessesRepository from '../modules/import-processes/import-processes.repository';
 
 // To avoid ssl sertificate requirement for imap, will be removed
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const CHUNK_SIZE = 50;
 

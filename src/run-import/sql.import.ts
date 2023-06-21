@@ -50,12 +50,12 @@ export async function sqlImport(
       await paginationImport(
         impt,
         process,
+        sqlConnection,
         idColumn,
         datasetsCount,
         offset,
         LIMIT,
         tablePaginationFunction,
-        sqlConnection,
         dialect,
         table,
         idColumn,
@@ -68,12 +68,12 @@ export async function sqlImport(
       await paginationImport(
         impt,
         process,
+        sqlConnection,
         idColumn,
         datasetsCount,
         offset,
         LIMIT,
         customSelectPaginationFunction,
-        sqlConnection,
         dialect,
         customSelect,
         idColumn
@@ -87,9 +87,9 @@ export async function sqlImport(
 }
 
 async function tablePaginationFunction(
+  sqlConnection: SqlConnection,
   offset: number,
   limit: number,
-  sqlConnection: SqlConnection,
   dialect: string,
   table: string,
   idColumn: string,
@@ -99,17 +99,17 @@ async function tablePaginationFunction(
     dialect,
     table,
     idColumn,
-    requestedFields,
     offset,
-    limit
+    limit,
+    requestedFields
   );
   return await sqlConnection.queryRows(rowsQuery);
 }
 
 async function customSelectPaginationFunction(
+  sqlConnection: SqlConnection,
   offset: number,
   limit: number,
-  sqlConnection: SqlConnection,
   dialect: string,
   customSelect: string,
   idColumn: string

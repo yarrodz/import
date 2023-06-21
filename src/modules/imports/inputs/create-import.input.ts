@@ -26,27 +26,23 @@ export class CreateImportInput implements Omit<IImport, 'fields'> {
   source: ImportSource;
 
   @IsOptional()
-  @ValidateNested()
+  @ValidateNested({ each: true })
   @Type(() => DatabaseInput)
   database?: DatabaseInput;
 
   @IsOptional()
-  @ValidateNested()
+  @ValidateNested({ each: true })
   @Type(() => ApiInput)
   api?: ApiInput;
 
   @IsOptional()
-  @ValidateNested()
+  @ValidateNested({ each: true })
   @Type(() => ImapInput)
   imap?: ImapInput;
-
-  @IsOptional()
-  @IsString()
-  idColumn: string;
 }
 
 export class DatabaseInput implements IDatabase {
-  @ValidateNested()
+  @ValidateNested({ each: true })
   @Type(() => DatabaseConnectionInput)
   connection: DatabaseConnectionInput;
 
@@ -84,7 +80,7 @@ export class DatabaseConnectionInput implements IDatabaseConnection {
 }
 
 export class ApiInput implements IApi {
-  @ValidateNested()
+  @ValidateNested({ each: true })
   @Type(() => ApiRequestConfigInput)
   requestConfig: ApiRequestConfigInput;
 
@@ -116,7 +112,7 @@ export class ApiRequestConfigInput implements IApiRequestConfig {
 }
 
 export class ImapInput implements IImap {
-  @ValidateNested()
+  @ValidateNested({ each: true })
   @Type(() => ImapConnectionInput)
   connection: ImapConnectionInput;
 }

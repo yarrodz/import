@@ -1,3 +1,5 @@
+import { SqlConnection } from "../../../utils/sql/sql.connection";
+
 export interface IPaginationFunction {
-  (offset: number, limit: number, ...params: any[]): Promise<object[]>;
+  (sqlConnection: SqlConnection, offset: number, limit: number, ...params: any[]): Promise<object[]>;
 }

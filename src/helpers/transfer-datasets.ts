@@ -3,19 +3,18 @@ import * as DatasetsRepository from '../modules/datasets/datasets.repository';
 import * as recordsService from '../modules/records/records.service';
 
 export async function transferDatasets(
-  importId: string,
   datasets: CreateDatasetInput[]
 ) {
   try {
     await Promise.all(
       datasets.map(async (datasetInput) => {
         const dataset = await DatasetsRepository.findByImportAndSourceDatasetId(
-          importId,
+          datasetInput.impt.toString(),
           datasetInput.sourceDatasetId
         );
 
         if (!dataset) {
-          await DatasetsRepository.create({ impt: importId, ...datasetInput });
+          await DatasetsRepository.create(datasetInput);
         } else {
           const records = datasetInput.records.map((record) => {
             return {

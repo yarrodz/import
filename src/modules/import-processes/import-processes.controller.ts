@@ -8,21 +8,27 @@ export class ImportsController {
     responseHandler.send(res);
   }
 
+  async delete(req: Request, res: Response) {
+    const id = req.params.id;
+    const responseHandler = await ImportsProcessesService.delete(id);
+    responseHandler.send(res);
+  }
+
   async pause(req: Request, res: Response) {
-    const processId = req.body.processId;
-    const responseHandler = await ImportsProcessesService.pause(processId);
+    const id = req.body.id;
+    const responseHandler = await ImportsProcessesService.pause(id);
     responseHandler.send(res);
   }
 
   async reload(req: Request, res: Response) {
-    const processId = req.body.processId;
-    const responseHandler = await ImportsProcessesService.reload(processId);
+    const id = req.body.id;
+    const responseHandler = await ImportsProcessesService.reload(id);
     responseHandler.send(res);
   }
 
   async retry(req: Request, res: Response) {
-    const processId = req.body.processId;
-    const responseHandler = await ImportsProcessesService.retry(processId);
+    const id = req.body.id;
+    const responseHandler = await ImportsProcessesService.retry(id);
     responseHandler.send(res);
   }
 }

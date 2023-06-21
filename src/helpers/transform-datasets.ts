@@ -24,18 +24,17 @@ export async function transformDatasets(
 
       datasets.push({
         unit,
-        import: impt._id,
+        impt: impt._id,
         sourceDatasetId: sourceDatasetId,
         records
       });
     } catch (error) {
-      const log = `Cannot parse dataset: '${JSON.stringify(
-        retrievedDataset
-      )}', Error: '${error.message}'`;
-      const logs = process.log;
-      logs.push(log);
       await ImportProcessesRepository.update(process.id, {
-        log: logs
+        $push: {
+          log: `Cannot parse dataset: '${JSON.stringify(
+            retrievedDataset
+          )}', Error: '${error.message}'`
+        }
       });
     }
   });

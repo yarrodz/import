@@ -4,6 +4,7 @@ import ImportProcess, {
 } from './import-process.schema';
 import { CreateImportProcessInput } from './inputs/create-imort-process.input';
 import { ImportStatus } from './enums/import-status.enum';
+import { UpdateQuery } from 'mongoose';
 
 class ImportProcessesRepository {
   async create(
@@ -43,10 +44,10 @@ class ImportProcessesRepository {
 
   async update(
     id: string,
-    updateAttrs: Partial<IImportProcess>
+    updateQuery: UpdateQuery<IImportProcess>
   ): Promise<IImportProcessDocument> {
     try {
-      return await ImportProcess.findByIdAndUpdate(id, updateAttrs, {
+      return await ImportProcess.findByIdAndUpdate(id, updateQuery, {
         new: true
       });
     } catch (error) {
