@@ -5,5 +5,5 @@ export enum FeatureType {
   BOOLEAN = 'boolean',
   TEXT = 'text',
   LONG_TEXT = 'long-text',
-  NUMBER = 'number',
+  NUMBER = 'number'
 }

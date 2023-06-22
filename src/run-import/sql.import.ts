@@ -10,6 +10,8 @@ import {
 import { IImportDocument } from '../modules/imports/import.schema';
 import { IImportProcessDocument } from '../modules/import-processes/import-process.schema';
 import ImportProcessesRepository from '../modules/import-processes/import-processes.repository';
+import { IPaginationFunction } from '../intefaces/pagination-function.interface';
+import { IField } from '../modules/imports/sub-schemas/field.schema';
 
 const LIMIT = 100;
 
@@ -27,39 +29,24 @@ export async function sqlImport(
     const datasetsCount = impt.database.datasetsCount;
     const fields = impt.fields;
 
-    sqlConnection = new SqlConnection(
-      connection.database,
-      connection.username,
-      connection.password,
-      {
-        host: connection.host,
-        port: connection.port,
-        dialect: dialectMap[dialect]
-      }
-    );
+    sqlConnection = new SqlConnection({
+      ...connection,
+      dialect: dialectMap[dialect]
+    });
     await sqlConnection.connect();
     const offset = process.processedDatasetsCount;
 
     //Import using table name
     if (table) {
-      const requestedFields = createRequestedFields(fields, idColumn);
-      const countQuery = createSelectCountQuery(table);
-      const datasetsCount = await sqlConnection.queryCount(countQuery);
-      await ImportProcessesRepository.update(process._id, { datasetsCount });
-
-      await paginationImport(
+      await importFromTable(
         impt,
         process,
         sqlConnection,
-        idColumn,
-        datasetsCount,
-        offset,
-        LIMIT,
-        tablePaginationFunction,
         dialect,
         table,
         idColumn,
-        requestedFields
+        fields,
+        offset
       );
       //Import using custom select
     } else {
@@ -68,12 +55,12 @@ export async function sqlImport(
       await paginationImport(
         impt,
         process,
-        sqlConnection,
         idColumn,
         datasetsCount,
         offset,
         LIMIT,
         customSelectPaginationFunction,
+        sqlConnection,
         dialect,
         customSelect,
         idColumn
@@ -86,15 +73,46 @@ export async function sqlImport(
   }
 }
 
-async function tablePaginationFunction(
+async function importFromTable(
+  impt: IImportDocument,
+  process: IImportProcessDocument,
   sqlConnection: SqlConnection,
+  dialect: string,
+  table: string,
+  idColumn: string,
+  fields: IField[],
+  offset: number
+) {
+  const requestedFields = createRequestedFields(fields, idColumn);
+  const countQuery = createSelectCountQuery(table);
+  const datasetsCount = await sqlConnection.queryCount(countQuery);
+  await ImportProcessesRepository.update(process._id, { datasetsCount });
+
+  await paginationImport(
+    impt,
+    process,
+    idColumn,
+    datasetsCount,
+    offset,
+    LIMIT,
+    tablePaginationFunction,
+    sqlConnection,
+    dialect,
+    table,
+    idColumn,
+    requestedFields
+  );
+}
+
+const tablePaginationFunction: IPaginationFunction = async (
   offset: number,
   limit: number,
+  sqlConnection: SqlConnection,
   dialect: string,
   table: string,
   idColumn: string,
   requestedFields: string[]
-): Promise<object[]> {
+) => {
   const rowsQuery = createSelectDataQuery(
     dialect,
     table,
@@ -104,16 +122,16 @@ async function tablePaginationFunction(
     requestedFields
   );
   return await sqlConnection.queryRows(rowsQuery);
-}
+};
 
-async function customSelectPaginationFunction(
-  sqlConnection: SqlConnection,
+const customSelectPaginationFunction: IPaginationFunction = async (
   offset: number,
   limit: number,
+  sqlConnection: SqlConnection,
   dialect: string,
   customSelect: string,
   idColumn: string
-): Promise<object[]> {
+) => {
   const paginatedQuery = paginateQuery(
     dialect,
     customSelect,
@@ -122,4 +140,4 @@ async function customSelectPaginationFunction(
     limit
   );
   return await sqlConnection.queryRows(paginatedQuery);
-}
+};

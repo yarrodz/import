@@ -1,9 +1,7 @@
 import express from 'express';
 import { createServer } from 'http';
 import dotenv from 'dotenv';
-import cors from 'cors';
 import mongoose from 'mongoose';
-import 'reflect-metadata';
 
 import ImportsRouter from './modules/imports/imports.router';
 import ImportProcessesRouter from './modules/import-processes/import-processes.router';
@@ -15,7 +13,6 @@ const PORT = process.env.PORT;
 const MONGO_URL = process.env.MONGO_URL;
 
 const app = express();
-app.use(cors());
 app.use(express.json());
 app.use('/imports', ImportsRouter);
 app.use('/import-processes', ImportProcessesRouter);

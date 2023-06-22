@@ -16,7 +16,7 @@ export function parseValue(feature: IFeature, value: any) {
         break;
       case FeatureType.BOOLEAN:
         parsedValue = Boolean(value);
-        break;    
+        break;
       case FeatureType.NUMBER:
         parsedValue = Number(value);
         break;

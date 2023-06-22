@@ -1,9 +1,6 @@
 import { Request, Response } from 'express';
-import { plainToInstance } from 'class-transformer';
 
 import ImportsService from './imports.service';
-import { CreateImportInput } from './inputs/create-import.input';
-import { FieldInput } from './inputs/field.input';
 
 export class ImportsController {
   async findAll(req: Request, res: Response) {
@@ -13,16 +10,15 @@ export class ImportsController {
   }
 
   async create(req: Request, res: Response) {
-    const createImportInput = plainToInstance(CreateImportInput, req.body);
-    const responseHandler = await ImportsService.create(createImportInput);
+    const impt = req.body;
+    const responseHandler = await ImportsService.create(impt);
     responseHandler.send(res);
   }
 
   async update(req: Request, res: Response) {
     const id = req.body.id;
     const impt = req.body.impt;
-    const updateImportInput = plainToInstance(CreateImportInput, impt);
-    const responseHandler = await ImportsService.update(id, updateImportInput);
+    const responseHandler = await ImportsService.update(id, impt);
     responseHandler.send(res);
   }
 
@@ -34,10 +30,8 @@ export class ImportsController {
 
   async setFields(req: Request, res: Response) {
     const id = req.body.id;
-    const fieldInputs = req.body.fields.map((field) => {
-      return plainToInstance(FieldInput, field);
-    });
-    const responseHandler = await ImportsService.setFields(id, fieldInputs);
+    const fields = req.body.fields;
+    const responseHandler = await ImportsService.setFields(id, fields);
     responseHandler.send(res);
   }
 

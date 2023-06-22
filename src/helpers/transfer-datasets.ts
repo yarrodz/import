@@ -2,9 +2,7 @@ import { CreateDatasetInput } from '../modules/datasets/inputs/create-dataset.in
 import * as DatasetsRepository from '../modules/datasets/datasets.repository';
 import * as recordsService from '../modules/records/records.service';
 
-export async function transferDatasets(
-  datasets: CreateDatasetInput[]
-) {
+export async function transferDatasets(datasets: CreateDatasetInput[]) {
   try {
     await Promise.all(
       datasets.map(async (datasetInput) => {

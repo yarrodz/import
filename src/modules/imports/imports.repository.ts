@@ -1,9 +1,8 @@
 import { UpdateQuery } from 'mongoose';
 import Import, { IImport, IImportDocument } from './import.schema';
-import { CreateImportInput } from './inputs/create-import.input';
 
 class ImportsRepository {
-  async create(input: CreateImportInput): Promise<IImportDocument> {
+  async create(input: IImport): Promise<IImportDocument> {
     try {
       return await Import.create(input);
     } catch (error) {

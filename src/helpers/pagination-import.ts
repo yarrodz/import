@@ -3,7 +3,7 @@ import { IImportProcessDocument } from '../modules/import-processes/import-proce
 import { ImportStatus } from '../modules/import-processes/enums/import-status.enum';
 import Websocket from '../utils/websocket/websocket';
 import emitProgress from './emit-progress';
-import { IPaginationFunction } from '../modules/imports/intefaces/pagination-function.interface';
+import { IPaginationFunction } from '../intefaces/pagination-function.interface';
 import { transformDatasets } from './transform-datasets';
 import { transferDatasets } from './transfer-datasets';
 import { IImportDocument } from '../modules/imports/import.schema';
@@ -12,7 +12,6 @@ import { SqlConnection } from '../utils/sql/sql.connection';
 export async function paginationImport(
   impt: IImportDocument,
   process: IImportProcessDocument,
-  sqlConnection: SqlConnection,
   idColumn: string,
   datasetsCount: number,
   offset: number,
@@ -27,13 +26,11 @@ export async function paginationImport(
       process._id
     );
     if (!refreshedProcess || refreshedProcess.status === ImportStatus.PAUSED) {
-      sqlConnection.disconnect();
       return;
     }
     emitProgress(io, processId, refreshedProcess);
 
     const retrievedDatasets = await paginationFunction(
-      sqlConnection,
       offset,
       limit,
       ...paginationFunctionParams

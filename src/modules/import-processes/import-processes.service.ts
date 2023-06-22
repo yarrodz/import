@@ -102,10 +102,9 @@ class ImportProcessesService {
         return responseHandler;
       }
 
-      const reloadedProcess = await ImportProcessesRepository.update(
-        id,
-        { status: ImportStatus.PENDING }
-      );
+      const reloadedProcess = await ImportProcessesRepository.update(id, {
+        status: ImportStatus.PENDING
+      });
 
       runImport(impt, reloadedProcess);
       responseHandler.setSuccess(200, id);

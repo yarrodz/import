@@ -1,6 +1,6 @@
 import { ImportSource } from '../modules/imports/enums/import-source.enum';
 import { IImport } from '../modules/imports/import.schema';
-import { IColumn } from '../modules/imports/intefaces/column.interface';
+import { IColumn } from '../intefaces/column.interface';
 import { receiveApiColumns } from './api.columns';
 import { findSqlTableColumns } from './sql.columns';
 

@@ -1,13 +1,12 @@
-import { validate } from 'class-validator';
-
 import ImportsRepository from './imports.repository';
 import ImportProcessesRepository from '../import-processes/import-processes.repository';
 import ResponseHandler from '../../utils/response-handler/response-handler';
-import { FieldInput } from './inputs/field.input';
-import { formatValidationErrors } from '../../utils/format-validation-errors/format-validation-errors';
-import { CreateImportInput } from './inputs/create-import.input';
+import { FieldValidator } from './validators/field.validator';
+import { CreateUpdateImportValidator } from './validators/create-update-import.validator';
 import runImport from '../../run-import/run-import';
 import findColumns from '../../find-columns/find-columns';
+import { IImport } from './import.schema';
+import { IField } from './sub-schemas/field.schema';
 
 class ImportsService {
   async findAll(unit: string): Promise<ResponseHandler> {
@@ -22,12 +21,12 @@ class ImportsService {
     }
   }
 
-  async create(createImportInput: CreateImportInput): Promise<ResponseHandler> {
+  async create(createImportInput: IImport): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const errors = await validate(createImportInput);
-      if (errors.length) {
-        responseHandler.setError(400, formatValidationErrors(errors));
+      const { error } = CreateUpdateImportValidator.validate(createImportInput);
+      if (error) {
+        responseHandler.setError(400, error);
         return responseHandler;
       }
 
@@ -45,7 +44,10 @@ class ImportsService {
     }
   }
 
-  async update(id: string, updateImportInput: CreateImportInput): Promise<ResponseHandler> {
+  async update(
+    id: string,
+    updateImportInput: IImport
+  ): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
       const impt = await ImportsRepository.findById(id);
@@ -54,9 +56,9 @@ class ImportsService {
         return responseHandler;
       }
 
-      const errors = await validate(updateImportInput);
-      if (errors.length) {
-        responseHandler.setError(400, formatValidationErrors(errors));
+      const { error } = CreateUpdateImportValidator.validate(updateImportInput);
+      if (error) {
+        responseHandler.setError(400, error);
         return responseHandler;
       }
 
@@ -73,7 +75,7 @@ class ImportsService {
       return responseHandler;
     }
   }
-  
+
   async delete(id: string): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
@@ -112,10 +114,7 @@ class ImportsService {
     }
   }
 
-  async setFields(
-    id: string,
-    fieldInputs: FieldInput[]
-  ): Promise<ResponseHandler> {
+  async setFields(id: string, fieldInputs: IField[]): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
       const impt = await ImportsRepository.findById(id);
@@ -124,14 +123,13 @@ class ImportsService {
         return responseHandler;
       }
 
-      const errorsArray = await Promise.all(
-        fieldInputs.map(async (fieldInput) => {
-          return await validate(fieldInput);
-        })
-      );
-      for (let errors of errorsArray) {
-        if (errors.length) {
-          responseHandler.setError(400, formatValidationErrors(errors));
+      const errorsArray = fieldInputs.map((fieldInput) => {
+        const { error } = FieldValidator.validate(fieldInput);
+        return error;
+      });
+      for (let error of errorsArray) {
+        if (error) {
+          responseHandler.setError(400, error);
           return responseHandler;
         }
       }

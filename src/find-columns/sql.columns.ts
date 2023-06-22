@@ -1,5 +1,5 @@
 import { IImport } from '../modules/imports/import.schema';
-import { IColumn } from '../modules/imports/intefaces/column.interface';
+import { IColumn } from '../intefaces/column.interface';
 import { SqlConnection } from '../utils/sql/sql.connection';
 import { dialectMap } from '../utils/sql/dialect.map';
 import {
@@ -19,17 +19,10 @@ export async function findSqlTableColumns(
     const table = impt.database.table;
     const customSelect = impt.database.customSelect;
 
-    sqlConnection = new SqlConnection(
-      connection.database,
-      connection.username,
-      connection.password,
-      {
-        host: connection.host,
-        port: connection.port,
-        dialect: dialectMap[source]
-      }
-    );
-
+    sqlConnection = new SqlConnection({
+      ...connection,
+      dialect: dialectMap[source]
+    });
     await sqlConnection.connect();
 
     let columns: IColumn[] = [];

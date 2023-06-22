@@ -3,13 +3,8 @@ import { Sequelize, Options, QueryTypes } from 'sequelize';
 export class SqlConnection {
   private connection: Sequelize;
 
-  constructor(
-    database: string,
-    username: string,
-    password: string,
-    options: Options
-  ) {
-    this.connection = new Sequelize(database, username, password, options);
+  constructor(options: Options) {
+    this.connection = new Sequelize(options);
   }
 
   async connect(): Promise<void> {
