@@ -1,3 +1,44 @@
+export function createCheckTableColumnUniquenessQuery(
+  dialect: string,
+  column: string,
+  table: string
+) {
+  if (dialect === 'Oracle' || dialect === 'Microsoft SQL Server') {
+    return `
+    SELECT CASE WHEN COUNT(${column}) = COUNT(DISTINCT ${column})
+      THEN 1 ELSE 0 END AS has_duplicates
+      FROM ${table};
+  `;
+  } else {
+    return `
+    SELECT COUNT(${column}) = COUNT(DISTINCT ${column}) AS has_duplicates
+      FROM ${table};
+  `;
+  }
+}
+
+export function createCheckSelectColumnUniquenessQuery(
+  dialect: string,
+  column: string,
+  query: string
+) {
+  if (query.endsWith(';')) {
+    query = query.slice(0, -1);
+  }
+  if (dialect === 'Oracle' || dialect === 'Microsoft SQL Server') {
+    return `
+    SELECT CASE WHEN COUNT(${column}) = COUNT(DISTINCT ${column})
+      THEN 1 ELSE 0 END AS has_duplicates
+      FROM (${query}) custom_select;
+  `;
+  } else {
+    return `
+    SELECT COUNT(${column}) = COUNT(DISTINCT ${column}) AS has_duplicates
+      FROM (${query}) custom_select;
+  `;
+  }
+}
+
 export function createSelectColumnsQuery(table: string, dialect: string) {
   if (dialect === 'Oracle') {
     return `

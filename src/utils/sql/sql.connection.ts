@@ -4,7 +4,7 @@ export class SqlConnection {
   private connection: Sequelize;
 
   constructor(options: Options) {
-    this.connection = new Sequelize(options);
+    this.connection = new Sequelize({ ...options, logging: false });
   }
 
   async connect(): Promise<void> {
@@ -30,14 +30,14 @@ export class SqlConnection {
     }
   }
 
-  async queryCount(str: string): Promise<number> {
+  async queryResult(str: string): Promise<any> {
     try {
       const result = await this.connection.query(str, {
         type: QueryTypes.SELECT
       });
       return Object.values(result[0])[0];
     } catch (error) {
-      throw new Error(`Error while quering count: ${error.message}`);
+      throw new Error(`Error while quering result: ${error.message}`);
     }
   }
 }

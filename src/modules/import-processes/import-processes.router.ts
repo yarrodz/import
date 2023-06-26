@@ -1,13 +1,23 @@
 import { Router } from 'express';
+import ImportProcessesController from './import-processes.controller';
 
-import ImportsProcessesController from './import-processes.controller';
+class ImportProcessesRouter {
+  public router: Router;
+  private importProcessesController: ImportProcessesController;
 
-const router = Router();
+  constructor(importProcessesController: ImportProcessesController) {
+    this.router = Router();
+    this.importProcessesController = importProcessesController;
+    this.initializeRoutes();
+  }
 
-router.get('/:unitId', ImportsProcessesController.findAll);
-router.delete('/:id', ImportsProcessesController.delete);
-router.post('/pause', ImportsProcessesController.pause);
-router.post('/reload', ImportsProcessesController.reload);
-router.post('/retry', ImportsProcessesController.retry);
+  private initializeRoutes() {
+    this.router.get('/:unitId', this.importProcessesController.findAll);
+    this.router.delete('/:id', this.importProcessesController.delete);
+    this.router.post('/pause', this.importProcessesController.pause);
+    this.router.post('/reload', this.importProcessesController.reload);
+    this.router.post('/retry', this.importProcessesController.retry);
+  }
+}
 
-export default router;
+export default ImportProcessesRouter;

@@ -1,16 +1,28 @@
 import ImportProcessesRepository from './import-processes.repository';
 import ImportsRepository from '../imports/imports.repository';
 import ResponseHandler from '../../utils/response-handler/response-handler';
-import Websocket from '../../utils/websocket/websocket';
-import emitProgress from '../../helpers/emit-progress';
 import { ImportStatus } from './enums/import-status.enum';
-import runImport from '../../run-import/run-import';
+import TransferService from '../transfer/transfer.service';
 
 class ImportProcessesService {
+  private importProcessesRepository: ImportProcessesRepository;
+  private importsRepository: ImportsRepository;
+  private transferService: TransferService;
+
+  constructor(
+    importProcessesRepository: ImportProcessesRepository,
+    importsRepository: ImportsRepository,
+    transferService: TransferService
+  ) {
+    this.importProcessesRepository = importProcessesRepository;
+    this.importsRepository = importsRepository;
+    this.transferService = transferService;
+  }
+
   async findAll(unit: string): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const processes = await ImportProcessesRepository.findAll(unit);
+      const processes = await this.importProcessesRepository.findAll(unit);
       responseHandler.setSuccess(200, processes);
       return responseHandler;
     } catch (error) {
@@ -22,14 +34,22 @@ class ImportProcessesService {
   async delete(id: string) {
     const responseHandler = new ResponseHandler();
     try {
-      const process = await ImportProcessesRepository.findById(id);
+      const process = await this.importProcessesRepository.findById(id);
       if (!process) {
         responseHandler.setError(404, 'Import process not found');
         return responseHandler;
       }
 
-      await ImportProcessesRepository.delete(id);
-      responseHandler.setSuccess(200, 'Deleted');
+      if (process.status === ImportStatus.PENDING) {
+        responseHandler.setError(
+          409,
+          'Pending import process cannot be deleted'
+        );
+        return responseHandler;
+      }
+
+      await this.importProcessesRepository.delete(id);
+      responseHandler.setSuccess(200, true);
       return responseHandler;
     } catch (error) {
       responseHandler.setError(500, error.message);
@@ -40,8 +60,7 @@ class ImportProcessesService {
   async pause(id: string) {
     const responseHandler = new ResponseHandler();
     try {
-      const io = Websocket.getInstance();
-      const process = await ImportProcessesRepository.findById(id);
+      const process = await this.importProcessesRepository.findById(id);
       if (!process) {
         responseHandler.setError(404, 'Import process not found');
         return responseHandler;
@@ -55,12 +74,11 @@ class ImportProcessesService {
         return responseHandler;
       }
 
-      const pausedProcess = await ImportProcessesRepository.update(id, {
+      await this.importProcessesRepository.update(id, {
         status: ImportStatus.PAUSED
       });
-      emitProgress(io, process._id.toString(), pausedProcess);
 
-      responseHandler.setSuccess(200, 'Import paused by user');
+      responseHandler.setSuccess(200, true);
       return responseHandler;
     } catch (error) {
       responseHandler.setError(500, error.message);
@@ -71,7 +89,7 @@ class ImportProcessesService {
   async reload(id: string) {
     const responseHandler = new ResponseHandler();
     try {
-      const process = await ImportProcessesRepository.findById(id);
+      const process = await this.importProcessesRepository.findById(id);
       if (!process) {
         responseHandler.setError(404, 'Import process not found');
         return responseHandler;
@@ -85,15 +103,18 @@ class ImportProcessesService {
         return responseHandler;
       }
 
-      const impt = await ImportsRepository.findById(process.import.toString());
+      const impt = await this.importsRepository.findById(
+        process.import.toString()
+      );
       if (!impt) {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
       }
 
-      const pendingImport = await ImportProcessesRepository.findPendingByUnit(
-        impt.unit as string
-      );
+      const pendingImport =
+        await this.importProcessesRepository.findPendingByUnit(
+          impt.unit as string
+        );
       if (pendingImport) {
         responseHandler.setError(
           409,
@@ -102,11 +123,11 @@ class ImportProcessesService {
         return responseHandler;
       }
 
-      const reloadedProcess = await ImportProcessesRepository.update(id, {
+      const reloadedProcess = await this.importProcessesRepository.update(id, {
         status: ImportStatus.PENDING
       });
 
-      runImport(impt, reloadedProcess);
+      this.transferService.transfer(impt, reloadedProcess);
       responseHandler.setSuccess(200, id);
       return responseHandler;
     } catch (error) {
@@ -118,7 +139,7 @@ class ImportProcessesService {
   async retry(id: string) {
     const responseHandler = new ResponseHandler();
     try {
-      const process = await ImportProcessesRepository.findById(id);
+      const process = await this.importProcessesRepository.findById(id);
       if (!process) {
         responseHandler.setError(404, 'Import process not found');
         return responseHandler;
@@ -132,19 +153,21 @@ class ImportProcessesService {
         return responseHandler;
       }
 
-      const impt = await ImportsRepository.findById(process.import.toString());
+      const impt = await this.importsRepository.findById(
+        process.import.toString()
+      );
       if (!impt) {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
       }
 
-      const retriedProcess = await ImportProcessesRepository.update(id, {
+      const retriedProcess = await this.importProcessesRepository.update(id, {
         attempts: 0,
         status: ImportStatus.PENDING,
         errorMessage: null
       });
 
-      runImport(impt, retriedProcess);
+      this.transferService.transfer(impt, retriedProcess);
       responseHandler.setSuccess(200, id);
       return responseHandler;
     } catch (error) {
@@ -154,4 +177,4 @@ class ImportProcessesService {
   }
 }
 
-export default new ImportProcessesService();
+export default ImportProcessesService;

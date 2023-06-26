@@ -1,18 +1,35 @@
 import ImportsRepository from './imports.repository';
 import ImportProcessesRepository from '../import-processes/import-processes.repository';
+import TransferService from '../transfer/transfer.service';
+import ColumnsService from '../columns/columns.service';
 import ResponseHandler from '../../utils/response-handler/response-handler';
 import { FieldValidator } from './validators/field.validator';
 import { CreateUpdateImportValidator } from './validators/create-update-import.validator';
-import runImport from '../../run-import/run-import';
-import findColumns from '../../find-columns/find-columns';
 import { IImport } from './import.schema';
 import { IField } from './sub-schemas/field.schema';
 
 class ImportsService {
+  private importsRepository: ImportsRepository;
+  private importProcessesRepository: ImportProcessesRepository;
+  private columnsService: ColumnsService;
+  private transferService: TransferService;
+
+  constructor(
+    importsRepository: ImportsRepository,
+    importProcessesRepository: ImportProcessesRepository,
+    columnsService: ColumnsService,
+    transferService: TransferService
+  ) {
+    this.importsRepository = importsRepository;
+    this.importProcessesRepository = importProcessesRepository;
+    this.columnsService = columnsService;
+    this.transferService = transferService;
+  }
+
   async findAll(unit: string): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const imports = await ImportsRepository.findAll(unit);
+      const imports = await this.importsRepository.findAll(unit);
       responseHandler.setSuccess(200, imports);
       return responseHandler;
     } catch (error) {
@@ -30,8 +47,20 @@ class ImportsService {
         return responseHandler;
       }
 
-      const columns = await findColumns(createImportInput);
-      const impt = await ImportsRepository.create(createImportInput);
+      const columns = await this.columnsService.find(createImportInput);
+
+      const idColumnUnique = await this.columnsService.checkIdColumnUniqueness(
+        createImportInput
+      );
+      if (!idColumnUnique) {
+        responseHandler.setError(
+          409,
+          'Provided id column includes duplicate values'
+        );
+        return responseHandler;
+      }
+
+      const impt = await this.importsRepository.create(createImportInput);
 
       responseHandler.setSuccess(200, {
         importId: impt._id,
@@ -50,7 +79,7 @@ class ImportsService {
   ): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const impt = await ImportsRepository.findById(id);
+      const impt = await this.importsRepository.findById(id);
       if (!impt) {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
@@ -62,8 +91,21 @@ class ImportsService {
         return responseHandler;
       }
 
-      const columns = await findColumns(updateImportInput);
-      await ImportsRepository.update(id, updateImportInput);
+      const columns = await this.columnsService.find(updateImportInput);
+
+      const idColumnUnique = await this.columnsService.checkIdColumnUniqueness(
+        updateImportInput
+      );
+
+      if (!idColumnUnique) {
+        responseHandler.setError(
+          409,
+          'Provided id column includes duplicate values'
+        );
+        return responseHandler;
+      }
+
+      await this.importsRepository.update(id, updateImportInput);
 
       responseHandler.setSuccess(200, {
         importId: impt._id,
@@ -79,13 +121,13 @@ class ImportsService {
   async delete(id: string): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const impt = await ImportsRepository.findById(id);
+      const impt = await this.importsRepository.findById(id);
       if (!impt) {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
       }
-      await ImportsRepository.delete(id);
-      responseHandler.setSuccess(200, 'Deleted');
+      await this.importsRepository.delete(id);
+      responseHandler.setSuccess(200, true);
       return responseHandler;
     } catch (error) {
       responseHandler.setError(500, error.message);
@@ -96,13 +138,13 @@ class ImportsService {
   async connect(id: string): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const impt = await ImportsRepository.findById(id);
+      const impt = await this.importsRepository.findById(id);
       if (!impt) {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
       }
 
-      const columns = await findColumns(impt);
+      const columns = await this.columnsService.find(impt);
       responseHandler.setSuccess(200, {
         importId: impt._id,
         columns
@@ -117,7 +159,7 @@ class ImportsService {
   async setFields(id: string, fieldInputs: IField[]): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const impt = await ImportsRepository.findById(id);
+      const impt = await this.importsRepository.findById(id);
       if (!impt) {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
@@ -134,7 +176,7 @@ class ImportsService {
         }
       }
 
-      const updatedImport = await ImportsRepository.update(id, {
+      const updatedImport = await this.importsRepository.update(id, {
         fields: fieldInputs
       });
       responseHandler.setSuccess(200, updatedImport);
@@ -148,15 +190,27 @@ class ImportsService {
   async start(id: string): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const impt = await ImportsRepository.findById(id);
+      const impt = await this.importsRepository.findById(id);
       if (!impt) {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
       }
 
-      const pendingImport = await ImportProcessesRepository.findPendingByUnit(
-        impt.unit.toString()
+      const idColumnUnique = await this.columnsService.checkIdColumnUniqueness(
+        impt
       );
+      if (!idColumnUnique) {
+        responseHandler.setError(
+          409,
+          'Provided id column includes duplicate values'
+        );
+        return responseHandler;
+      }
+
+      const pendingImport =
+        await this.importProcessesRepository.findPendingByUnit(
+          impt.unit.toString()
+        );
       if (pendingImport) {
         responseHandler.setError(
           409,
@@ -165,7 +219,7 @@ class ImportsService {
         return responseHandler;
       }
 
-      const process = await ImportProcessesRepository.create({
+      const process = await this.importProcessesRepository.create({
         unit: impt.unit as string,
         import: impt._id
       });
@@ -173,7 +227,7 @@ class ImportsService {
       // We dont need to wait till import executes,
       // We send of id import process
       // Client send websocket request and then sends event 'join' with processId
-      runImport(impt, process);
+      this.transferService.transfer(impt, process);
       responseHandler.setSuccess(200, process._id);
       return responseHandler;
     } catch (error) {
@@ -183,4 +237,4 @@ class ImportsService {
   }
 }
 
-export default new ImportsService();
+export default ImportsService;

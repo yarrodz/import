@@ -3,10 +3,10 @@ import { createServer } from 'http';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 
-import ImportsRouter from './modules/imports/imports.router';
-import ImportProcessesRouter from './modules/import-processes/import-processes.router';
 import Websocket from './utils/websocket/websocket';
-import ImportProcessesSocket from './modules/import-processes/import-processes.socket';
+import setupImport from './setup';
+import { recordModel } from './record.schema';
+import { datasetModel } from './dataset.schema';
 
 dotenv.config();
 const PORT = process.env.PORT;
@@ -14,14 +14,21 @@ const MONGO_URL = process.env.MONGO_URL;
 
 const app = express();
 app.use(express.json());
-app.use('/imports', ImportsRouter);
-app.use('/import-processes', ImportProcessesRouter);
 
 const httpServer = createServer(app);
 const io = Websocket.getInstance(httpServer);
-io.initializeHandlers([
-  { path: '/processes', handler: new ImportProcessesSocket() }
-]);
+
+const { importsRouter, importProcessesRouter } = setupImport(
+  io,
+  recordModel,
+  datasetModel,
+  5,
+  5000,
+  100
+);
+
+app.use('/imports', importsRouter.router);
+app.use('/import-processes', importProcessesRouter.router);
 
 async function start() {
   try {

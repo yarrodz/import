@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Types } from 'mongoose';
+import { Schema, Types } from 'mongoose';
 
 import { FeatureType } from './enums/feature-type.enum';
 
@@ -16,5 +16,3 @@ export const FeatureSchema = new Schema<IFeature>({
     required: true
   }
 });
-
-export default mongoose.model<IFeature>('Feature', FeatureSchema);

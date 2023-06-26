@@ -23,10 +23,13 @@ export default class ResponseHandler {
   }
 
   send(res: Response) {
-    if (this.type === ResponseType.SUCCESS) {
-      res.status(this.statusCode).json(this.result);
-    } else {
-      res.status(this.statusCode).json({ message: this.message });
+    switch (this.type) {
+      case ResponseType.SUCCESS:
+        res.status(this.statusCode).json(this.result);
+        break;
+      case ResponseType.ERROR:
+        res.status(this.statusCode).json({ message: this.message });
+        break;
     }
   }
 }

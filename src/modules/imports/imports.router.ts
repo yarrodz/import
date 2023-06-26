@@ -2,14 +2,25 @@ import { Router } from 'express';
 
 import ImportsController from './imports.controller';
 
-const router = Router();
+class ImportsRouter {
+  public router: Router;
+  private importsController: ImportsController;
 
-router.get('/:unitId', ImportsController.findAll);
-router.post('/', ImportsController.create);
-router.put('/', ImportsController.update);
-router.delete('/:id', ImportsController.delete);
-router.post('/connect', ImportsController.connect);
-router.post('/setFields', ImportsController.setFields);
-router.post('/start', ImportsController.start);
+  constructor(importsController: ImportsController) {
+    this.router = Router();
+    this.importsController = importsController;
+    this.initializeRoutes();
+  }
 
-export default router;
+  private initializeRoutes() {
+    this.router.get('/:unitId', this.importsController.findAll);
+    this.router.post('/', this.importsController.create);
+    this.router.put('/', this.importsController.update);
+    this.router.delete('/:id', this.importsController.delete);
+    this.router.post('/connect', this.importsController.connect);
+    this.router.post('/setFields', this.importsController.setFields);
+    this.router.post('/start', this.importsController.start);
+  }
+}
+
+export default ImportsRouter;

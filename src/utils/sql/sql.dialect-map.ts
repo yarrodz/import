@@ -1,4 +1,4 @@
-export const dialectMap = {
+export const SQLDialectMap = {
   MySQL: 'mysql',
   PostgreSQL: 'postgres',
   'Microsoft SQL Server': 'mssql',

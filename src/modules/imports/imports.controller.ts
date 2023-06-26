@@ -2,50 +2,56 @@ import { Request, Response } from 'express';
 
 import ImportsService from './imports.service';
 
-export class ImportsController {
-  async findAll(req: Request, res: Response) {
+class ImportsController {
+  private importsService: ImportsService;
+
+  constructor(importsService: ImportsService) {
+    this.importsService = importsService;
+  }
+
+  findAll = async (req: Request, res: Response) => {
     const unitId = req.params.unitId;
-    const responseHandler = await ImportsService.findAll(unitId);
+    const responseHandler = await this.importsService.findAll(unitId);
     responseHandler.send(res);
-  }
+  };
 
-  async create(req: Request, res: Response) {
+  create = async (req: Request, res: Response) => {
     const impt = req.body;
-    const responseHandler = await ImportsService.create(impt);
+    const responseHandler = await this.importsService.create(impt);
     responseHandler.send(res);
-  }
+  };
 
-  async update(req: Request, res: Response) {
+  update = async (req: Request, res: Response) => {
     const id = req.body.id;
     const impt = req.body.impt;
-    const responseHandler = await ImportsService.update(id, impt);
+    const responseHandler = await this.importsService.update(id, impt);
     responseHandler.send(res);
-  }
+  };
 
-  async connect(req: Request, res: Response) {
+  connect = async (req: Request, res: Response) => {
     const id = req.body.id;
-    const responseHandler = await ImportsService.connect(id);
+    const responseHandler = await this.importsService.connect(id);
     responseHandler.send(res);
-  }
+  };
 
-  async setFields(req: Request, res: Response) {
+  setFields = async (req: Request, res: Response) => {
     const id = req.body.id;
     const fields = req.body.fields;
-    const responseHandler = await ImportsService.setFields(id, fields);
+    const responseHandler = await this.importsService.setFields(id, fields);
     responseHandler.send(res);
-  }
+  };
 
-  async start(req: Request, res: Response) {
+  start = async (req: Request, res: Response) => {
     const id = req.body.id;
-    const responseHandler = await ImportsService.start(id);
+    const responseHandler = await this.importsService.start(id);
     responseHandler.send(res);
-  }
+  };
 
-  async delete(req: Request, res: Response) {
+  delete = async (req: Request, res: Response) => {
     const id = req.params.id;
-    const responseHandler = await ImportsService.delete(id);
+    const responseHandler = await this.importsService.delete(id);
     responseHandler.send(res);
-  }
+  };
 }
 
-export default new ImportsController();
+export default ImportsController;

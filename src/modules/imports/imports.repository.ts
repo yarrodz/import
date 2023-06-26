@@ -1,10 +1,16 @@
-import { UpdateQuery } from 'mongoose';
-import Import, { IImport, IImportDocument } from './import.schema';
+import { Model, UpdateQuery } from 'mongoose';
+import { IImport, IImportDocument } from './import.schema';
 
 class ImportsRepository {
+  private importsModel: Model<IImport>;
+
+  constructor(importsModel: Model<IImport>) {
+    this.importsModel = importsModel;
+  }
+
   async create(input: IImport): Promise<IImportDocument> {
     try {
-      return await Import.create(input);
+      return await this.importsModel.create(input);
     } catch (error) {
       throw new error(
         `Error while query for creating import: ${error.message}`
@@ -14,7 +20,7 @@ class ImportsRepository {
 
   async findAll(unit: string): Promise<IImportDocument[]> {
     try {
-      return await Import.find({ unit }).lean();
+      return await this.importsModel.find({ unit }).lean();
     } catch (error) {
       throw new error(`Error while quering imports: ${error.message}`);
     }
@@ -22,7 +28,7 @@ class ImportsRepository {
 
   async findById(id: string): Promise<IImportDocument> {
     try {
-      return await Import.findById(id).lean();
+      return await this.importsModel.findById(id).lean();
     } catch (error) {
       throw new error(`Error while quering import: ${error.message}`);
     }
@@ -33,7 +39,9 @@ class ImportsRepository {
     updateQuery: UpdateQuery<IImport>
   ): Promise<IImport> {
     try {
-      return await Import.findByIdAndUpdate(id, updateQuery, { new: true });
+      return await this.importsModel.findByIdAndUpdate(id, updateQuery, {
+        new: true
+      });
     } catch (error) {
       throw new error(
         `Error while query for updating import: ${error.message}`
@@ -43,11 +51,11 @@ class ImportsRepository {
 
   async delete(id: string): Promise<void> {
     try {
-      await Import.findByIdAndDelete(id);
+      await this.importsModel.findByIdAndDelete(id);
     } catch (error) {
       throw new error(`Error while query for delete import: ${error.message}`);
     }
   }
 }
 
-export default new ImportsRepository();
+export default ImportsRepository;

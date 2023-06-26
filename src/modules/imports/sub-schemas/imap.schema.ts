@@ -1,7 +1,7 @@
 import { Schema } from 'mongoose';
-import { Config as ImapConfig } from 'imap';
+// import { Config as ImapConfig } from 'imap';
 
-export interface IImapConnection extends ImapConfig {
+export interface IImapConnection {
   user: string;
   password: string;
   host?: string;

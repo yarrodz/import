@@ -1,9 +1,9 @@
 import { Schema } from 'mongoose';
-import { AxiosRequestConfig } from 'axios';
+// import { AxiosRequestConfig } from 'axios';
 
 import { RequestMethod } from '../enums/request-method.enum';
 
-export interface IApiRequestConfig extends AxiosRequestConfig {
+export interface IApiRequestConfig {
   method: RequestMethod;
   url: string;
   headers?: object;
