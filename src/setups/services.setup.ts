@@ -21,6 +21,7 @@ export default function setupServices(
 ): {
   importsService: ImportsService;
   importProcessesService: ImportProcessesService;
+  transferService: TransferService;
 } {
   const sqlColumnsService = new SQLColumnsService();
   const columnsService = new ColumnsService(sqlColumnsService);
@@ -55,6 +56,7 @@ export default function setupServices(
 
   return {
     importsService,
-    importProcessesService
+    importProcessesService,
+    transferService
   };
 }

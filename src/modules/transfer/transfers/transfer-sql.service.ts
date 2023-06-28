@@ -11,6 +11,7 @@ import {
   paginateQuery
 } from '../../../utils/sql/sql.query-builder';
 import IPaginationFunction from '../interfaces/pagination-function.interface';
+import { DatabaseImportTarget } from '../../imports/enums/database-import-target.enum';
 
 class TransferSQLService {
   private importProcessesRepository: ImportProcessesRepository;
@@ -32,7 +33,7 @@ class TransferSQLService {
     let sqlConnection: SqlConnection;
     try {
       const { source, database } = impt;
-      const { connection, table } = database;
+      const { connection, table, target } = database;
       const processId = process._id;
       const dialect = SQLDialectMap[source];
 
@@ -44,26 +45,30 @@ class TransferSQLService {
 
       const offset = process.processedDatasetsCount;
 
-      //transfer from table
-      if (table) {
-        await this.transferFromTable(
-          impt,
-          processId,
-          sqlConnection,
-          source,
-          offset,
-          limit
-        );
+      switch (target) {
+        case DatabaseImportTarget.TABLE:
+          await this.transferFromTable(
+            impt,
+            processId,
+            sqlConnection,
+            source,
+            offset,
+            limit
+          );
+          break;
         //transfer from custom select
-      } else {
-        await this.transferFromCustomSelect(
-          impt,
-          processId,
-          sqlConnection,
-          source,
-          offset,
-          limit
-        );
+        case DatabaseImportTarget.CUSTOM_SELECT:
+          await this.transferFromCustomSelect(
+            impt,
+            processId,
+            sqlConnection,
+            source,
+            offset,
+            limit
+          );
+          break;
+        default:
+          throw new Error('Unexpected database import target');
       }
       sqlConnection.disconnect();
     } catch (error) {

@@ -7,6 +7,7 @@ import {
   createSelectDataQuery,
   paginateQuery
 } from '../../../utils/sql/sql.query-builder';
+import { DatabaseImportTarget } from '../../imports/enums/database-import-target.enum';
 import { IImport } from '../../imports/import.schema';
 import { IColumn } from '../interfaces/column.interface';
 
@@ -15,7 +16,7 @@ class SQLColumnsService {
     let sqlConnection: SqlConnection;
     try {
       const { source, database } = impt;
-      const { connection, idColumn, table, customSelect } = database;
+      const { connection, idColumn, table, customSelect, target } = database;
       const dialect = SQLDialectMap[source];
 
       sqlConnection = new SqlConnection({
@@ -25,21 +26,26 @@ class SQLColumnsService {
       await sqlConnection.connect();
 
       let columns: IColumn[] = [];
-      if (table) {
-        try {
-          columns = await this.selectColumnsFromSchema(
-            sqlConnection,
-            table,
-            source
-          );
-          //Maybe user have no access to information schema then we receive columns from dataset
-        } catch (error) {
-          const query = createSelectDataQuery(source, table, idColumn, 0, 1);
+      switch (target) {
+        case DatabaseImportTarget.TABLE:
+          try {
+            columns = await this.selectColumnsFromSchema(
+              sqlConnection,
+              table,
+              source
+            );
+            //Maybe user have no access to information schema then we receive columns from dataset
+          } catch (error) {
+            const query = createSelectDataQuery(source, table, idColumn, 0, 1);
+            columns = await this.selectColumnsFromDataset(sqlConnection, query);
+          }
+          break;
+        case DatabaseImportTarget.CUSTOM_SELECT:
+          const query = paginateQuery(source, customSelect, idColumn, 0, 1);
           columns = await this.selectColumnsFromDataset(sqlConnection, query);
-        }
-      } else {
-        const query = paginateQuery(source, customSelect, idColumn, 0, 1);
-        columns = await this.selectColumnsFromDataset(sqlConnection, query);
+          break;
+        default:
+          throw new Error('Unexpected database import target');
       }
       sqlConnection.disconnect();
       return columns;
@@ -53,7 +59,7 @@ class SQLColumnsService {
     let sqlConnection: SqlConnection;
     try {
       const { source, database } = impt;
-      const { connection, idColumn, table, customSelect } = database;
+      const { connection, idColumn, table, customSelect, target } = database;
       const dialect = SQLDialectMap[source];
 
       sqlConnection = new SqlConnection({
@@ -63,21 +69,25 @@ class SQLColumnsService {
       await sqlConnection.connect();
 
       let isUnique: boolean;
-      if (table) {
-        const query = createCheckTableColumnUniquenessQuery(
-          source,
-          idColumn,
-          table
-        );
-        isUnique = await sqlConnection.queryResult(query);
-      } else {
-        const query = createCheckSelectColumnUniquenessQuery(
-          source,
-          idColumn,
-          customSelect
-        );
-        console.log(query);
-        isUnique = await sqlConnection.queryResult(query);
+      switch (target) {
+        case DatabaseImportTarget.TABLE:
+          const tableQuery = createCheckTableColumnUniquenessQuery(
+            source,
+            idColumn,
+            table
+          );
+          isUnique = await sqlConnection.queryResult(tableQuery);
+          break;
+        case DatabaseImportTarget.CUSTOM_SELECT:
+          const customSelectQuery = createCheckSelectColumnUniquenessQuery(
+            source,
+            idColumn,
+            customSelect
+          );
+          isUnique = await sqlConnection.queryResult(customSelectQuery);
+          break;
+        default:
+          throw new Error('Unexpected database import target');
       }
       sqlConnection.disconnect();
       return isUnique;

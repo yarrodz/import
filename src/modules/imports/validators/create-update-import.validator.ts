@@ -1,6 +1,7 @@
 import Joi from 'joi';
 
 import { ImportSource } from '../enums/import-source.enum';
+import { DatabaseImportTarget } from '../enums/database-import-target.enum';
 
 const databaseValidator = Joi.object({
   connection: Joi.object({
@@ -10,15 +11,16 @@ const databaseValidator = Joi.object({
     port: Joi.number().integer().required(),
     database: Joi.string().required()
   }).required(),
-  table: Joi.string(),
   idColumn: Joi.string().required(),
-  customSelect: Joi.string(),
-  datasetsCount: Joi.number().integer()
+  target: Joi.string().valid(...Object.values(DatabaseImportTarget)).required(),
+  table: Joi.string().allow(null),
+  customSelect: Joi.string().allow(null),
+  datasetsCount: Joi.number().integer().allow(null)
 });
 
 export const CreateUpdateImportValidator = Joi.object({
   unit: Joi.string().length(24).required(),
-  source: Joi.string().valid(...Object.values(ImportSource)),
+  source: Joi.string().valid(...Object.values(ImportSource)).required(),
   database: databaseValidator
 });
 

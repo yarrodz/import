@@ -33,6 +33,16 @@ class ImportProcessesRepository {
     }
   }
 
+  async findPending(): Promise<IImportProcessDocument[]> {
+    try {
+      return await this.importProcessModel
+        .find({ status: ImportStatus.PENDING })
+        .lean();
+    } catch (error) {
+      throw new error(`Error while quering import processes: ${error.message}`);
+    }
+  }
+
   async findById(id: string): Promise<IImportProcessDocument> {
     try {
       return await this.importProcessModel.findById(id).lean();

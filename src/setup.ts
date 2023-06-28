@@ -9,6 +9,7 @@ import setupControllers from './setups/controllers.setup';
 import setupRouters from './setups/routers.setup';
 import ImportsRouter from './modules/imports/imports.router';
 import ImportProcessesRouter from './modules/import-processes/import-processes.router';
+import createReloadPendingImportProcessesFunction from './modules/import-processes/reload-pending-processes';
 
 export default function setupImport(
   io: IO,
@@ -20,19 +21,28 @@ export default function setupImport(
 ): {
   importsRouter: ImportsRouter;
   importProcessesRouter: ImportProcessesRouter;
+  reloadPendingImportProcesses: Function;
 } {
   const { datasetsRepository, importsRepository, importProcessesRepository } =
     setupRepositories(recordModel, datasetModel);
 
-  const { importsService, importProcessesService } = setupServices(
-    io,
-    datasetsRepository,
-    importsRepository,
-    importProcessesRepository,
-    maxAttempts,
-    attemptDelayTime,
-    limit
-  );
+  const { importsService, importProcessesService, transferService } =
+    setupServices(
+      io,
+      datasetsRepository,
+      importsRepository,
+      importProcessesRepository,
+      maxAttempts,
+      attemptDelayTime,
+      limit
+    );
+
+  const reloadPendingImportProcesses =
+    createReloadPendingImportProcessesFunction(
+      importProcessesRepository,
+      importsRepository,
+      transferService
+    );
 
   const { importsController, importProcessesController } = setupControllers(
     importsService,
@@ -44,5 +54,5 @@ export default function setupImport(
     importProcessesController
   );
 
-  return { importsRouter, importProcessesRouter };
+  return { importsRouter, importProcessesRouter, reloadPendingImportProcesses };
 }

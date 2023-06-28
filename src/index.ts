@@ -18,14 +18,8 @@ app.use(express.json());
 const httpServer = createServer(app);
 const io = Websocket.getInstance(httpServer);
 
-const { importsRouter, importProcessesRouter } = setupImport(
-  io,
-  recordModel,
-  datasetModel,
-  5,
-  5000,
-  100
-);
+const { importsRouter, importProcessesRouter, reloadPendingImportProcesses } =
+  setupImport(io, recordModel, datasetModel, 5, 5000, 100);
 
 app.use('/imports', importsRouter.router);
 app.use('/import-processes', importProcessesRouter.router);
@@ -36,6 +30,7 @@ async function start() {
     httpServer.listen(PORT, () =>
       console.log(`Server listening on port: ${PORT}`)
     );
+    reloadPendingImportProcesses();
   } catch (error) {
     console.error(error);
   }
