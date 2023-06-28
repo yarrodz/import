@@ -52,6 +52,7 @@ class ImportsService {
       const idColumnUnique = await this.columnsService.checkIdColumnUniqueness(
         createImportInput
       );
+      console.log(idColumnUnique);
       if (!idColumnUnique) {
         responseHandler.setError(
           409,

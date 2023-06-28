@@ -9,6 +9,8 @@ import TransferHelper from '../modules/transfer/transfer.helper';
 import TransferService from '../modules/transfer/transfer.service';
 import SQLColumnsService from '../modules/columns/columns/sql-columns.service';
 import TransferSQLService from '../modules/transfer/transfers/transfer-sql.service';
+import APIColumnsService from '../modules/columns/columns/api-columns.service';
+import TransferAPIService from '../modules/transfer/transfers/transfer-api.service';
 
 export default function setupServices(
   io: IO,
@@ -23,7 +25,11 @@ export default function setupServices(
   importProcessesService: ImportProcessesService;
 } {
   const sqlColumnsService = new SQLColumnsService();
-  const columnsService = new ColumnsService(sqlColumnsService);
+  const apiColumnsService = new APIColumnsService();
+  const columnsService = new ColumnsService(
+    sqlColumnsService,
+    apiColumnsService
+  );
   const transferHelper = new TransferHelper(
     io,
     datasetsRepository,
@@ -33,10 +39,15 @@ export default function setupServices(
     importProcessesRepository,
     transferHelper
   );
+  const transferApiService = new TransferAPIService(
+    importProcessesRepository,
+    transferHelper
+  );
   const transferService = new TransferService(
     io,
     importProcessesRepository,
     transferSQLService,
+    transferApiService,
     maxAttempts,
     delayAttempt,
     limit

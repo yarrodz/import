@@ -1,6 +1,9 @@
 import Joi from 'joi';
 
 import { ImportSource } from '../enums/import-source.enum';
+import { RequestMethod } from '../enums/request-method.enum';
+import { RequestBodyType } from '../enums/request-body.enum';
+import { ResponseType } from '../enums/response-type.enum';
 
 const databaseValidator = Joi.object({
   connection: Joi.object({
@@ -10,16 +13,37 @@ const databaseValidator = Joi.object({
     port: Joi.number().integer().required(),
     database: Joi.string().required()
   }).required(),
-  table: Joi.string(),
+  table: Joi.string().optional().allow(null),
   idColumn: Joi.string().required(),
-  customSelect: Joi.string(),
-  datasetsCount: Joi.number().integer()
+  customSelect: Joi.string().optional().allow(null),
+  datasetsCount: Joi.number().integer().optional().allow(null)
+});
+
+const apiValidator = Joi.object({
+  requestConfig: Joi.object({
+    method: Joi.string()
+      .valid(...Object.values(RequestMethod))
+      .required(),
+    url: Joi.string().required(),
+    headers: Joi.object().optional().allow(null),
+    params: Joi.object().optional().allow(null),
+    bodyType: Joi.string()
+      .valid(...Object.values(RequestBodyType))
+      .required(),
+    body: Joi.object().optional().allow(null),
+    responseType: Joi.string()
+      .valid(...Object.values(ResponseType))
+      .required()
+  }).required(),
+  idColumn: Joi.string().required(),
+  path: Joi.string().required()
 });
 
 export const CreateUpdateImportValidator = Joi.object({
   unit: Joi.string().length(24).required(),
   source: Joi.string().valid(...Object.values(ImportSource)),
-  database: databaseValidator
+  database: databaseValidator.optional().allow(null),
+  api: apiValidator.optional().allow(null)
 });
 
 // export class CreateImportInput implements Omit<IImport, 'fields'> {

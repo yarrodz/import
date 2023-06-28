@@ -1,13 +1,19 @@
-import FindSQLColumnsService from './columns/sql-columns.service';
+import SQLColumnsService from './columns/sql-columns.service';
 import { IImport } from '../imports/import.schema';
 import { IColumn } from './interfaces/column.interface';
 import { ImportSource } from '../imports/enums/import-source.enum';
+import APIColumnsService from './columns/api-columns.service';
 
 class ColumnsService {
-  private findSQLColumnsService: FindSQLColumnsService;
+  private sqlColumnsService: SQLColumnsService;
+  private apiColumnsService: APIColumnsService;
 
-  constructor(findSQLColumnsService: FindSQLColumnsService) {
-    this.findSQLColumnsService = findSQLColumnsService;
+  constructor(
+    sqlColumnsService: SQLColumnsService,
+    apiColumnsService: APIColumnsService
+  ) {
+    this.sqlColumnsService = sqlColumnsService;
+    this.apiColumnsService = apiColumnsService;
   }
 
   public async find(impt: Omit<IImport, 'fields'>): Promise<IColumn[]> {
@@ -19,11 +25,11 @@ class ColumnsService {
       case ImportSource.ORACLE:
       case ImportSource.MARIADB:
       case ImportSource.ORACLE:
-        columns = await this.findSQLColumnsService.find(impt);
+        columns = await this.sqlColumnsService.find(impt);
         break;
-      //   case ImportSource.API:
-      //     columns = await receiveApiColumns(impt);
-      //     break;
+      case ImportSource.API:
+        columns = await this.apiColumnsService.find(impt);
+        break;
       //   case ImportSource.IMAP:
       //     throw new Error('Not implemented');
       default:
@@ -44,13 +50,13 @@ class ColumnsService {
       case ImportSource.MICROSOFT_SQL_SERVER:
       case ImportSource.ORACLE:
       case ImportSource.MARIADB:
-      case ImportSource.ORACLE:
-        idColumnUnique =
-          await this.findSQLColumnsService.checkIdColumnUniqueness(impt);
+        idColumnUnique = await this.sqlColumnsService.checkIdColumnUniqueness(
+          impt
+        );
         break;
-      //   case ImportSource.API:
-      //     columns = await receiveApiColumns(impt);
-      //     break;
+      case ImportSource.API:
+        idColumnUnique = this.apiColumnsService.checkIdColumnUniqueness(impt);
+        break;
       //   case ImportSource.IMAP:
       //     throw new Error('Not implemented');
       default:
@@ -60,24 +66,6 @@ class ColumnsService {
     }
     return idColumnUnique;
   }
-
-  // private async receiveApiColumns(
-  //     impt: Omit<IImport, 'fields'>
-  //   ): Promise<IColumn[]> {
-  //     const requestConfig = impt.api.requestConfig;
-  //     const path = impt.api.path;
-
-  //     const data = await axios(requestConfig);
-  //     const dataset = resolvePath(data, path)[0] as object;
-
-  //     const columns: IColumn[] = Object.entries(dataset).map(([key, value]) => {
-  //       return {
-  //         name: key,
-  //         type: typeof value
-  //       };
-  //     });
-  //     return columns;
-  //   }
 }
 
 export default ColumnsService;

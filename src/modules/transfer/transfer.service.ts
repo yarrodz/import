@@ -6,11 +6,13 @@ import ImportProcessesRepository from '../import-processes/import-processes.repo
 import TransferSQLService from './transfers/transfer-sql.service';
 import { ImportSource } from '../imports/enums/import-source.enum';
 import { ImportStatus } from '../import-processes/enums/import-status.enum';
+import TransferAPIService from './transfers/transfer-api.service';
 
 class TransferService {
   private io: IO;
   private importProcessesRepository: ImportProcessesRepository;
   private transferSQLService: TransferSQLService;
+  private transferAPIService: TransferAPIService;
   private maxAttempts: number;
   private attemptDelayTime: number;
   private limit: number;
@@ -19,6 +21,7 @@ class TransferService {
     io: IO,
     importProcessesRepository: ImportProcessesRepository,
     transferSQLService: TransferSQLService,
+    transferAPIService: TransferAPIService,
     maxAttempts: number,
     attemptDelayTime: number,
     limit: number
@@ -26,6 +29,7 @@ class TransferService {
     (this.io = io),
       (this.importProcessesRepository = importProcessesRepository);
     this.transferSQLService = transferSQLService;
+    this.transferAPIService = transferAPIService;
     this.maxAttempts = maxAttempts;
     this.attemptDelayTime = attemptDelayTime;
     this.limit = limit;
@@ -54,9 +58,9 @@ class TransferService {
       case ImportSource.MARIADB:
         await this.transferSQLService.transfer(impt, process, this.limit);
         break;
-      // case ImportSource.API:
-      //   await this.transferApi(impt, processId);
-      //   break;
+      case ImportSource.API:
+        await this.transferAPIService.transfer(impt, process, this.limit);
+        break;
       // case ImportSource.IMAP:
       //   await imapImport(impt, processId);
       //   break;
