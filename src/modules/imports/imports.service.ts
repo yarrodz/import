@@ -7,23 +7,32 @@ import { FieldValidator } from './validators/field.validator';
 import { CreateUpdateImportValidator } from './validators/create-update-import.validator';
 import { IImport } from './import.schema';
 import { IField } from './sub-schemas/field.schema';
+import { RequestAuthType } from '../api/enums/request-auth-type.enum';
+import { Request, Response } from 'express';
+import OAuthService from '../oauth2/oauth2.service';
+import OAuth2SessionHelper from '../oauth2/oauth2-session.helper';
+import IOAuth2CallbackContext from '../oauth2/interafces/oauth2-callback-context.interface';
+import { OAuth2CallbackContextAction } from '../oauth2/enums/oauth2-callback-context-action.enum';
 
 class ImportsService {
   private importsRepository: ImportsRepository;
   private importProcessesRepository: ImportProcessesRepository;
   private columnsService: ColumnsService;
   private transferService: TransferService;
+  private oAuthService: OAuthService;
 
   constructor(
     importsRepository: ImportsRepository,
     importProcessesRepository: ImportProcessesRepository,
     columnsService: ColumnsService,
-    transferService: TransferService
+    transferService: TransferService,
+    oAuthService: OAuthService
   ) {
     this.importsRepository = importsRepository;
     this.importProcessesRepository = importProcessesRepository;
     this.columnsService = columnsService;
     this.transferService = transferService;
+    this.oAuthService = oAuthService;
   }
 
   async findAll(unit: string): Promise<ResponseHandler> {
@@ -38,8 +47,12 @@ class ImportsService {
     }
   }
 
-  async create(createImportInput: IImport): Promise<ResponseHandler> {
+  async create(
+    req: Request,
+    createImportInput: IImport
+  ): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
+    const oAuthSessionHelper = new OAuth2SessionHelper(req.session);
     try {
       const { error } = CreateUpdateImportValidator.validate(createImportInput);
       if (error) {
@@ -47,12 +60,25 @@ class ImportsService {
         return responseHandler;
       }
 
-      const columns = await this.columnsService.find(createImportInput);
+      const impt = await this.importsRepository.create(createImportInput);
+
+      let token;
+      if (impt.api?.request?.auth?.type === RequestAuthType.OAUTH2) {
+        const tokens = oAuthSessionHelper.findTokens(impt.id);
+        if (tokens === null) {
+          const oauth2 = impt.api?.request?.auth?.oauth2;
+          const context: IOAuth2CallbackContext = {
+            action: OAuth2CallbackContextAction.CONNECT,
+            importId: impt.id
+          } 
+          return await this.oAuthService.oAuth2AuthUriRedirect(req, oauth2, context);
+        }
+      }
+      const columns = await this.columnsService.find(createImportInput, token);
 
       const idColumnUnique = await this.columnsService.checkIdColumnUniqueness(
         createImportInput
       );
-      console.log(idColumnUnique);
       if (!idColumnUnique) {
         responseHandler.setError(
           409,
@@ -61,10 +87,8 @@ class ImportsService {
         return responseHandler;
       }
 
-      const impt = await this.importsRepository.create(createImportInput);
-
       responseHandler.setSuccess(200, {
-        importId: impt._id,
+        importId: 'impt._id',
         columns
       });
       return responseHandler;
@@ -75,6 +99,7 @@ class ImportsService {
   }
 
   async update(
+    req: Request,
     id: string,
     updateImportInput: IImport
   ): Promise<ResponseHandler> {
@@ -91,26 +116,26 @@ class ImportsService {
         responseHandler.setError(400, error);
         return responseHandler;
       }
+      const updatedImpt = await this.importsRepository.update(id, updateImportInput);
 
       const columns = await this.columnsService.find(updateImportInput);
 
-      const idColumnUnique = await this.columnsService.checkIdColumnUniqueness(
-        updateImportInput
-      );
+      // const idColumnUnique = await this.columnsService.checkIdColumnUniqueness(
+      //   updateImportInput
+      // );
 
-      if (!idColumnUnique) {
-        responseHandler.setError(
-          409,
-          'Provided id column includes duplicate values'
-        );
-        return responseHandler;
-      }
+      // if (!idColumnUnique) {
+      //   responseHandler.setError(
+      //     409,
+      //     'Provided id column includes duplicate values'
+      //   );
+      //   return responseHandler;
+      // }
 
-      await this.importsRepository.update(id, updateImportInput);
 
       responseHandler.setSuccess(200, {
         importId: impt._id,
-        columns
+        updatedImpt
       });
       return responseHandler;
     } catch (error) {
@@ -136,7 +161,7 @@ class ImportsService {
     }
   }
 
-  async connect(id: string): Promise<ResponseHandler> {
+  async connect(req: Request, id: string): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
       const impt = await this.importsRepository.findById(id);
@@ -188,7 +213,7 @@ class ImportsService {
     }
   }
 
-  async start(id: string): Promise<ResponseHandler> {
+  async start(id: string, accessToken?: string): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
       const impt = await this.importsRepository.findById(id);
@@ -197,16 +222,16 @@ class ImportsService {
         return responseHandler;
       }
 
-      const idColumnUnique = await this.columnsService.checkIdColumnUniqueness(
-        impt
-      );
-      if (!idColumnUnique) {
-        responseHandler.setError(
-          409,
-          'Provided id column includes duplicate values'
-        );
-        return responseHandler;
-      }
+      // const idColumnUnique = await this.columnsService.checkIdColumnUniqueness(
+      //   impt
+      // );
+      // if (!idColumnUnique) {
+      //   responseHandler.setError(
+      //     409,
+      //     'Provided id column includes duplicate values'
+      //   );
+      //   return responseHandler;
+      // }
 
       const pendingImport =
         await this.importProcessesRepository.findPendingByUnit(

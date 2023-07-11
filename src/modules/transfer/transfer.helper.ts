@@ -137,6 +137,60 @@ class TransferHelper {
     this.io.to(processId.toString()).emit('importProcess', completedProcess);
   }
 
+  // public async streamTransfer(
+  //   impt: IImportDocument,
+  //   processId: string,
+  //   idColumn: string,
+  //   readable: ReadStream
+  // ) {
+  //   for await (const chunk of readable) {
+  //     const refreshedProcess = await this.importProcessesRepository.findById(
+  //       processId
+  //     );
+  //     if (refreshedProcess.status === ImportStatus.PAUSED) {
+  //       this.io
+  //         .to(processId.toString())
+  //         .emit('importProcess', refreshedProcess);
+  //       return;
+  //     }
+
+  //     let chunks = chunk.toString().split('][');
+  //     let parsedChunks = chunks.map((chunk) => JSON.parse(chunks));
+  //     const parsedChunk = parsedChunks[0];
+
+  //     const transormedDatasets = await this.transformDatasets(
+  //       impt,
+  //       processId,
+  //       parsedChunk,
+  //       idColumn
+  //     );
+
+  //     await this.insertDatasets(transormedDatasets);
+
+  //     const updatedProcess = await this.importProcessesRepository.update(
+  //       processId,
+  //       {
+  //         attempts: 0,
+  //         errorMessage: null,
+  //         $inc: {
+  //           processedDatasetsCount: parsedChunk.length,
+  //           transferedDatasetsCount: transormedDatasets.length
+  //         }
+  //       }
+  //     );
+
+  //     this.io.to(processId.toString()).emit('importProcess', updatedProcess);
+  //   }
+  //   const completedProcess = await this.importProcessesRepository.update(
+  //     processId,
+  //     {
+  //       status: ImportStatus.COMPLETED,
+  //       errorMessage: null
+  //     }
+  //   );
+  //   this.io.to(processId.toString()).emit('importProcess', completedProcess);
+  // }
+
   private async transformDatasets(
     impt: IImportDocument,
     processId: string,

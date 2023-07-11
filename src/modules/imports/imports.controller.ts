@@ -17,20 +17,20 @@ class ImportsController {
 
   create = async (req: Request, res: Response) => {
     const impt = req.body;
-    const responseHandler = await this.importsService.create(impt);
+    const responseHandler = await this.importsService.create(req, impt);
     responseHandler.send(res);
   };
 
   update = async (req: Request, res: Response) => {
     const id = req.body.id;
     const impt = req.body.impt;
-    const responseHandler = await this.importsService.update(id, impt);
+    const responseHandler = await this.importsService.update(req, id, impt);
     responseHandler.send(res);
   };
 
   connect = async (req: Request, res: Response) => {
     const id = req.body.id;
-    const responseHandler = await this.importsService.connect(id);
+    const responseHandler = await this.importsService.connect(req, id);
     responseHandler.send(res);
   };
 

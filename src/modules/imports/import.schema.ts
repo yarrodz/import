@@ -1,9 +1,9 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
 import { ImportSource } from './enums/import-source.enum';
-import { DatabaseSchema, IDatabase } from './sub-schemas/database.schema';
+import { DatabaseSchema, IDatabase } from '../database/database.schema';
 import { FieldSchema, IField } from './sub-schemas/field.schema';
-import { ApiSchema, IApi } from './sub-schemas/api.schema';
+import { ApiSchema, IApi } from '../api/api.schema';
 import { IImap, ImapSchema } from './sub-schemas/imap.schema';
 
 export interface IImport {

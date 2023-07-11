@@ -11,6 +11,7 @@ import SQLColumnsService from '../modules/columns/columns/sql-columns.service';
 import TransferSQLService from '../modules/transfer/transfers/transfer-sql.service';
 import APIColumnsService from '../modules/columns/columns/api-columns.service';
 import TransferAPIService from '../modules/transfer/transfers/transfer-api.service';
+import OAuthService from '../modules/oauth2/oauth2.service';
 
 export default function setupServices(
   io: IO,
@@ -23,13 +24,8 @@ export default function setupServices(
 ): {
   importsService: ImportsService;
   importProcessesService: ImportProcessesService;
+  oAuthService: OAuthService;
 } {
-  const sqlColumnsService = new SQLColumnsService();
-  const apiColumnsService = new APIColumnsService();
-  const columnsService = new ColumnsService(
-    sqlColumnsService,
-    apiColumnsService
-  );
   const transferHelper = new TransferHelper(
     io,
     datasetsRepository,
@@ -52,11 +48,19 @@ export default function setupServices(
     delayAttempt,
     limit
   );
+  const oAuthService = new OAuthService();
+  const sqlColumnsService = new SQLColumnsService();
+  const apiColumnsService = new APIColumnsService();
+  const columnsService = new ColumnsService(
+    sqlColumnsService,
+    apiColumnsService
+  );
   const importsService = new ImportsService(
     importsRepository,
     importProcessesRepository,
     columnsService,
-    transferService
+    transferService,
+    oAuthService
   );
   const importProcessesService = new ImportProcessesService(
     importProcessesRepository,
@@ -66,6 +70,7 @@ export default function setupServices(
 
   return {
     importsService,
-    importProcessesService
+    importProcessesService,
+    oAuthService
   };
 }

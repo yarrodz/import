@@ -76,7 +76,6 @@ class SQLColumnsService {
           idColumn,
           customSelect
         );
-        console.log(query);
         isUnique = await sqlConnection.queryResult(query);
       }
       sqlConnection.disconnect();

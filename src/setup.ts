@@ -9,6 +9,7 @@ import setupControllers from './setups/controllers.setup';
 import setupRouters from './setups/routers.setup';
 import ImportsRouter from './modules/imports/imports.router';
 import ImportProcessesRouter from './modules/import-processes/import-processes.router';
+import OAuthRouter from './modules/oauth2/oauth2.router';
 
 export default function setupImport(
   io: IO,
@@ -20,29 +21,30 @@ export default function setupImport(
 ): {
   importsRouter: ImportsRouter;
   importProcessesRouter: ImportProcessesRouter;
+  oAuthRouter: OAuthRouter;
 } {
   const { datasetsRepository, importsRepository, importProcessesRepository } =
     setupRepositories(recordModel, datasetModel);
 
-  const { importsService, importProcessesService } = setupServices(
-    io,
-    datasetsRepository,
-    importsRepository,
-    importProcessesRepository,
-    maxAttempts,
-    attemptDelayTime,
-    limit
-  );
+  const { importsService, importProcessesService, oAuthService } =
+    setupServices(
+      io,
+      datasetsRepository,
+      importsRepository,
+      importProcessesRepository,
+      maxAttempts,
+      attemptDelayTime,
+      limit
+    );
 
-  const { importsController, importProcessesController } = setupControllers(
-    importsService,
-    importProcessesService
-  );
+  const { importsController, importProcessesController, oAuthController } =
+    setupControllers(importsService, importProcessesService, oAuthService);
 
-  const { importsRouter, importProcessesRouter } = setupRouters(
+  const { importsRouter, importProcessesRouter, oAuthRouter } = setupRouters(
     importsController,
-    importProcessesController
+    importProcessesController,
+    oAuthController
   );
 
-  return { importsRouter, importProcessesRouter };
+  return { importsRouter, importProcessesRouter, oAuthRouter };
 }

@@ -74,6 +74,7 @@ class TransferService {
     impt: IImportDocument,
     process: IImportProcessDocument
   ): Promise<void> {
+    console.log(error);
     const refreshedProcess = await this.importProcessesRepository.findById(
       process._id
     );
@@ -117,90 +118,6 @@ class TransferService {
       setTimeout(() => resolve(undefined), this.attemptDelayTime);
     });
   }
-
-  // private async transferApi(
-  //   impt: IImportDocument,
-  //   processId: string
-  // ) {
-  //   const requestConfig = impt.api.requestConfig;
-  //   const idColumn = impt.api.idColumn;
-  //   const path = impt.api.path;
-  //   const data = await axios(requestConfig);
-  //   let retrievedDatasets = this.resolvePath(data, path) as object[];
-  //   const process = await this.importProcessesRepository.update(processId, {
-  //     datasetsCount: retrievedDatasets.length
-  //   });
-  //   const { processedDatasetsCount } = process;
-  //   let datasetsToImport = retrievedDatasets.slice(
-  //     processedDatasetsCount,
-  //     retrievedDatasets.length
-  //   );
-  //   let chunkedDatasets = JSON.parse(
-  //     JSON.stringify(this.chunkArray(datasetsToImport, LIMIT))
-  //   ) as object[][];
-  //   retrievedDatasets = null;
-  //   datasetsToImport = null;
-  //   await this.transferHelper.chunkTransfer(chunkedDatasets, impt, processId, idColumn);
-  // }
-
-  // private chunkArray(array: object[], chunkSize: number): object[][] {
-  //   const chunkedArray = [];
-  //   for (let i = 0; i < array.length; i += chunkSize) {
-  //     const chunk = array.slice(i, i + chunkSize);
-  //     chunkedArray.push(chunk);
-  //   }
-  //   return chunkedArray;
-  // }
-
-  // private resolvePath(obj: object, path: string) {
-  //   const props = path.split('.');
-  //   let current = obj;
-  //   for (const prop of props) {
-  //     current = current[prop];
-  //   }
-  //   return current;
-  // }
-
-  // private async transferImap(
-  //   impt: IImportDocument,
-  //   processId: string
-  // ) {
-  //   let imapConnection: ImapConnection;
-  //   try {
-  //     const idColumn = 'messageId';
-  //     const connection = impt.imap.connection;
-  //     imapConnection = new ImapConnection(connection);
-  //     await imapConnection.connect();
-  //     const rawEmails = await imapConnection.receiveEmails();
-  //     let parsedEmails = await this.parseEmails(rawEmails);
-  //     imapConnection.disconnect();
-  //     const process = await this.importProcessesRepository.update(processId, {
-  //       datasetsCount: parsedEmails.length
-  //     });
-  //     const { processedDatasetsCount } = process;
-  //     let emailesToImport = parsedEmails.slice(
-  //       processedDatasetsCount,
-  //       parsedEmails.length
-  //     );
-  //     const chunkedEmails = JSON.parse(
-  //       JSON.stringify(this.chunkArray(emailesToImport, LIMIT))
-  //     ) as object[][];
-  //     parsedEmails = null;
-  //     emailesToImport = null;
-  //     await this.transferHelper.chunkTransfer(chunkedEmails, impt, processId, idColumn);
-  //   } catch (error) {
-  //     imapConnection.disconnect();
-  //     throw error;
-  //   }
-  // }
-
-  // private async parseEmails(emails: string[]): Promise<ParsedMail[]> {
-  //   return await Promise.all(
-  //     emails.map(async (email) => {
-  //       return await simpleParser(email);
-  //     })
-  //   );
-  // }
 }
 
 export default TransferService;

@@ -6,12 +6,12 @@ export function createCheckTableColumnUniquenessQuery(
   if (dialect === 'Oracle' || dialect === 'Microsoft SQL Server') {
     return `
     SELECT CASE WHEN COUNT(${column}) = COUNT(DISTINCT ${column})
-      THEN 1 ELSE 0 END AS has_duplicates
+      THEN 1 ELSE 0 END AS has_no_duplicates
       FROM ${table};
   `;
   } else {
     return `
-    SELECT COUNT(${column}) = COUNT(DISTINCT ${column}) AS has_duplicates
+    SELECT COUNT(${column}) = COUNT(DISTINCT ${column}) AS has_no_duplicates
       FROM ${table};
   `;
   }
@@ -28,12 +28,12 @@ export function createCheckSelectColumnUniquenessQuery(
   if (dialect === 'Oracle' || dialect === 'Microsoft SQL Server') {
     return `
     SELECT CASE WHEN COUNT(${column}) = COUNT(DISTINCT ${column})
-      THEN 1 ELSE 0 END AS has_duplicates
+      THEN 1 ELSE 0 END AS has_no_duplicates
       FROM (${query}) custom_select;
   `;
   } else {
     return `
-    SELECT COUNT(${column}) = COUNT(DISTINCT ${column}) AS has_duplicates
+    SELECT COUNT(${column}) = COUNT(DISTINCT ${column}) AS has_no_duplicates
       FROM (${query}) custom_select;
   `;
   }

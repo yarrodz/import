@@ -16,7 +16,10 @@ class ColumnsService {
     this.apiColumnsService = apiColumnsService;
   }
 
-  public async find(impt: Omit<IImport, 'fields'>): Promise<IColumn[]> {
+  public async find(
+    impt: Omit<IImport, 'fields'>,
+    token?: string 
+  ): Promise<IColumn[] | string> {
     let columns: IColumn[] = [];
     switch (impt.source) {
       case ImportSource.MYSQL:
@@ -24,47 +27,33 @@ class ColumnsService {
       case ImportSource.MICROSOFT_SQL_SERVER:
       case ImportSource.ORACLE:
       case ImportSource.MARIADB:
-      case ImportSource.ORACLE:
-        columns = await this.sqlColumnsService.find(impt);
-        break;
+        return await this.sqlColumnsService.find(impt);
       case ImportSource.API:
-        columns = await this.apiColumnsService.find(impt);
-        break;
-      //   case ImportSource.IMAP:
-      //     throw new Error('Not implemented');
+        return await this.apiColumnsService.find(impt, token);
       default:
         throw new Error(
           `Unexpected import source for receiving columns: ${impt.source}`
         );
     }
-    return columns;
   }
 
   public async checkIdColumnUniqueness(
     impt: Omit<IImport, 'fields'>
   ): Promise<boolean> {
-    let idColumnUnique: boolean;
     switch (impt.source) {
       case ImportSource.MYSQL:
       case ImportSource.POSTGRESQL:
       case ImportSource.MICROSOFT_SQL_SERVER:
       case ImportSource.ORACLE:
       case ImportSource.MARIADB:
-        idColumnUnique = await this.sqlColumnsService.checkIdColumnUniqueness(
-          impt
-        );
-        break;
+        return await this.sqlColumnsService.checkIdColumnUniqueness(impt);
       case ImportSource.API:
-        idColumnUnique = this.apiColumnsService.checkIdColumnUniqueness(impt);
-        break;
-      //   case ImportSource.IMAP:
-      //     throw new Error('Not implemented');
+        return this.apiColumnsService.checkIdColumnUniqueness(impt);
       default:
         throw new Error(
-          `Unexpected import source for receiving columns: ${impt.source}`
+          `Error while receiving columns. Unexpected import source: ${impt.source}`
         );
     }
-    return idColumnUnique;
   }
 }
 
