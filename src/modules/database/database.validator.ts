@@ -7,5 +7,6 @@ export const databaseValidator = Joi.object({
   table: Joi.string().optional().allow(null),
   idColumn: Joi.string().required(),
   customSelect: Joi.string().optional().allow(null),
+  limitPerSecond: Joi.number().required(),
   datasetsCount: Joi.number().integer().optional().allow(null)
 });

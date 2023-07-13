@@ -1,21 +1,30 @@
+import { Request } from 'express';
+
 import ImportProcessesRepository from './import-processes.repository';
 import ImportsRepository from '../imports/imports.repository';
 import ResponseHandler from '../../utils/response-handler/response-handler';
 import { ImportStatus } from './enums/import-status.enum';
+import ConnectionService from '../connection/connection.service';
 import TransferService from '../transfer/transfer.service';
+import IImportContext from '../imports/interfaces/import-context.interface';
+import { ImportContextAction } from '../imports/enums/import-context-action.enum';
+import { ConnectionState } from '../connection/enums/connection-state.enum';
 
 class ImportProcessesService {
   private importProcessesRepository: ImportProcessesRepository;
   private importsRepository: ImportsRepository;
+  private connectionService: ConnectionService;
   private transferService: TransferService;
 
   constructor(
     importProcessesRepository: ImportProcessesRepository,
     importsRepository: ImportsRepository,
+    connectionService: ConnectionService,
     transferService: TransferService
   ) {
     this.importProcessesRepository = importProcessesRepository;
     this.importsRepository = importsRepository;
+    this.connectionService = connectionService;
     this.transferService = transferService;
   }
 
@@ -86,7 +95,7 @@ class ImportProcessesService {
     }
   }
 
-  async reload(id: string) {
+  async reload(req: Request, id: string) {
     const responseHandler = new ResponseHandler();
     try {
       const process = await this.importProcessesRepository.findById(id);
@@ -123,6 +132,22 @@ class ImportProcessesService {
         return responseHandler;
       }
 
+      const context: IImportContext = {
+        action: ImportContextAction.RELOAD,
+        importId: impt._id
+      };
+      const connectionResult = await this.connectionService.connect(
+        req,
+        impt,
+        context
+      );
+
+      if (connectionResult.state === ConnectionState.OAUTH2_REQUIRED) {
+        const authUri = connectionResult.oAuth2AuthUri;
+        responseHandler.setSuccess(201, authUri);
+        return responseHandler;
+      }
+
       const reloadedProcess = await this.importProcessesRepository.update(id, {
         status: ImportStatus.PENDING
       });
@@ -136,7 +161,7 @@ class ImportProcessesService {
     }
   }
 
-  async retry(id: string) {
+  async retry(req: Request, id: string) {
     const responseHandler = new ResponseHandler();
     try {
       const process = await this.importProcessesRepository.findById(id);
@@ -158,6 +183,22 @@ class ImportProcessesService {
       );
       if (!impt) {
         responseHandler.setError(404, 'Import not found');
+        return responseHandler;
+      }
+
+      const context: IImportContext = {
+        action: ImportContextAction.RETRY,
+        importId: impt._id
+      };
+      const connectionResult = await this.connectionService.connect(
+        req,
+        impt,
+        context
+      );
+
+      if (connectionResult.state === ConnectionState.OAUTH2_REQUIRED) {
+        const authUri = connectionResult.oAuth2AuthUri;
+        responseHandler.setSuccess(201, authUri);
         return responseHandler;
       }
 

@@ -3,36 +3,33 @@ import { Server as IO } from 'socket.io';
 import { IImportDocument } from '../imports/import.schema';
 import { IImportProcessDocument } from '../import-processes/import-process.schema';
 import ImportProcessesRepository from '../import-processes/import-processes.repository';
-import TransferSQLService from './transfers/transfer-sql.service';
+import SqlTranserService from '../database/sql-transfer.service';
 import { ImportSource } from '../imports/enums/import-source.enum';
 import { ImportStatus } from '../import-processes/enums/import-status.enum';
-import TransferAPIService from './transfers/transfer-api.service';
+import ApiTransferService from '../api/api-transfer.service';
 
 class TransferService {
   private io: IO;
   private importProcessesRepository: ImportProcessesRepository;
-  private transferSQLService: TransferSQLService;
-  private transferAPIService: TransferAPIService;
+  private sqlTranserService: SqlTranserService;
+  private apiTransferService: ApiTransferService;
   private maxAttempts: number;
   private attemptDelayTime: number;
-  private limit: number;
 
   constructor(
     io: IO,
     importProcessesRepository: ImportProcessesRepository,
-    transferSQLService: TransferSQLService,
-    transferAPIService: TransferAPIService,
+    sqlTranserService: SqlTranserService,
+    apiTransferService: ApiTransferService,
     maxAttempts: number,
-    attemptDelayTime: number,
-    limit: number
+    attemptDelayTime: number
   ) {
     (this.io = io),
       (this.importProcessesRepository = importProcessesRepository);
-    this.transferSQLService = transferSQLService;
-    this.transferAPIService = transferAPIService;
+    this.sqlTranserService = sqlTranserService;
+    this.apiTransferService = apiTransferService;
     this.maxAttempts = maxAttempts;
     this.attemptDelayTime = attemptDelayTime;
-    this.limit = limit;
   }
 
   public async transfer(
@@ -56,10 +53,10 @@ class TransferService {
       case ImportSource.MICROSOFT_SQL_SERVER:
       case ImportSource.ORACLE:
       case ImportSource.MARIADB:
-        await this.transferSQLService.transfer(impt, process, this.limit);
+        await this.sqlTranserService.transfer(impt, process);
         break;
       case ImportSource.API:
-        await this.transferAPIService.transfer(impt, process, this.limit);
+        await this.apiTransferService.transfer(impt, process);
         break;
       // case ImportSource.IMAP:
       //   await imapImport(impt, processId);

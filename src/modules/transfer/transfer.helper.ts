@@ -31,7 +31,7 @@ class TransferHelper {
     idColumn: string,
     datasetsCount: number,
     offset: number,
-    limit: number,
+    limitPerSecond: number,
     paginationFunction: IPaginationFunction,
     ...paginationFunctionParams: any[]
   ) {
@@ -46,35 +46,31 @@ class TransferHelper {
         return;
       }
 
+      const stepStart = new Date();
+
       const retrievedDatasets = await paginationFunction(
         offset,
-        limit,
+        limitPerSecond,
         ...paginationFunctionParams
       );
 
-      const transormedDatasets = await this.transformDatasets(
-        impt,
-        processId,
-        retrievedDatasets,
-        idColumn
-      );
+      await this.step(impt, processId, retrievedDatasets, idColumn);
+      const stepEnd = new Date();
+      const stepExecutionTime = stepEnd.getTime() - stepStart.getTime();
+      console.log('stepExecutionTime: ', stepExecutionTime);
 
-      await this.insertDatasets(transormedDatasets);
+      //If step executed faster than second. we have to wait for the remaining time so that there is a second in the sum
+      if (stepExecutionTime < 1000) {
+        const remainingToSecond = 1000 - stepExecutionTime;
+      console.log('remainingToSecond: ', remainingToSecond);
 
-      const updatedProcess = await this.importProcessesRepository.update(
-        processId,
-        {
-          attempts: 0,
-          errorMessage: null,
-          $inc: {
-            processedDatasetsCount: retrievedDatasets.length,
-            transferedDatasetsCount: transormedDatasets.length
-          }
-        }
-      );
+        await this.sleep(remainingToSecond);
+      }
 
-      this.io.to(processId.toString()).emit('importProcess', updatedProcess);
-      offset += limit;
+      offset += limitPerSecond;
+      console.log('offset: ', offset);
+      console.log('----------------');
+
     }
 
     const completedProcess = await this.importProcessesRepository.update(
@@ -104,27 +100,20 @@ class TransferHelper {
         return;
       }
       const chunk = chunkedDatasets.shift();
-      const transormedDatasets = await this.transformDatasets(
-        impt,
-        processId,
-        chunk,
-        idColumn
-      );
 
-      await this.insertDatasets(transormedDatasets);
+      const stepStart = new Date();
+      await this.step(impt, processId, chunk, idColumn);
+      const stepEnd = new Date();
+      const stepExecutionTime = stepEnd.getTime() - stepStart.getTime();
+      console.log('stepExecutionTime: ', stepExecutionTime);
 
-      const updatedProcess = await this.importProcessesRepository.update(
-        processId,
-        {
-          attempts: 0,
-          errorMessage: null,
-          $inc: {
-            processedDatasetsCount: chunk.length,
-            transferedDatasetsCount: transormedDatasets.length
-          }
-        }
-      );
-      this.io.to(processId.toString()).emit('importProcess', updatedProcess);
+      //If step executed faster than second. we have to wait for the remaining time so that there is a second in the sum
+      if (stepExecutionTime < 1000) {
+        const remainingToSecond = 1000 - stepExecutionTime;
+      console.log('remainingToSecond: ', remainingToSecond);
+      await this.sleep(remainingToSecond);
+      }
+      console.log('----------------');
     }
 
     const completedProcess = await this.importProcessesRepository.update(
@@ -191,6 +180,36 @@ class TransferHelper {
   //   this.io.to(processId.toString()).emit('importProcess', completedProcess);
   // }
 
+  private async step(
+    impt: IImportDocument,
+    processId: string,
+    datasets: object[],
+    idColumn: string
+  ) {
+    const transormedDatasets = await this.transformDatasets(
+      impt,
+      processId,
+      datasets,
+      idColumn
+    );
+
+    await this.insertDatasets(transormedDatasets);
+
+    const updatedProcess = await this.importProcessesRepository.update(
+      processId,
+      {
+        attempts: 0,
+        errorMessage: null,
+        $inc: {
+          processedDatasetsCount: datasets.length,
+          transferedDatasetsCount: transormedDatasets.length
+        }
+      }
+    );
+
+    this.io.to(processId.toString()).emit('importProcess', updatedProcess);
+  }
+
   private async transformDatasets(
     impt: IImportDocument,
     processId: string,
@@ -236,7 +255,7 @@ class TransferHelper {
     const records = [];
     fields.forEach(({ feature, source }) => {
       const featureId = feature._id;
-      const value = sourceDataset[source];
+      const value = this.resolvePath(sourceDataset, source);
       const parsedValue = this.parseValue(feature, value);
 
       const record = {
@@ -246,6 +265,19 @@ class TransferHelper {
       records.push(record);
     });
     return records;
+  }
+
+  private resolvePath(data: object, source: string) {
+    try {
+      const properties = source.split('.');
+      let currentPath = data;
+      for (const property of properties) {
+        currentPath = currentPath[property];
+      }
+      return currentPath;
+    } catch (error) {
+      throw new Error(`Error while searching for response: ${error.message}`);
+    }
   }
 
   private parseValue(feature: IFeature, value: any) {
@@ -290,6 +322,12 @@ class TransferHelper {
     } catch (error) {
       throw new Error(`Error while transfer datasets: ${error.message}`);
     }
+  }
+
+  private async sleep(time: number) {
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(undefined), time);
+    });
   }
 }
 

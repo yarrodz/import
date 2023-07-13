@@ -13,7 +13,7 @@ class OAuth2Router {
   }
 
   private initializeRoutes() {
-    this.router.get('/oauth-callback', this.oAuthController.oauthCallback);
+    this.router.get('/oauth-callback', this.oAuthController.oAuth2Callback);
   }
 }
 

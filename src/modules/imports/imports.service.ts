@@ -1,38 +1,38 @@
+import { Request } from 'express';
+
 import ImportsRepository from './imports.repository';
 import ImportProcessesRepository from '../import-processes/import-processes.repository';
-import TransferService from '../transfer/transfer.service';
+import ConnectionService from '../connection/connection.service';
 import ColumnsService from '../columns/columns.service';
+import TransferService from '../transfer/transfer.service';
 import ResponseHandler from '../../utils/response-handler/response-handler';
 import { FieldValidator } from './validators/field.validator';
-import { CreateUpdateImportValidator } from './validators/create-update-import.validator';
+import { ImportValidator } from './validators/import.validator';
 import { IImport } from './import.schema';
 import { IField } from './sub-schemas/field.schema';
-import { RequestAuthType } from '../api/enums/request-auth-type.enum';
-import { Request, Response } from 'express';
-import OAuthService from '../oauth2/oauth2.service';
-import OAuth2SessionHelper from '../oauth2/oauth2-session.helper';
-import IOAuth2CallbackContext from '../oauth2/interafces/oauth2-callback-context.interface';
-import { OAuth2CallbackContextAction } from '../oauth2/enums/oauth2-callback-context-action.enum';
+import IImportContext from './interfaces/import-context.interface';
+import { ImportContextAction } from './enums/import-context-action.enum';
+import { ConnectionState } from '../connection/enums/connection-state.enum';
 
 class ImportsService {
   private importsRepository: ImportsRepository;
   private importProcessesRepository: ImportProcessesRepository;
+  private connectionService: ConnectionService;
   private columnsService: ColumnsService;
   private transferService: TransferService;
-  private oAuthService: OAuthService;
 
   constructor(
     importsRepository: ImportsRepository,
     importProcessesRepository: ImportProcessesRepository,
+    connectionService: ConnectionService,
     columnsService: ColumnsService,
-    transferService: TransferService,
-    oAuthService: OAuthService
+    transferService: TransferService
   ) {
     this.importsRepository = importsRepository;
     this.importProcessesRepository = importProcessesRepository;
+    this.connectionService = connectionService;
     this.columnsService = columnsService;
     this.transferService = transferService;
-    this.oAuthService = oAuthService;
   }
 
   async findAll(unit: string): Promise<ResponseHandler> {
@@ -52,29 +52,33 @@ class ImportsService {
     createImportInput: IImport
   ): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
-    const oAuthSessionHelper = new OAuth2SessionHelper(req.session);
     try {
-      const { error } = CreateUpdateImportValidator.validate(createImportInput);
+      const { error } = ImportValidator.validate(createImportInput);
       if (error) {
+        console.log(error);
         responseHandler.setError(400, error);
         return responseHandler;
       }
 
       const impt = await this.importsRepository.create(createImportInput);
 
-      let token;
-      if (impt.api?.request?.auth?.type === RequestAuthType.OAUTH2) {
-        const tokens = oAuthSessionHelper.findTokens(impt.id);
-        if (tokens === null) {
-          const oauth2 = impt.api?.request?.auth?.oauth2;
-          const context: IOAuth2CallbackContext = {
-            action: OAuth2CallbackContextAction.CONNECT,
-            importId: impt.id
-          } 
-          return await this.oAuthService.oAuth2AuthUriRedirect(req, oauth2, context);
-        }
+      const context: IImportContext = {
+        action: ImportContextAction.CONNECT,
+        importId: impt._id
+      };
+      const connectionResult = await this.connectionService.connect(
+        req,
+        impt,
+        context
+      );
+
+      if (connectionResult.state === ConnectionState.OAUTH2_REQUIRED) {
+        const authUri = connectionResult.oAuth2AuthUri;
+        responseHandler.setSuccess(201, authUri);
+        return responseHandler;
       }
-      const columns = await this.columnsService.find(createImportInput, token);
+
+      const columns = await this.columnsService.find(createImportInput);
 
       const idColumnUnique = await this.columnsService.checkIdColumnUniqueness(
         createImportInput
@@ -88,11 +92,13 @@ class ImportsService {
       }
 
       responseHandler.setSuccess(200, {
-        importId: 'impt._id',
+        importId: impt._id,
         columns
       });
       return responseHandler;
     } catch (error) {
+      console.error(error);
+
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -111,31 +117,43 @@ class ImportsService {
         return responseHandler;
       }
 
-      const { error } = CreateUpdateImportValidator.validate(updateImportInput);
+      const { error } = ImportValidator.validate(updateImportInput);
       if (error) {
         responseHandler.setError(400, error);
         return responseHandler;
       }
-      const updatedImpt = await this.importsRepository.update(id, updateImportInput);
+      await this.importsRepository.update(id, updateImportInput);
+      const context: IImportContext = {
+        action: ImportContextAction.CONNECT,
+        importId: impt._id
+      };
+      const connectionResult = await this.connectionService.connect(
+        req,
+        impt,
+        context
+      );
 
+      if (connectionResult.state === ConnectionState.OAUTH2_REQUIRED) {
+        const authUri = connectionResult.oAuth2AuthUri;
+        responseHandler.setSuccess(201, authUri);
+        return responseHandler;
+      }
       const columns = await this.columnsService.find(updateImportInput);
+      const idColumnUnique = await this.columnsService.checkIdColumnUniqueness(
+        updateImportInput
+      );
 
-      // const idColumnUnique = await this.columnsService.checkIdColumnUniqueness(
-      //   updateImportInput
-      // );
-
-      // if (!idColumnUnique) {
-      //   responseHandler.setError(
-      //     409,
-      //     'Provided id column includes duplicate values'
-      //   );
-      //   return responseHandler;
-      // }
-
+      if (!idColumnUnique) {
+        responseHandler.setError(
+          409,
+          'Provided id column includes duplicate values'
+        );
+        return responseHandler;
+      }
 
       responseHandler.setSuccess(200, {
         importId: impt._id,
-        updatedImpt
+        columns
       });
       return responseHandler;
     } catch (error) {
@@ -169,14 +187,48 @@ class ImportsService {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
       }
+      console.log('connect');
 
+      const context: IImportContext = {
+        action: ImportContextAction.CONNECT,
+        importId: impt._id
+      };
+      const connectionResult = await this.connectionService.connect(
+        req,
+        impt,
+        context
+      );
+      console.log('2');
+
+      if (connectionResult.state === ConnectionState.OAUTH2_REQUIRED) {
+        const authUri = connectionResult.oAuth2AuthUri;
+        responseHandler.setSuccess(201, authUri);
+        return responseHandler;
+      }
       const columns = await this.columnsService.find(impt);
+      console.log('3');
+
+      const idColumnUnique = await this.columnsService.checkIdColumnUniqueness(
+        impt
+      );
+      console.log('4');
+
+      if (!idColumnUnique) {
+        responseHandler.setError(
+          409,
+          'Provided id column includes duplicate values'
+        );
+        return responseHandler;
+      }
+
       responseHandler.setSuccess(200, {
         importId: impt._id,
         columns
       });
       return responseHandler;
     } catch (error) {
+      console.error(error);
+
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -213,7 +265,7 @@ class ImportsService {
     }
   }
 
-  async start(id: string, accessToken?: string): Promise<ResponseHandler> {
+  async start(req: Request, id: string): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
       const impt = await this.importsRepository.findById(id);
@@ -221,17 +273,6 @@ class ImportsService {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
       }
-
-      // const idColumnUnique = await this.columnsService.checkIdColumnUniqueness(
-      //   impt
-      // );
-      // if (!idColumnUnique) {
-      //   responseHandler.setError(
-      //     409,
-      //     'Provided id column includes duplicate values'
-      //   );
-      //   return responseHandler;
-      // }
 
       const pendingImport =
         await this.importProcessesRepository.findPendingByUnit(
@@ -245,11 +286,26 @@ class ImportsService {
         return responseHandler;
       }
 
+      const context: IImportContext = {
+        action: ImportContextAction.START,
+        importId: impt._id
+      };
+      const connectionResult = await this.connectionService.connect(
+        req,
+        impt,
+        context
+      );
+
+      if (connectionResult.state === ConnectionState.OAUTH2_REQUIRED) {
+        const authUri = connectionResult.oAuth2AuthUri;
+        responseHandler.setSuccess(201, authUri);
+        return responseHandler;
+      }
+
       const process = await this.importProcessesRepository.create({
         unit: impt.unit as string,
         import: impt._id
       });
-
       // We dont need to wait till import executes,
       // We send of id import process
       // Client send websocket request and then sends event 'join' with processId
@@ -257,6 +313,7 @@ class ImportsService {
       responseHandler.setSuccess(200, process._id);
       return responseHandler;
     } catch (error) {
+      console.error(error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }

@@ -1,14 +1,13 @@
-import ImportProcessesRepository from '../../import-processes/import-processes.repository';
-import TransferHelper from '../transfer.helper';
-import { IImportDocument } from '../../imports/import.schema';
-import { IImportProcessDocument } from '../../import-processes/import-process.schema';
-import { TransferType } from '../enums/transfer-type.enum';
-import ApiConnection from '../../api/connection/api-connection';
-import IPaginationFunction from '../interfaces/pagination-function.interface';
-import IPaginationValues from '../interfaces/pagination.interface';
-import { IRequest } from '../../api/sub-schemas/request.schema';
+import ImportProcessesRepository from '../import-processes/import-processes.repository';
+import TransferHelper from '../transfer/transfer.helper';
+import { IImportDocument } from '../imports/import.schema';
+import { IImportProcessDocument } from '../import-processes/import-process.schema';
+import { TransferType } from '../transfer/enums/transfer-type.enum';
+import ApiConnector from './connector/api-connector';
+import IPaginationFunction from '../transfer/interfaces/pagination-function.interface';
+import IPaginationValues from '../transfer/interfaces/pagination.interface';
 
-class TransferAPIService {
+class ApiTransferService {
   private importProcessesRepository: ImportProcessesRepository;
   private transferHelper: TransferHelper;
 
@@ -22,21 +21,20 @@ class TransferAPIService {
 
   public async transfer(
     impt: IImportDocument,
-    process: IImportProcessDocument,
-    limit: number
+    process: IImportProcessDocument
   ): Promise<void> {
     const api = impt.api;
-    const { transferType } = api;
+    const { transferType, limitPerSecond } = api;
     const processId = process._id;
 
     const offset = process.processedDatasetsCount;
 
     switch (transferType) {
       case TransferType.CHUNK:
-        await this.chunkTransfer(impt, processId, offset, limit);
+        await this.chunkTransfer(impt, processId, offset, limitPerSecond);
         break;
       case TransferType.PAGINATION:
-        await this.paginationTranfer(impt, processId, offset, limit);
+        await this.paginationTranfer(impt, processId, offset, limitPerSecond);
         break;
       // case TransferType.STREAM:
       //   await this.streamTransfer(impt, processId);
@@ -50,14 +48,13 @@ class TransferAPIService {
     impt: IImportDocument,
     processId: string,
     offset: number,
-    limit: number
+    limitPerSecond: number
   ) {
     const { request, idColumn } = impt.api;
-    const apiConnection = new ApiConnection(request);
-    // await apiConnection.authorize();
+    const apiConnector = new ApiConnector(request);
+    await apiConnector.authorizeRequest();
 
-    let retrievedDatasets = await apiConnection.send();
-
+    let retrievedDatasets = await apiConnector.send();
     await this.importProcessesRepository.update(processId, {
       datasetsCount: retrievedDatasets.length
     });
@@ -67,7 +64,7 @@ class TransferAPIService {
       retrievedDatasets.length
     );
     let chunkedDatasets = JSON.parse(
-      JSON.stringify(this.chunkArray(retrievedDatasets, limit))
+      JSON.stringify(this.chunkArray(retrievedDatasets, limitPerSecond))
     ) as object[][];
 
     retrievedDatasets = null;
@@ -84,13 +81,13 @@ class TransferAPIService {
     impt: IImportDocument,
     processId: string,
     offset: number,
-    limit: number
+    limitPerSecond: number
   ) {
     const api = impt.api;
     const { idColumn, datasetsCount, request } = api;
 
-    const apiConnection = new ApiConnection(request);
-    // await apiConnection.authorize();
+    const apiConnector = new ApiConnector(request);
+    await apiConnector.authorizeRequest();
 
     await this.importProcessesRepository.update(processId, { datasetsCount });
     await this.transferHelper.paginationTransfer(
@@ -99,22 +96,22 @@ class TransferAPIService {
       idColumn,
       datasetsCount,
       offset,
-      limit,
+      limitPerSecond,
       this.apiPaginationFunction,
-      apiConnection
+      apiConnector
     );
   }
 
   private apiPaginationFunction: IPaginationFunction = async (
     offset: number,
     limit: number,
-    apiConnection: ApiConnection
+    apiConnector: ApiConnector
   ) => {
     const pagination: IPaginationValues = {
       offset,
       limit
     };
-    return await apiConnection.send(pagination);
+    return await apiConnector.send(pagination);
   };
 
   private chunkArray(array: object[], chunkSize: number) {
@@ -130,8 +127,8 @@ class TransferAPIService {
   //   const api = impt.api;
   //   const { idColumn, datasetsCount } = api;
 
-  //   const apiConnection = new ApiConnection(api);
-  //   const readable = (await apiConnection.send()) as unknown as ReadStream;
+  //   const apiConnector = new ApiConnector(api);
+  //   const readable = (await apiConnector.send()) as unknown as ReadStream;
 
   //   await this.importProcessesRepository.update(processId, { datasetsCount });
   //   await this.transferHelper.streamTransfer(
@@ -143,4 +140,4 @@ class TransferAPIService {
   // }
 }
 
-export default TransferAPIService;
+export default ApiTransferService;

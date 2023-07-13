@@ -25,7 +25,7 @@ export default class ResponseHandler {
 
   setRedirect(link: string) {
     this.type = ResponseHandlerType.REDIRECT;
-    this.statusCode = 302;
+    this.statusCode = 201;
     this.redirectLink = link;
   }
 

@@ -16,8 +16,7 @@ export default function setupImport(
   recordModel: Model<IRecord>,
   datasetModel: Model<IDataset>,
   maxAttempts: number,
-  attemptDelayTime: number,
-  limit: number
+  attemptDelayTime: number
 ): {
   importsRouter: ImportsRouter;
   importProcessesRouter: ImportProcessesRouter;
@@ -26,19 +25,18 @@ export default function setupImport(
   const { datasetsRepository, importsRepository, importProcessesRepository } =
     setupRepositories(recordModel, datasetModel);
 
-  const { importsService, importProcessesService, oAuthService } =
+  const { importsService, importProcessesService, oAuth2Service } =
     setupServices(
       io,
       datasetsRepository,
       importsRepository,
       importProcessesRepository,
       maxAttempts,
-      attemptDelayTime,
-      limit
+      attemptDelayTime
     );
 
   const { importsController, importProcessesController, oAuthController } =
-    setupControllers(importsService, importProcessesService, oAuthService);
+    setupControllers(importsService, importProcessesService, oAuth2Service);
 
   const { importsRouter, importProcessesRouter, oAuthRouter } = setupRouters(
     importsController,

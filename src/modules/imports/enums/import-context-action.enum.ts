@@ -1,4 +1,4 @@
-export enum OAuth2CallbackContextAction {
+export enum ImportContextAction {
   CONNECT = 'connect',
   START = 'start',
   RELOAD = 'reload',

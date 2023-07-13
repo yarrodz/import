@@ -9,7 +9,7 @@ class OAuth2Controller {
     this.oAuth2Service = oAuthService;
   }
 
-  oauthCallback = async (req: Request, res: Response) => {
+  oAuth2Callback = async (req: Request, res: Response) => {
     const responseHandler = await this.oAuth2Service.oAuth2Callback(req);
     responseHandler.send(res);
   };

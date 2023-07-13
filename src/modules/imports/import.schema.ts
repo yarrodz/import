@@ -4,14 +4,14 @@ import { ImportSource } from './enums/import-source.enum';
 import { DatabaseSchema, IDatabase } from '../database/database.schema';
 import { FieldSchema, IField } from './sub-schemas/field.schema';
 import { ApiSchema, IApi } from '../api/api.schema';
-import { IImap, ImapSchema } from './sub-schemas/imap.schema';
+// import { IImap, ImapSchema } from './sub-schemas/imap.schema';
 
 export interface IImport {
   unit: Types.ObjectId | string;
   source: ImportSource;
   database?: IDatabase;
   api?: IApi;
-  imap?: IImap;
+  // imap?: IImap;
   fields: IField[];
 }
 
@@ -26,7 +26,7 @@ const ImportSchema = new Schema<IImport>({
   },
   database: { type: DatabaseSchema, required: false },
   api: { type: ApiSchema, required: false },
-  imap: { type: ImapSchema, requred: false },
+  // imap: { type: ImapSchema, requred: false },
   fields: [{ type: FieldSchema }]
 });
 

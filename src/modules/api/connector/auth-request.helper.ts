@@ -5,11 +5,7 @@ import { RequestAuthType } from '../enums/request-auth-type.enum';
 import { ApiKeyPlacement } from '../enums/api-key-placement.enum';
 
 class AuthRequestHelper {
-  public async auth(
-    request: AxiosRequestConfig,
-    auth: IRequestAuth,
-    token?: string
-  ) {
+  public async auth(request: AxiosRequestConfig, auth: IRequestAuth) {
     if (!auth) {
       return;
     }
@@ -27,7 +23,7 @@ class AuthRequestHelper {
         break;
       }
       case RequestAuthType.OAUTH2: {
-        this.oauth2(request, token);
+        this.oauth2(request, auth);
         break;
       }
       default: {
@@ -66,10 +62,11 @@ class AuthRequestHelper {
     request.headers.Authorization = `Bearer ${token}`;
   }
 
-  private async oauth2(request: AxiosRequestConfig, token: string) {
-    if (token) {
+  private async oauth2(request: AxiosRequestConfig, auth: IRequestAuth) {
+    const { access_token } = auth.oauth2;
+    if (access_token) {
       request.headers = request.headers || {};
-      request.headers.Authorization = `Bearer ${token}`;
+      request.headers.Authorization = `Bearer ${access_token}`;
     } else {
       throw new Error(
         'Error while OAuth2. Access token was not set in request.'

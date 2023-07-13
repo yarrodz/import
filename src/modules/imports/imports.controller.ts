@@ -43,7 +43,7 @@ class ImportsController {
 
   start = async (req: Request, res: Response) => {
     const id = req.body.id;
-    const responseHandler = await this.importsService.start(id);
+    const responseHandler = await this.importsService.start(req, id);
     responseHandler.send(res);
   };
 

@@ -1,6 +1,6 @@
 import { Sequelize, Options, QueryTypes } from 'sequelize';
 
-export class SqlConnection {
+export class SqlConnector {
   private connection: Sequelize;
 
   constructor(options: Options) {

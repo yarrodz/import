@@ -1,66 +1,66 @@
-import { SqlConnection } from '../../../utils/sql/sql.connection';
-import { SQLDialectMap } from '../../../utils/sql/sql.dialect-map';
+import { SqlConnector } from './connector/sql.connection';
+import { SQLDialectMap } from './connector/sql.dialect-map';
 import {
   createCheckSelectColumnUniquenessQuery,
   createCheckTableColumnUniquenessQuery,
   createSelectColumnsQuery,
   createSelectDataQuery,
   paginateQuery
-} from '../../../utils/sql/sql.query-builder';
-import { IImport } from '../../imports/import.schema';
-import { IColumn } from '../interfaces/column.interface';
+} from './connector/sql.query-builder';
+import { IImport } from '../imports/import.schema';
+import { IColumn } from '../columns/interfaces/column.interface';
 
-class SQLColumnsService {
+class SqlColumnsService {
   public async find(impt: Omit<IImport, 'fields'>): Promise<IColumn[]> {
-    let sqlConnection: SqlConnection;
+    let sqlConnector: SqlConnector;
     try {
       const { source, database } = impt;
       const { connection, idColumn, table, customSelect } = database;
       const dialect = SQLDialectMap[source];
 
-      sqlConnection = new SqlConnection({
+      sqlConnector = new SqlConnector({
         ...connection,
         dialect
       });
-      await sqlConnection.connect();
+      await sqlConnector.connect();
 
       let columns: IColumn[] = [];
       if (table) {
         try {
           columns = await this.selectColumnsFromSchema(
-            sqlConnection,
+            sqlConnector,
             table,
             source
           );
           //Maybe user have no access to information schema then we receive columns from dataset
         } catch (error) {
           const query = createSelectDataQuery(source, table, idColumn, 0, 1);
-          columns = await this.selectColumnsFromDataset(sqlConnection, query);
+          columns = await this.selectColumnsFromDataset(sqlConnector, query);
         }
       } else {
         const query = paginateQuery(source, customSelect, idColumn, 0, 1);
-        columns = await this.selectColumnsFromDataset(sqlConnection, query);
+        columns = await this.selectColumnsFromDataset(sqlConnector, query);
       }
-      sqlConnection.disconnect();
+      sqlConnector.disconnect();
       return columns;
     } catch (error) {
-      sqlConnection.disconnect();
+      sqlConnector.disconnect();
       throw error;
     }
   }
 
   public async checkIdColumnUniqueness(impt: Omit<IImport, 'fields'>) {
-    let sqlConnection: SqlConnection;
+    let sqlConnector: SqlConnector;
     try {
       const { source, database } = impt;
       const { connection, idColumn, table, customSelect } = database;
       const dialect = SQLDialectMap[source];
 
-      sqlConnection = new SqlConnection({
+      sqlConnector = new SqlConnector({
         ...connection,
         dialect
       });
-      await sqlConnection.connect();
+      await sqlConnector.connect();
 
       let isUnique: boolean;
       if (table) {
@@ -69,30 +69,32 @@ class SQLColumnsService {
           idColumn,
           table
         );
-        isUnique = await sqlConnection.queryResult(query);
+        isUnique = await sqlConnector.queryResult(query);
       } else {
         const query = createCheckSelectColumnUniquenessQuery(
           source,
           idColumn,
           customSelect
         );
-        isUnique = await sqlConnection.queryResult(query);
+        isUnique = await sqlConnector.queryResult(query);
       }
-      sqlConnection.disconnect();
+      sqlConnector.disconnect();
       return isUnique;
     } catch (error) {
-      sqlConnection.disconnect();
-      throw error;
+      sqlConnector.disconnect();
+      throw new Error(
+        `Error while checking column uniqueness: ${error.message}`
+      );
     }
   }
 
   private async selectColumnsFromSchema(
-    sqlConnection: SqlConnection,
+    sqlConnector: SqlConnector,
     table: string,
     dialect: string
   ): Promise<IColumn[]> {
     const columnsQuery = createSelectColumnsQuery(table, dialect);
-    const retrievedColumns = await sqlConnection.queryRows(columnsQuery);
+    const retrievedColumns = await sqlConnector.queryRows(columnsQuery);
     return retrievedColumns.map((column) => {
       return {
         name: column['column_name'] || column['COLUMN_NAME'],
@@ -102,10 +104,10 @@ class SQLColumnsService {
   }
 
   private async selectColumnsFromDataset(
-    sqlConnection: SqlConnection,
+    sqlConnector: SqlConnector,
     query: string
   ): Promise<IColumn[]> {
-    const retrievedDatasets = await sqlConnection.queryRows(query);
+    const retrievedDatasets = await sqlConnector.queryRows(query);
     if (retrievedDatasets.length === 0) {
       throw new Error('Error while quering columns: table is empty');
     }
@@ -119,4 +121,4 @@ class SQLColumnsService {
   }
 }
 
-export default SQLColumnsService;
+export default SqlColumnsService;

@@ -7,7 +7,7 @@ import { IRequestAuth } from '../sub-schemas/request-sub-schemas/request-auth.sh
 import { IRequestPaginationOptions } from '../sub-schemas/request-sub-schemas/request-pagination-options.schema';
 import IPagination from '../../transfer/interfaces/pagination.interface';
 
-class ApiConnection {
+class ApiConnector {
   private authRequestHelper: AuthRequestHelper;
   private paginateRequestHelper: PaginateRequestHelper;
 
@@ -50,14 +50,18 @@ class ApiConnection {
       }
       const data = await axios(this.request);
       const response = this.resolveResponsePath(data);
+      // console.log('Name:', response[0]['properties']['Name'])
+      // console.log('typeof:', typeof response[0]['properties']['Name'])
+      console.log(response)
       return response;
     } catch (error) {
+      console.error('error: ', error)
       throw new Error(`Error while sending request: ${error.message}`);
     }
   }
 
-  public async authorizeRequest(token?: string) {
-    await this.authRequestHelper.auth(this.request, this.auth, token);
+  public async authorizeRequest() {
+    await this.authRequestHelper.auth(this.request, this.auth);
   }
 
   private paginateRequest(pagination: IPagination) {
@@ -82,4 +86,4 @@ class ApiConnection {
   }
 }
 
-export default ApiConnection;
+export default ApiConnector;

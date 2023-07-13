@@ -1,26 +1,24 @@
-import SQLColumnsService from './columns/sql-columns.service';
+import SqlColumnsService from '../database/sql-columns.service';
 import { IImport } from '../imports/import.schema';
 import { IColumn } from './interfaces/column.interface';
 import { ImportSource } from '../imports/enums/import-source.enum';
-import APIColumnsService from './columns/api-columns.service';
+import ApiColumnsService from '../api/api-columns.service';
 
 class ColumnsService {
-  private sqlColumnsService: SQLColumnsService;
-  private apiColumnsService: APIColumnsService;
+  private sqlColumnsService: SqlColumnsService;
+  private apiColumnsService: ApiColumnsService;
 
   constructor(
-    sqlColumnsService: SQLColumnsService,
-    apiColumnsService: APIColumnsService
+    sqlColumnsService: SqlColumnsService,
+    apiColumnsService: ApiColumnsService
   ) {
     this.sqlColumnsService = sqlColumnsService;
     this.apiColumnsService = apiColumnsService;
   }
 
   public async find(
-    impt: Omit<IImport, 'fields'>,
-    token?: string 
+    impt: Omit<IImport, 'fields'>
   ): Promise<IColumn[] | string> {
-    let columns: IColumn[] = [];
     switch (impt.source) {
       case ImportSource.MYSQL:
       case ImportSource.POSTGRESQL:
@@ -29,7 +27,7 @@ class ColumnsService {
       case ImportSource.MARIADB:
         return await this.sqlColumnsService.find(impt);
       case ImportSource.API:
-        return await this.apiColumnsService.find(impt, token);
+        return await this.apiColumnsService.find(impt);
       default:
         throw new Error(
           `Unexpected import source for receiving columns: ${impt.source}`

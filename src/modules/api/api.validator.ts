@@ -8,6 +8,7 @@ export const apiValidator = Joi.object({
   transferType: Joi.string()
     .valid(...Object.values(TransferType))
     .required(),
+  limitPerSecond: Joi.number().required(),
   idColumn: Joi.string().required(),
   datasetsCount: Joi.number().optional().allow(null)
 });

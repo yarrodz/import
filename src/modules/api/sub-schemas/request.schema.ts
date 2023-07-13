@@ -4,16 +4,16 @@ import {
   IRequestAuth,
   RequestAuthSchema
 } from './request-sub-schemas/request-auth.shema';
-import {
-  IRequestBody,
-  RequestBodySchema
-} from './request-sub-schemas/request-body.shema';
+// import {
+//   IRequestBody,
+//   RequestBodySchema
+// } from './request-sub-schemas/request-body.shema';
 import {
   IRequestPaginationOptions,
   RequestPaginationOptionsSchema
 } from './request-sub-schemas/request-pagination-options.schema';
 import { RequestMethod } from '../enums/request-method.enum';
-import { RequestResponseType } from '../enums/request-response-type.enum';
+// import { RequestResponseType } from '../enums/request-response-type.enum';
 
 export interface IRequest {
   method: RequestMethod;

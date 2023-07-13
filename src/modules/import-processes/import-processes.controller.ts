@@ -28,13 +28,13 @@ export class ImportProcessesController {
 
   reload = async (req: Request, res: Response) => {
     const id = req.body.id;
-    const responseHandler = await this.importProcessesService.reload(id);
+    const responseHandler = await this.importProcessesService.reload(req, id);
     responseHandler.send(res);
   };
 
   retry = async (req: Request, res: Response) => {
     const id = req.body.id;
-    const responseHandler = await this.importProcessesService.retry(id);
+    const responseHandler = await this.importProcessesService.retry(req, id);
     responseHandler.send(res);
   };
 }

@@ -10,6 +10,7 @@ export interface IDatabase {
   idColumn: string;
   table?: string;
   customSelect?: string;
+  limitPerSecond: number;
   datasetsCount?: number;
 }
 
@@ -19,6 +20,7 @@ export const DatabaseSchema = new Schema<IDatabase>(
     idColumn: { type: String, required: true },
     table: { type: String, required: false },
     customSelect: { type: String, required: false },
+    limitPerSecond: { type: Number, required: true },
     datasetsCount: { type: Number, required: false }
   },
   {

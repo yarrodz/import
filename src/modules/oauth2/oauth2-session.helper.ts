@@ -1,9 +1,7 @@
 import { Session } from 'express-session';
-import { Types } from 'mongoose';
 
 import IOAuth2Session from './interafces/oauth2-session.interface';
 import IOAuth2CallbackProcess from './interafces/oauth2-callback-process.interface';
-import IOAuth2Token from './interafces/oauth2-token.interface';
 
 class OAuth2SessionHelper {
   private session: IOAuth2Session;
@@ -35,34 +33,6 @@ class OAuth2SessionHelper {
       return null;
     }
     return callbackProcess;
-  }
-
-  public addTokens(token: IOAuth2Token) {
-    this.session.oAuth2Tokens = this.session.oAuth2Tokens || [];
-    this.session.oAuth2Tokens = this.session.oAuth2Tokens.filter(
-      (t) => t.importId !== token.importId
-    );
-    this.session.oAuth2Tokens.push(token);
-  }
-
-  public findTokens(importId: Types.ObjectId) {
-    if (this.session.oAuth2Tokens === undefined) {
-      return null;
-    }
-    const token = this.session.oAuth2Tokens.find(
-      (t) => t.importId === importId
-    );
-
-    if (token === undefined) {
-      return null;
-    }
-    return token;
-  }
-
-  public removeTokens(importId: Types.ObjectId) {
-    this.session.oAuth2Tokens = this.session.oAuth2Tokens.filter(
-      (t) => t.importId !== importId
-    );
   }
 }
 

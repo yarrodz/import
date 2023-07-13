@@ -1,8 +1,8 @@
-import IOAuth2CallbackContext from './oauth2-callback-context.interface';
-import IOAuth2CallbackUriParams from './oauth2-callback-uri-params.interface';
+import IImportContext from '../../imports/interfaces/import-context.interface';
+import IOAuth2SessionCallbackParams from './oauth2-session-callback-params.interface';
 
 export default interface IOAuth2CallbackProcess {
   state: string;
-  context: IOAuth2CallbackContext;
-  uriParams: IOAuth2CallbackUriParams;
+  context: IImportContext;
+  params: IOAuth2SessionCallbackParams;
 }

@@ -7,6 +7,7 @@ export interface IApi {
   request: IRequest;
   transferType: TransferType;
   idColumn: string;
+  limitPerSecond: number;
   datasetsCount?: number;
 }
 
@@ -19,6 +20,7 @@ export const ApiSchema = new Schema<IApi>(
       required: true
     },
     idColumn: { type: String, required: true },
+    limitPerSecond: { type: Number, required: true },
     datasetsCount: { type: Number, required: false }
   },
   {

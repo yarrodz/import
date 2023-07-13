@@ -1,18 +1,18 @@
-import { IImportDocument } from '../../imports/import.schema';
-import ImportProcessesRepository from '../../import-processes/import-processes.repository';
-import TransferHelper from '../transfer.helper';
-import { IImportProcessDocument } from '../../import-processes/import-process.schema';
-import { SqlConnection } from '../../../utils/sql/sql.connection';
-import { SQLDialectMap } from '../../../utils/sql/sql.dialect-map';
-import { createRequestedFields } from '../../../utils/sql/create-requested-fields';
+import { IImportDocument } from '../imports/import.schema';
+import ImportProcessesRepository from '../import-processes/import-processes.repository';
+import TransferHelper from '../transfer/transfer.helper';
+import { IImportProcessDocument } from '../import-processes/import-process.schema';
+import { SqlConnector } from './connector/sql.connection';
+import { SQLDialectMap } from './connector/sql.dialect-map';
+import { createRequestedFields } from './connector/create-requested-fields';
 import {
   createSelectCountQuery,
   createSelectDataQuery,
   paginateQuery
-} from '../../../utils/sql/sql.query-builder';
-import IPaginationFunction from '../interfaces/pagination-function.interface';
+} from './connector/sql.query-builder';
+import IPaginationFunction from '../transfer/interfaces/pagination-function.interface';
 
-class TransferSQLService {
+class SqlTranserService {
   private importProcessesRepository: ImportProcessesRepository;
   private transferHelper: TransferHelper;
 
@@ -26,21 +26,20 @@ class TransferSQLService {
 
   public async transfer(
     impt: IImportDocument,
-    process: IImportProcessDocument,
-    limit: number
+    process: IImportProcessDocument
   ): Promise<void> {
-    let sqlConnection: SqlConnection;
+    let sqlConnector: SqlConnector;
     try {
       const { source, database } = impt;
-      const { connection, table } = database;
+      const { connection, table, limitPerSecond } = database;
       const processId = process._id;
       const dialect = SQLDialectMap[source];
 
-      sqlConnection = new SqlConnection({
+      sqlConnector = new SqlConnector({
         ...connection,
         dialect
       });
-      await sqlConnection.connect();
+      await sqlConnector.connect();
 
       const offset = process.processedDatasetsCount;
 
@@ -49,25 +48,25 @@ class TransferSQLService {
         await this.transferFromTable(
           impt,
           processId,
-          sqlConnection,
+          sqlConnector,
           source,
           offset,
-          limit
+          limitPerSecond
         );
         //transfer from custom select
       } else {
         await this.transferFromCustomSelect(
           impt,
           processId,
-          sqlConnection,
+          sqlConnector,
           source,
           offset,
-          limit
+          limitPerSecond
         );
       }
-      sqlConnection.disconnect();
+      sqlConnector.disconnect();
     } catch (error) {
-      sqlConnection.disconnect();
+      sqlConnector.disconnect();
       throw error;
     }
   }
@@ -75,16 +74,16 @@ class TransferSQLService {
   private async transferFromTable(
     impt: IImportDocument,
     processId: string,
-    sqlConnection: SqlConnection,
+    sqlConnector: SqlConnector,
     dialect: string,
     offset: number,
-    limit: number
+    limitPerSecond: number
   ) {
     const { database, fields } = impt;
     const { idColumn, table } = database;
 
     const countQuery = createSelectCountQuery(table);
-    const datasetsCount = await sqlConnection.queryResult(countQuery);
+    const datasetsCount = await sqlConnector.queryResult(countQuery);
     await this.importProcessesRepository.update(processId, { datasetsCount });
 
     const requestedFields = createRequestedFields(fields, idColumn);
@@ -95,9 +94,9 @@ class TransferSQLService {
       idColumn,
       datasetsCount,
       offset,
-      limit,
+      limitPerSecond,
       this.tablePaginationFunction,
-      sqlConnection,
+      sqlConnector,
       dialect,
       table,
       idColumn,
@@ -108,10 +107,10 @@ class TransferSQLService {
   private async transferFromCustomSelect(
     impt: IImportDocument,
     processId: string,
-    sqlConnection: SqlConnection,
+    sqlConnector: SqlConnector,
     dialect: string,
     offset: number,
-    limit: number
+    limitPerSecond: number
   ) {
     const { database } = impt;
     const { idColumn, customSelect, datasetsCount } = database;
@@ -124,9 +123,9 @@ class TransferSQLService {
       idColumn,
       datasetsCount,
       offset,
-      limit,
+      limitPerSecond,
       this.customSelectPaginationFunction,
-      sqlConnection,
+      sqlConnector,
       dialect,
       customSelect,
       idColumn
@@ -135,8 +134,8 @@ class TransferSQLService {
 
   private tablePaginationFunction: IPaginationFunction = async (
     offset: number,
-    limit: number,
-    sqlConnection: SqlConnection,
+    limitPerSecond: number,
+    sqlConnector: SqlConnector,
     dialect: string,
     table: string,
     idColumn: string,
@@ -147,16 +146,16 @@ class TransferSQLService {
       table,
       idColumn,
       offset,
-      limit,
+      limitPerSecond,
       requestedFields
     );
-    return await sqlConnection.queryRows(rowsQuery);
+    return await sqlConnector.queryRows(rowsQuery);
   };
 
   private customSelectPaginationFunction: IPaginationFunction = async (
     offset: number,
-    limit: number,
-    sqlConnection: SqlConnection,
+    limitPerSecond: number,
+    sqlConnector: SqlConnector,
     dialect: string,
     customSelect: string,
     idColumn: string
@@ -166,10 +165,10 @@ class TransferSQLService {
       customSelect,
       idColumn,
       offset,
-      limit
+      limitPerSecond
     );
-    return await sqlConnection.queryRows(paginatedQuery);
+    return await sqlConnector.queryRows(paginatedQuery);
   };
 }
 
-export default TransferSQLService;
+export default SqlTranserService;
