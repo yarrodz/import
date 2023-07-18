@@ -1,10 +1,11 @@
+import { Model, Types, UpdateQuery } from 'mongoose';
+
 import {
   IImportProcess,
   IImportProcessDocument
 } from './import-process.schema';
 import { CreateImportProcessInput } from './inputs/create-imort-process.input';
 import { ImportStatus } from './enums/import-status.enum';
-import { Model, UpdateQuery } from 'mongoose';
 
 class ImportProcessesRepository {
   private importProcessModel: Model<IImportProcess>;
@@ -33,7 +34,7 @@ class ImportProcessesRepository {
     }
   }
 
-  async findById(id: string): Promise<IImportProcessDocument> {
+  async findById(id: string | Types.ObjectId): Promise<IImportProcessDocument> {
     try {
       return await this.importProcessModel.findById(id).lean();
     } catch (error) {

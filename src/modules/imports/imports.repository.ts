@@ -1,4 +1,4 @@
-import { Model, UpdateQuery } from 'mongoose';
+import { Model, Types, UpdateQuery } from 'mongoose';
 import { IImport, IImportDocument } from './import.schema';
 
 class ImportsRepository {
@@ -10,8 +10,10 @@ class ImportsRepository {
 
   async create(input: IImport): Promise<IImportDocument> {
     try {
+      console.log('input: ', input);
       return await this.importsModel.create(input);
     } catch (error) {
+      console.log('err: ', error);
       throw new error(
         `Error while query for creating import: ${error.message}`
       );
@@ -26,7 +28,7 @@ class ImportsRepository {
     }
   }
 
-  async findById(id: string): Promise<IImportDocument> {
+  async findById(id: string | Types.ObjectId): Promise<IImportDocument> {
     try {
       return await this.importsModel.findById(id).lean();
     } catch (error) {

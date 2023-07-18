@@ -1,25 +1,33 @@
+import { Types } from 'mongoose';
+
 import SqlColumnsService from '../database/sql-columns.service';
-import { IImport } from '../imports/import.schema';
-import { IColumn } from './interfaces/column.interface';
-import { ImportSource } from '../imports/enums/import-source.enum';
 import ApiColumnsService from '../api/api-columns.service';
+import { ImportSource } from '../imports/enums/import-source.enum';
+import { IColumn } from './interfaces/column.interface';
+import ImportsRepository from '../imports/imports.repository';
 
 class ColumnsService {
+  private importsRepository: ImportsRepository;
   private sqlColumnsService: SqlColumnsService;
   private apiColumnsService: ApiColumnsService;
 
   constructor(
+    importsRepository: ImportsRepository,
     sqlColumnsService: SqlColumnsService,
     apiColumnsService: ApiColumnsService
   ) {
+    this.importsRepository = importsRepository;
     this.sqlColumnsService = sqlColumnsService;
     this.apiColumnsService = apiColumnsService;
   }
 
   public async find(
-    impt: Omit<IImport, 'fields'>
+    importId: string | Types.ObjectId
   ): Promise<IColumn[] | string> {
-    switch (impt.source) {
+    const impt = await this.importsRepository.findById(importId);
+    const { source } = impt;
+
+    switch (source) {
       case ImportSource.MYSQL:
       case ImportSource.POSTGRESQL:
       case ImportSource.MICROSOFT_SQL_SERVER:
@@ -36,9 +44,12 @@ class ColumnsService {
   }
 
   public async checkIdColumnUniqueness(
-    impt: Omit<IImport, 'fields'>
+    importId: string | Types.ObjectId
   ): Promise<boolean> {
-    switch (impt.source) {
+    const impt = await this.importsRepository.findById(importId);
+    const { source } = impt;
+
+    switch (source) {
       case ImportSource.MYSQL:
       case ImportSource.POSTGRESQL:
       case ImportSource.MICROSOFT_SQL_SERVER:

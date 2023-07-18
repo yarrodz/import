@@ -1,18 +1,18 @@
 import ApiConnector from './connector/api-connector';
-import IPagination from '../transfer/interfaces/pagination.interface';
-import { IImport } from '../imports/import.schema';
+import { IImport, IImportDocument } from '../imports/import.schema';
 import { TransferType } from '../transfer/enums/transfer-type.enum';
 import { IColumn } from '../columns/interfaces/column.interface';
+import IOffsetPagination from '../transfer/interfaces/offset-pagination.interface';
+import ICursorPagination from '../transfer/interfaces/cursor-pagination.interface';
+import resolvePath from '../../utils/resolve-path/resolve-path';
 
 class ApiColumnsService {
-  public async find(
-    impt: Omit<IImport, 'fields'>
-  ): Promise<IColumn[] | string> {
+  public async find(impt: IImportDocument): Promise<IColumn[] | string> {
     try {
-      const { api } = impt;
-      const { transferType, request, idColumn } = api;
+      const { api, idColumn } = impt;
+      const { transferType, datasetsPath } = api;
 
-      const apiConnector = new ApiConnector(request);
+      const apiConnector = new ApiConnector(api);
       await apiConnector.authorizeRequest();
 
       let response: object[] = [];
@@ -21,9 +21,16 @@ class ApiColumnsService {
           response = await apiConnector.send();
           break;
         }
-        case TransferType.PAGINATION: {
-          const pagination: IPagination = {
+        case TransferType.OFFSET_PAGINATION: {
+          const pagination: IOffsetPagination = {
             offset: 0,
+            limit: 1
+          };
+          response = await apiConnector.send(pagination);
+          break;
+        }
+        case TransferType.CURSOR_PAGINATION: {
+          const pagination: ICursorPagination = {
             limit: 1
           };
           response = await apiConnector.send(pagination);
@@ -40,11 +47,8 @@ class ApiColumnsService {
         }
       }
 
-      const dataset = response[0];
-      if (dataset[idColumn] === undefined) {
-        throw new Error('Id column is not present in dataset');
-      }
-
+      const datasets = resolvePath(response, datasetsPath);
+      const dataset = datasets[0];
       const columns: IColumn[] = this.findNestedObjectTypes(dataset);
       return columns;
     } catch (error) {
@@ -54,31 +58,24 @@ class ApiColumnsService {
     }
   }
 
-  private findNestedObjectTypes(obj: any): any {
-    if (typeof obj === 'object'  && obj !== null) {
-      return Object.entries(obj).reduce((acc, [key, value]) => {
-        acc[key] = this.findNestedObjectTypes(value);
-        return acc;
-      }, {});
-    } else {
-      return typeof obj;
-    }
-  }
-
   public async checkIdColumnUniqueness(impt: Omit<IImport, 'fields'>) {
     try {
-      const { api } = impt;
-      const { transferType, request, idColumn } = api;
+      const { api, idColumn } = impt;
+      const { transferType, datasetsPath } = api;
 
-      const apiConnector = new ApiConnector(request);
+      const apiConnector = new ApiConnector(api);
       await apiConnector.authorizeRequest();
 
       switch (transferType) {
         case TransferType.CHUNK: {
           const response = await apiConnector.send();
-          return this.isUnique(response, idColumn);
+          const datasets = resolvePath(response, datasetsPath) as object[];
+          return this.checkKeyValuesUniqueness(datasets, idColumn);
         }
-        case TransferType.PAGINATION: {
+        case TransferType.OFFSET_PAGINATION: {
+          return true;
+        }
+        case TransferType.CURSOR_PAGINATION: {
           return true;
         }
         // case TransferType.STREAM: {
@@ -96,12 +93,23 @@ class ApiColumnsService {
     }
   }
 
-  private isUnique(array: object[], idColumn: string) {
+  private findNestedObjectTypes(obj: any): any {
+    if (typeof obj === 'object' && obj !== null) {
+      return Object.entries(obj).reduce((acc, [key, value]) => {
+        acc[key] = this.findNestedObjectTypes(value);
+        return acc;
+      }, {});
+    } else {
+      return typeof obj;
+    }
+  }
+
+  private checkKeyValuesUniqueness(array: object[], key: string) {
     var uniqueValues = [];
 
     array.forEach(function (object) {
       if (!uniqueValues.includes(object)) {
-        uniqueValues.push(object[idColumn]);
+        uniqueValues.push(object[key]);
       }
     });
 

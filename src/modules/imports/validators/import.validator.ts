@@ -8,7 +8,10 @@ export const ImportValidator = Joi.object({
   unit: Joi.string().length(24).required(),
   source: Joi.string().valid(...Object.values(ImportSource)),
   database: databaseValidator.optional().allow(null),
-  api: apiValidator.optional().allow(null)
+  api: apiValidator.optional().allow(null),
+  idColumn: Joi.string().optional().allow(null),
+  datasetsCount: Joi.number().integer().optional().allow(null),
+  limitRequestsPerSecond: Joi.number().optional().allow(null)
 });
 
 // export class ImapInput implements IImap {

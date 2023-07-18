@@ -1,38 +1,43 @@
 import crypto from 'crypto';
 import { Request } from 'express';
 
+import { IImportDocument } from '../imports/import.schema';
 import { IOAuth2 } from './oauth2.schema';
 import OAuth2SessionHelper from './oauth2-session.helper';
 import IOAuth2CallbackContext from '../imports/interfaces/import-context.interface';
-import IOAuth2AuthUriParams from './interafces/oauth2-auth-uri-params.interface';
-import IOAuth2CallbackUriParams from './interafces/oauth2-session-callback-params.interface';
-import IOAuth2CallbackProcess from './interafces/oauth2-callback-process.interface';
+import IOAuth2AuthUriParams from './interfaces/oauth2-auth-uri-params.interface';
+import IOAuth2CallbackUriParams from './interfaces/oauth2-session-callback-params.interface';
+import IOAuth2CallbackProcess from './interfaces/oauth2-callback-process.interface';
 
 const PROMPT = 'consent';
 const ACCESS_TYPE = 'offline';
 const RESPONSE_TYPE = 'code';
 const CODE_CHALANGE_METHOD = 'S256';
-const GRANT_TYPE = 'authorization_code';
 const OAUTH2_REDIRECT_URI = 'http://localhost:3000/oauth-callback/';
 
 class OAuth2AuthUriHelper {
   public createUri = async (
     req: Request,
-    oAuth2: IOAuth2,
+    impt: IImportDocument,
     context: IOAuth2CallbackContext
   ) => {
-    const oAuthSessionHelper = new OAuth2SessionHelper(req.session);
-    const { auth_uri, use_code_verifier } = oAuth2;
+    const oAuth2SessionHelper = new OAuth2SessionHelper(req.session);
+    // console.log(impt)
+    // console.log(impt.api)
+    // console.log(impt.api.auth)
+    // console.log(impt.api.auth.oauth2)
+    const { oauth2 } = impt.api.auth;
+    const { auth_uri, use_code_verifier } = oauth2;
 
     const state = crypto.randomBytes(100).toString('base64url');
 
     const authUriParams: IOAuth2AuthUriParams = this.createAuthUriParams(
-      oAuth2,
+      oauth2,
       state
     );
 
     const callbackParams: IOAuth2CallbackUriParams =
-      this.createAuthCallbackParams(oAuth2);
+      this.createAuthCallbackParams(oauth2);
 
     if (use_code_verifier) {
       this.setCodeVerifier(authUriParams, callbackParams);
@@ -43,11 +48,10 @@ class OAuth2AuthUriHelper {
       context,
       params: callbackParams
     };
-    oAuthSessionHelper.addCallbackProcess(oAuth2CallbackProcess);
+    oAuth2SessionHelper.addCallbackProcess(oAuth2CallbackProcess);
 
     const authUriQueryString = this.queryStringFromObject(authUriParams);
     const authUri = `${auth_uri}?${authUriQueryString}`;
-
     return authUri;
   };
 

@@ -16,6 +16,8 @@ import OAuthService from '../modules/oauth2/oauth2.service';
 import ApiConnectionSerice from '../modules/api/api-connection.service';
 import ConnectionService from '../modules/connection/connection.service';
 import OAuth2AuthUriHelper from '../modules/oauth2/oauth2-auth-uri.helper';
+import OAuth2RefreshTokenHelper from '../modules/oauth2/oath2-refresh-token.helper';
+import SqlConnectionSerice from '../modules/database/sql-connection.service';
 
 export default function setupServices(
   io: IO,
@@ -38,28 +40,41 @@ export default function setupServices(
     importProcessesRepository,
     transferHelper
   );
-  const transferApiService = new ApiTransferService(
+  const apiTransferService = new ApiTransferService(
     importProcessesRepository,
     transferHelper
   );
   const transferService = new TransferService(
     io,
+    importsRepository,
     importProcessesRepository,
     sqlTranserService,
-    transferApiService,
+    apiTransferService,
     maxAttempts,
     delayAttempt
   );
 
   const oAuth2AuthUriHelper = new OAuth2AuthUriHelper();
+  const oAuth2RefreshTokenHelper = new OAuth2RefreshTokenHelper(
+    importsRepository
+  );
   const oAuth2Service = new OAuthService(importsRepository);
 
-  const apiConnectionService = new ApiConnectionSerice(oAuth2AuthUriHelper);
-  const connectionService = new ConnectionService(apiConnectionService);
+  const sqlConnectionService = new SqlConnectionSerice();
+  const apiConnectionService = new ApiConnectionSerice(
+    importsRepository,
+    oAuth2RefreshTokenHelper
+  );
+  const connectionService = new ConnectionService(
+    importsRepository,
+    sqlConnectionService,
+    apiConnectionService
+  );
 
   const sqlColumnsService = new SqlColumnsService();
   const apiColumnsService = new ApiColumnsService();
   const columnsService = new ColumnsService(
+    importsRepository,
     sqlColumnsService,
     apiColumnsService
   );
@@ -69,13 +84,15 @@ export default function setupServices(
     importProcessesRepository,
     connectionService,
     columnsService,
-    transferService
+    transferService,
+    oAuth2AuthUriHelper
   );
   const importProcessesService = new ImportProcessesService(
     importProcessesRepository,
     importsRepository,
     connectionService,
-    transferService
+    transferService,
+    oAuth2AuthUriHelper
   );
 
   return {

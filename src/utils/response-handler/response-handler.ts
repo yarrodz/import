@@ -41,7 +41,7 @@ export default class ResponseHandler {
         res.status(this.statusCode).redirect(this.redirectLink);
         break;
       default:
-        throw new Error('Unknown response type for response handler');
+        throw new Error('Unknown response handler type.');
     }
   }
 }

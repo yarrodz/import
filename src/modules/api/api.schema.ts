@@ -1,27 +1,63 @@
 import { Schema } from 'mongoose';
 
-import { IRequest, RequestSchema } from './sub-schemas/request.schema';
+import {
+  IRequestAuth,
+  RequestAuthSchema
+} from './sub-schemas/api-sub-schemas/request-auth.shema';
+// import {
+//   IRequestBody,
+//   RequestBodySchema
+// } from './request-sub-schemas/request-body.shema';
+import {
+  IRequestPaginationOptions,
+  RequestPaginationOptionsSchema
+} from './sub-schemas/api-sub-schemas/request-pagination-options.schema';
+import { RequestMethod } from './enums/request-method.enum';
 import { TransferType } from '../transfer/enums/transfer-type.enum';
+import { RequestResponseType } from './enums/request-response-type.enum';
 
 export interface IApi {
-  request: IRequest;
+  method: RequestMethod;
+  url: string;
+  auth?: IRequestAuth;
+  headers?: object;
+  params?: object;
+  // body?: IRequestBody;
+  body?: object;
   transferType: TransferType;
-  idColumn: string;
-  limitPerSecond: number;
-  datasetsCount?: number;
+  paginationOptions?: IRequestPaginationOptions;
+  responseType: RequestResponseType;
+  datasetsPath: string;
 }
 
 export const ApiSchema = new Schema<IApi>(
   {
-    request: { type: RequestSchema, required: true },
+    method: {
+      type: String,
+      enum: Object.values(RequestMethod),
+      required: true
+    },
+    url: { type: String, required: true },
+    auth: { type: RequestAuthSchema, required: false },
+    headers: { type: Object, required: false },
+    params: { type: Object, required: false },
+    // body:  { type: RequestBodySchema, required: false },
+    body: { type: Object, required: false },
     transferType: {
       type: String,
       enum: Object.values(TransferType),
       required: true
     },
-    idColumn: { type: String, required: true },
-    limitPerSecond: { type: Number, required: true },
-    datasetsCount: { type: Number, required: false }
+    paginationOptions: {
+      type: RequestPaginationOptionsSchema,
+      required: false
+    },
+    responseType: {
+      type: String,
+      enum: Object.values(RequestResponseType),
+      required: true
+    },
+    datasetsPath: { type: String, required: true }
   },
   {
     _id: false

@@ -1,37 +1,42 @@
-import { Request } from 'express';
+import { Types } from 'mongoose';
 
-import { IImport } from '../imports/import.schema';
-import { ImportSource } from '../imports/enums/import-source.enum';
-import IOAuth2CallbackContext from '../imports/interfaces/import-context.interface';
 import ApiConnectionSerice from '../api/api-connection.service';
-import IConnectionResult from './interfaces/connection-result.interface';
+import { ImportSource } from '../imports/enums/import-source.enum';
 import { ConnectionState } from './enums/connection-state.enum';
+import ImportsRepository from '../imports/imports.repository';
+import SqlConnectionSerice from '../database/sql-connection.service';
 
 class ConnectionService {
+  private importsRepository: ImportsRepository;
+  private sqlConnectionService: SqlConnectionSerice;
   private apiConnectionService: ApiConnectionSerice;
 
-  constructor(apiConnectionService: ApiConnectionSerice) {
+  constructor(
+    importsRepository: ImportsRepository,
+    sqlConnectionService: SqlConnectionSerice,
+    apiConnectionService: ApiConnectionSerice
+  ) {
+    this.importsRepository = importsRepository;
+    this.sqlConnectionService = sqlConnectionService;
     this.apiConnectionService = apiConnectionService;
   }
 
   public async connect(
-    req: Request,
-    impt: Omit<IImport, 'fields'>,
-    context: IOAuth2CallbackContext
-  ): Promise<IConnectionResult> {
-    switch (impt.source) {
+    importId: string | Types.ObjectId
+  ): Promise<ConnectionState> {
+    const impt = await this.importsRepository.findById(importId);
+    const { source } = impt;
+
+    switch (source) {
       case ImportSource.MYSQL:
       case ImportSource.POSTGRESQL:
       case ImportSource.MICROSOFT_SQL_SERVER:
       case ImportSource.ORACLE:
       case ImportSource.MARIADB: {
-        const connectionResult: IConnectionResult = {
-          state: ConnectionState.CONNECTED
-        };
-        return connectionResult;
+        return await this.sqlConnectionService.connect(impt);
       }
       case ImportSource.API:
-        return await this.apiConnectionService.connect(req, impt, context);
+        return await this.apiConnectionService.connect(impt);
       default:
         throw new Error(
           `Error while connection: Unexpected import source: ${impt.source}`

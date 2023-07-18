@@ -6,6 +6,7 @@ export interface IImportProcess {
   unit: Types.ObjectId | string;
   import: Types.ObjectId | string;
   status: ImportStatus;
+  cursor?: string;
   datasetsCount: number;
   processedDatasetsCount: number;
   transferedDatasetsCount: number;
@@ -24,6 +25,7 @@ export const ImportProcessSchema = new Schema<IImportProcess>({
     enum: Object.values(ImportStatus),
     default: ImportStatus.PENDING
   },
+  cursor: { type: String, required: false },
   datasetsCount: { type: Number, default: 0 },
   processedDatasetsCount: { type: Number, default: 0 },
   transferedDatasetsCount: { type: Number, default: 0 },

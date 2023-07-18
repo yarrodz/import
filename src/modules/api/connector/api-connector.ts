@@ -1,24 +1,31 @@
 import axios, { AxiosRequestConfig } from 'axios';
 
+import { IApi } from '../api.schema';
 import AuthRequestHelper from './auth-request.helper';
 import PaginateRequestHelper from './paginate-request.helper';
-import { IRequest } from '../sub-schemas/request.schema';
-import { IRequestAuth } from '../sub-schemas/request-sub-schemas/request-auth.shema';
-import { IRequestPaginationOptions } from '../sub-schemas/request-sub-schemas/request-pagination-options.schema';
-import IPagination from '../../transfer/interfaces/pagination.interface';
+import ParseResponseHelper from './parse-response.helper';
+import { IRequestAuth } from '../sub-schemas/api-sub-schemas/request-auth.shema';
+import { IRequestPaginationOptions } from '../sub-schemas/api-sub-schemas/request-pagination-options.schema';
+import { RequestResponseType } from '../enums/request-response-type.enum';
+import { TransferType } from '../../transfer/enums/transfer-type.enum';
+import IOffsetPagination from '../../transfer/interfaces/offset-pagination.interface';
+import ICursorPagination from '../../transfer/interfaces/cursor-pagination.interface';
 
 class ApiConnector {
   private authRequestHelper: AuthRequestHelper;
   private paginateRequestHelper: PaginateRequestHelper;
+  private parseResponseHelper: ParseResponseHelper;
 
   private request: AxiosRequestConfig;
-  private responsePath: string;
   private auth?: IRequestAuth;
+  private paginationType?: TransferType;
   private paginationOptions?: IRequestPaginationOptions;
+  private responseType: RequestResponseType;
 
-  constructor(request: IRequest) {
+  constructor(api: IApi) {
     this.authRequestHelper = new AuthRequestHelper();
     this.paginateRequestHelper = new PaginateRequestHelper();
+    this.parseResponseHelper = new ParseResponseHelper();
 
     const {
       method,
@@ -27,9 +34,10 @@ class ApiConnector {
       headers,
       params,
       body,
+      transferType,
       paginationOptions,
-      responsePath
-    } = request;
+      responseType
+    } = api;
 
     this.request = {
       method,
@@ -38,24 +46,23 @@ class ApiConnector {
       params,
       data: body
     };
-    this.responsePath = responsePath;
     this.auth = auth;
+    this.paginationType = transferType;
     this.paginationOptions = paginationOptions;
+    this.responseType = responseType;
   }
 
-  public async send(pagination?: IPagination): Promise<object[]> {
+  public async send(
+    pagination?: IOffsetPagination | ICursorPagination
+  ): Promise<object[]> {
     try {
       if (pagination) {
         this.paginateRequest(pagination);
       }
-      const data = await axios(this.request);
-      const response = this.resolveResponsePath(data);
-      // console.log('Name:', response[0]['properties']['Name'])
-      // console.log('typeof:', typeof response[0]['properties']['Name'])
-      console.log(response)
-      return response;
+      const response = await axios(this.request);
+      const parsedResponse = this.parseResponse(response, this.responseType);
+      return parsedResponse;
     } catch (error) {
-      console.error('error: ', error)
       throw new Error(`Error while sending request: ${error.message}`);
     }
   }
@@ -64,25 +71,21 @@ class ApiConnector {
     await this.authRequestHelper.auth(this.request, this.auth);
   }
 
-  private paginateRequest(pagination: IPagination) {
+  private paginateRequest(pagination: IOffsetPagination | ICursorPagination) {
+    // console.log("this.request: ", this.request);
+    // console.log("this.paginationType: ", this.paginationType);
+    // console.log("this.paginationOptions: ", this.paginationOptions);
+    // console.log("pagination: ", pagination);
     this.paginateRequestHelper.paginate(
       this.request,
+      this.paginationType,
       this.paginationOptions,
       pagination
     );
   }
 
-  private resolveResponsePath(data: object): object[] {
-    try {
-      const properties = this.responsePath.split('.');
-      let currentPath = data;
-      for (const property of properties) {
-        currentPath = currentPath[property];
-      }
-      return currentPath as object[];
-    } catch (error) {
-      throw new Error(`Error while searching for response: ${error.message}`);
-    }
+  private parseResponse(data: any, responseType: RequestResponseType) {
+    return this.parseResponseHelper.parse(data, responseType);
   }
 }
 

@@ -1,6 +1,6 @@
 import { AxiosRequestConfig } from 'axios';
 
-import { IRequestAuth } from '../sub-schemas/request-sub-schemas/request-auth.shema';
+import { IRequestAuth } from '../sub-schemas/api-sub-schemas/request-auth.shema';
 import { RequestAuthType } from '../enums/request-auth-type.enum';
 import { ApiKeyPlacement } from '../enums/api-key-placement.enum';
 

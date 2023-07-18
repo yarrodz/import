@@ -1,24 +1,37 @@
 import { AxiosRequestConfig } from 'axios';
 
-import { IRequestPaginationOptions } from '../sub-schemas/request-sub-schemas/request-pagination-options.schema';
+import { IRequestPaginationOptions } from '../sub-schemas/api-sub-schemas/request-pagination-options.schema';
 import { RequestPaginationPlacement } from '../enums/request-paginanation-placement';
-import IPagination from '../../transfer/interfaces/pagination.interface';
+import IOffsetPagination from '../../transfer/interfaces/offset-pagination.interface';
+import ICursorPagination from '../../transfer/interfaces/cursor-pagination.interface';
+import { TransferType } from '../../transfer/enums/transfer-type.enum';
 
 class PaginateRequestHelper {
   public paginate(
     request: AxiosRequestConfig,
+    paginationType: TransferType,
     paginationOptions: IRequestPaginationOptions,
-    pagination: IPagination
+    pagination: IOffsetPagination | ICursorPagination
   ) {
     if (!paginationOptions || !pagination) {
       return;
     }
     switch (paginationOptions.placement) {
       case RequestPaginationPlacement.QUERY_PARAMETERS:
-        this.paginateQueryParams(request, paginationOptions, pagination);
+        this.paginateQueryParams(
+          request,
+          paginationType,
+          paginationOptions,
+          pagination
+        );
         break;
       case RequestPaginationPlacement.BODY:
-        this.paginateBody(request, paginationOptions, pagination);
+        this.paginateBody(
+          request,
+          paginationType,
+          paginationOptions,
+          pagination
+        );
         break;
       default: {
         throw new Error(
@@ -30,30 +43,73 @@ class PaginateRequestHelper {
 
   private paginateQueryParams(
     request: AxiosRequestConfig,
+    paginationType: TransferType,
     paginationOptions: IRequestPaginationOptions,
-    pagination: IPagination
+    pagination: IOffsetPagination | ICursorPagination
   ) {
-    const { offsetParameter, limitParameter } = paginationOptions;
-    const { offset, limit } = pagination;
+    console.log('paginationType: ', paginationType);
+    switch (paginationType) {
+      case TransferType.OFFSET_PAGINATION: {
+        const { offsetParameter, limitParameter } = paginationOptions;
+        const { offset, limit } = pagination as IOffsetPagination;
 
-    request.params = request.params || {};
+        request.params = request.params || {};
 
-    request.params[offsetParameter] = offset;
-    request.params[limitParameter] = limit;
+        request.params[offsetParameter] = offset;
+        request.params[limitParameter] = limit;
+        break;
+      }
+      case TransferType.CURSOR_PAGINATION: {
+        const { cursorParameter, limitParameter } = paginationOptions;
+        const { cursor, limit } = pagination as ICursorPagination;
+
+        request.params = request.params || {};
+
+        request.params[cursorParameter] = cursor;
+        request.params[limitParameter] = limit;
+        break;
+      }
+      default: {
+        throw new Error(
+          'Error while paginating request. Unknown pagination type.'
+        );
+      }
+    }
   }
 
   private paginateBody(
     request: AxiosRequestConfig,
+    paginationType: TransferType,
     paginationOptions: IRequestPaginationOptions,
-    pagination: IPagination
+    pagination: IOffsetPagination | ICursorPagination
   ) {
-    const { offsetParameter, limitParameter } = paginationOptions;
-    const { offset, limit } = pagination;
+    switch (paginationType) {
+      case TransferType.OFFSET_PAGINATION: {
+        const { offsetParameter, limitParameter } = paginationOptions;
+        const { offset, limit } = pagination as IOffsetPagination;
 
-    request.params = request.params || {};
+        request.data = request.data || {};
 
-    request.data[offsetParameter] = offset;
-    request.data[limitParameter] = limit;
+        request.data[offsetParameter] = offset;
+        request.data[limitParameter] = limit;
+        break;
+      }
+      case TransferType.CURSOR_PAGINATION: {
+        const { cursorParameter, limitParameter } = paginationOptions;
+        const { cursor, limit } = pagination as ICursorPagination;
+
+        request.data = request.data || {};
+
+        request.data[cursorParameter] = cursor;
+        request.data[limitParameter] = limit;
+        break;
+      }
+      default: {
+        throw new Error(
+          'Error while paginating request. Unknown pagination type.'
+        );
+      }
+    }
   }
 }
 

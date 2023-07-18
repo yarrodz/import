@@ -5,8 +5,6 @@ import { DatabaseConnectionValidator } from './sub-validators/database-connectio
 export const databaseValidator = Joi.object({
   connection: DatabaseConnectionValidator.required(),
   table: Joi.string().optional().allow(null),
-  idColumn: Joi.string().required(),
   customSelect: Joi.string().optional().allow(null),
-  limitPerSecond: Joi.number().required(),
-  datasetsCount: Joi.number().integer().optional().allow(null)
+  limit: Joi.number().required()
 });

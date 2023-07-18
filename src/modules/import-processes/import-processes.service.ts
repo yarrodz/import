@@ -9,23 +9,27 @@ import TransferService from '../transfer/transfer.service';
 import IImportContext from '../imports/interfaces/import-context.interface';
 import { ImportContextAction } from '../imports/enums/import-context-action.enum';
 import { ConnectionState } from '../connection/enums/connection-state.enum';
+import OAuth2AuthUriHelper from '../oauth2/oauth2-auth-uri.helper';
 
 class ImportProcessesService {
   private importProcessesRepository: ImportProcessesRepository;
   private importsRepository: ImportsRepository;
   private connectionService: ConnectionService;
   private transferService: TransferService;
+  private oAuth2AuthUriHelper: OAuth2AuthUriHelper;
 
   constructor(
     importProcessesRepository: ImportProcessesRepository,
     importsRepository: ImportsRepository,
     connectionService: ConnectionService,
-    transferService: TransferService
+    transferService: TransferService,
+    oAuth2AuthUriHelper: OAuth2AuthUriHelper
   ) {
     this.importProcessesRepository = importProcessesRepository;
     this.importsRepository = importsRepository;
     this.connectionService = connectionService;
     this.transferService = transferService;
+    this.oAuth2AuthUriHelper = oAuth2AuthUriHelper;
   }
 
   async findAll(unit: string): Promise<ResponseHandler> {
@@ -119,6 +123,7 @@ class ImportProcessesService {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
       }
+      const { _id: importId } = impt;
 
       const pendingImport =
         await this.importProcessesRepository.findPendingByUnit(
@@ -134,25 +139,25 @@ class ImportProcessesService {
 
       const context: IImportContext = {
         action: ImportContextAction.RELOAD,
-        importId: impt._id
+        importId,
+        processId: id
       };
-      const connectionResult = await this.connectionService.connect(
-        req,
-        impt,
-        context
-      );
-
-      if (connectionResult.state === ConnectionState.OAUTH2_REQUIRED) {
-        const authUri = connectionResult.oAuth2AuthUri;
+      const connectionState = await this.connectionService.connect(importId);
+      if (connectionState === ConnectionState.OAUTH2_REQUIRED) {
+        const authUri = await this.oAuth2AuthUriHelper.createUri(
+          req,
+          impt,
+          context
+        );
         responseHandler.setSuccess(201, authUri);
         return responseHandler;
       }
 
-      const reloadedProcess = await this.importProcessesRepository.update(id, {
+      await this.importProcessesRepository.update(id, {
         status: ImportStatus.PENDING
       });
 
-      this.transferService.transfer(impt, reloadedProcess);
+      this.transferService.transfer(importId, id);
       responseHandler.setSuccess(200, id);
       return responseHandler;
     } catch (error) {
@@ -185,30 +190,31 @@ class ImportProcessesService {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
       }
+      const { _id: importId } = impt;
 
       const context: IImportContext = {
         action: ImportContextAction.RETRY,
-        importId: impt._id
+        importId,
+        processId: id
       };
-      const connectionResult = await this.connectionService.connect(
-        req,
-        impt,
-        context
-      );
-
-      if (connectionResult.state === ConnectionState.OAUTH2_REQUIRED) {
-        const authUri = connectionResult.oAuth2AuthUri;
+      const connectionState = await this.connectionService.connect(importId);
+      if (connectionState === ConnectionState.OAUTH2_REQUIRED) {
+        const authUri = await this.oAuth2AuthUriHelper.createUri(
+          req,
+          impt,
+          context
+        );
         responseHandler.setSuccess(201, authUri);
         return responseHandler;
       }
 
-      const retriedProcess = await this.importProcessesRepository.update(id, {
+      await this.importProcessesRepository.update(id, {
         attempts: 0,
         status: ImportStatus.PENDING,
         errorMessage: null
       });
 
-      this.transferService.transfer(impt, retriedProcess);
+      this.transferService.transfer(importId, id);
       responseHandler.setSuccess(200, id);
       return responseHandler;
     } catch (error) {

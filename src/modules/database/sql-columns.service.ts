@@ -7,15 +7,15 @@ import {
   createSelectDataQuery,
   paginateQuery
 } from './connector/sql.query-builder';
-import { IImport } from '../imports/import.schema';
+import { IImport, IImportDocument } from '../imports/import.schema';
 import { IColumn } from '../columns/interfaces/column.interface';
 
 class SqlColumnsService {
-  public async find(impt: Omit<IImport, 'fields'>): Promise<IColumn[]> {
+  public async find(impt: IImportDocument): Promise<IColumn[]> {
     let sqlConnector: SqlConnector;
     try {
-      const { source, database } = impt;
-      const { connection, idColumn, table, customSelect } = database;
+      const { source, database, idColumn } = impt;
+      const { connection, table, customSelect } = database;
       const dialect = SQLDialectMap[source];
 
       sqlConnector = new SqlConnector({
@@ -52,8 +52,8 @@ class SqlColumnsService {
   public async checkIdColumnUniqueness(impt: Omit<IImport, 'fields'>) {
     let sqlConnector: SqlConnector;
     try {
-      const { source, database } = impt;
-      const { connection, idColumn, table, customSelect } = database;
+      const { source, database, idColumn } = impt;
+      const { connection, table, customSelect } = database;
       const dialect = SQLDialectMap[source];
 
       sqlConnector = new SqlConnector({

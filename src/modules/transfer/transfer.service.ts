@@ -1,16 +1,22 @@
 import { Server as IO } from 'socket.io';
+import { Types } from 'mongoose';
 
-import { IImportDocument } from '../imports/import.schema';
-import { IImportProcessDocument } from '../import-processes/import-process.schema';
+import ImportsRepository from '../imports/imports.repository';
 import ImportProcessesRepository from '../import-processes/import-processes.repository';
 import SqlTranserService from '../database/sql-transfer.service';
+import ApiTransferService from '../api/api-transfer.service';
+import { IImportDocument } from '../imports/import.schema';
+import { IImportProcessDocument } from '../import-processes/import-process.schema';
 import { ImportSource } from '../imports/enums/import-source.enum';
 import { ImportStatus } from '../import-processes/enums/import-status.enum';
-import ApiTransferService from '../api/api-transfer.service';
+import ConnectionService from '../connection/connection.service';
+import { ConnectionState } from '../connection/enums/connection-state.enum';
 
 class TransferService {
   private io: IO;
+  private importsRepository: ImportsRepository;
   private importProcessesRepository: ImportProcessesRepository;
+  private connectionService: ConnectionService;
   private sqlTranserService: SqlTranserService;
   private apiTransferService: ApiTransferService;
   private maxAttempts: number;
@@ -18,14 +24,15 @@ class TransferService {
 
   constructor(
     io: IO,
+    importsRepository: ImportsRepository,
     importProcessesRepository: ImportProcessesRepository,
     sqlTranserService: SqlTranserService,
     apiTransferService: ApiTransferService,
     maxAttempts: number,
     attemptDelayTime: number
   ) {
-    (this.io = io),
-      (this.importProcessesRepository = importProcessesRepository);
+    (this.io = io), (this.importsRepository = importsRepository);
+    this.importProcessesRepository = importProcessesRepository;
     this.sqlTranserService = sqlTranserService;
     this.apiTransferService = apiTransferService;
     this.maxAttempts = maxAttempts;
@@ -33,9 +40,11 @@ class TransferService {
   }
 
   public async transfer(
-    impt: IImportDocument,
-    process: IImportProcessDocument
+    importId: string | Types.ObjectId,
+    processId: string | Types.ObjectId
   ): Promise<void> {
+    const impt = await this.importsRepository.findById(importId);
+    const process = await this.importProcessesRepository.findById(processId);
     try {
       await this.run(impt, process);
     } catch (error) {
@@ -47,7 +56,8 @@ class TransferService {
     impt: IImportDocument,
     process: IImportProcessDocument
   ): Promise<void> {
-    switch (impt.source) {
+    const { source } = impt;
+    switch (source) {
       case ImportSource.MYSQL:
       case ImportSource.POSTGRESQL:
       case ImportSource.MICROSOFT_SQL_SERVER:
@@ -71,11 +81,18 @@ class TransferService {
     impt: IImportDocument,
     process: IImportProcessDocument
   ): Promise<void> {
-    console.log(error);
-    const refreshedProcess = await this.importProcessesRepository.findById(
-      process._id
-    );
-    switch (refreshedProcess.attempts) {
+    const { _id: importId } = impt;
+    const { _id: processId } = process;
+
+    const connectionState = await this.connectionService.connect(importId);
+    if (connectionState === ConnectionState.OAUTH2_REQUIRED) {
+      await this.importProcessesRepository.update(processId, {
+        status: ImportStatus.PAUSED
+      });
+      return;
+    }
+
+    switch (process.attempts) {
       case this.maxAttempts:
         await this.failTransferProcess(error, process);
         break;
@@ -103,11 +120,13 @@ class TransferService {
     impt: IImportDocument,
     process: IImportProcessDocument
   ): Promise<void> {
-    await this.importProcessesRepository.update(process._id, {
+    const { _id: importId } = impt;
+    const { _id: processId } = process;
+    await this.importProcessesRepository.update(processId, {
       $inc: { attempts: 1 }
     });
     await this.delayAttempt();
-    return await this.transfer(impt, process);
+    return await this.transfer(importId, processId);
   }
 
   private async delayAttempt(): Promise<void> {

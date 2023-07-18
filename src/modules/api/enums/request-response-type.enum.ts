@@ -1,4 +1,4 @@
 export enum RequestResponseType {
   JSON = 'JSON',
-  CSV = 'CSV'
+  CSV_JSON = 'CSV-formatted JSON'
 }

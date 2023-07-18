@@ -1,13 +1,13 @@
-import axios, { AxiosBasicCredentials, AxiosRequestConfig } from 'axios';
 import { Request } from 'express';
+import axios, { AxiosBasicCredentials, AxiosRequestConfig } from 'axios';
 
 import OAuth2SessionHelper from './oauth2-session.helper';
-import IOAuth2CallbackContext from '../imports/interfaces/import-context.interface';
 import ResponseHandler from '../../utils/response-handler/response-handler';
 import ImportsRepository from '../imports/imports.repository';
-import IOAuth2CallbackBody from './interafces/oauth2-callback-body.interface';
-import IOAuth2SessionCallbackParams from './interafces/oauth2-session-callback-params.interface';
+import IOAuth2CallbackBody from './interfaces/oauth2-callback-body.interface';
+import IOAuth2SessionCallbackParams from './interfaces/oauth2-session-callback-params.interface';
 import { ImportContextAction } from '../imports/enums/import-context-action.enum';
+import IOAuth2CallbackProcess from './interfaces/oauth2-callback-process.interface';
 
 const GRANT_TYPE = 'authorization_code';
 const OAUTH2_REDIRECT_URI = 'http://localhost:3000/oauth-callback/';
@@ -21,25 +21,19 @@ class OAuth2Service {
 
   oAuth2Callback = async (req: Request) => {
     const responseHandler = new ResponseHandler();
-    let context: IOAuth2CallbackContext;
+    let callbackProcess: IOAuth2CallbackProcess;
     try {
       const { session, query } = req;
       const { code, state } = query;
 
-      const oAuthSessionHelper = new OAuth2SessionHelper(session);
-      const callbackProcess = oAuthSessionHelper.findCallbackProcess(
+      const oAuth2SessionHelper = new OAuth2SessionHelper(session);
+      callbackProcess = oAuth2SessionHelper.findCallbackProcess(
         state as string
       );
+      oAuth2SessionHelper.removeCallbackProcess(state as string);
 
-      if (callbackProcess === null) {
-        const errorRedirectUri = this.createErrorRedirectUri();
-        responseHandler.setRedirect(errorRedirectUri);
-        return responseHandler;
-      }
-
-      const { params } = callbackProcess;
-      const { token_uri } = params;
-      context = callbackProcess.context;
+      const { params, context } = callbackProcess;
+      const { token_uri, client_id, client_secret } = params;
       const { importId } = context;
 
       const body: IOAuth2CallbackBody = this.createCallbackBody(
@@ -56,26 +50,27 @@ class OAuth2Service {
         }
       };
 
-      const basicCredetials: AxiosBasicCredentials | null =
-        this.createBasicCredential(params);
-
-      if (basicCredetials !== null) {
-        config.auth = basicCredetials;
+      if (client_secret) {
+        config.auth = {
+          username: client_id,
+          password: client_secret
+        } as AxiosBasicCredentials;
       }
 
       const response = await axios(config);
 
-      const { access_token, bearer_token } = response.data;
+      const { access_token, refresh_token } = response.data;
 
-      await this.importsRepository.update(importId as unknown as string, {
-        'api.request.auth.oauth2.access_token': access_token
+      await this.importsRepository.update(importId as string, {
+        'api.auth.oauth2.access_token': access_token,
+        'api.auth.oauth2.refresh_token': refresh_token
       });
 
-      const successRedirectUri = this.createSuccessRedirectUri(context);
+      const successRedirectUri = this.createSuccessRedirectUri(callbackProcess);
       responseHandler.setRedirect(successRedirectUri);
       return responseHandler;
     } catch (error) {
-      const errorRedirectUri = this.createErrorRedirectUri(context);
+      const errorRedirectUri = this.createErrorRedirectUri(callbackProcess);
       responseHandler.setRedirect(errorRedirectUri);
       return responseHandler;
     }
@@ -105,22 +100,9 @@ class OAuth2Service {
     return body;
   }
 
-  private createBasicCredential(
-    params: IOAuth2SessionCallbackParams
-  ): AxiosBasicCredentials | null {
-    const { client_id, client_secret } = params;
-    if (client_secret === undefined) {
-      return null;
-    } else {
-      return {
-        username: client_id,
-        password: client_secret
-      };
-    }
-  }
-
-  private createSuccessRedirectUri(context: IOAuth2CallbackContext) {
-    const { action, importId, importProcessId } = context;
+  private createSuccessRedirectUri(callbackProcess: IOAuth2CallbackProcess) {
+    const { context } = callbackProcess;
+    const { action, importId, processId } = context;
     switch (action) {
       case ImportContextAction.CONNECT: {
         return `http://localhost:4200/imports/connect/${importId}`;
@@ -128,11 +110,11 @@ class OAuth2Service {
       case ImportContextAction.START: {
         return `http://localhost:4200/imports/start/${importId}`;
       }
-      case ImportContextAction.CONNECT: {
-        return `http://localhost:4200/processes/reload/${importProcessId}`;
+      case ImportContextAction.RELOAD: {
+        return `http://localhost:4200/processes/reload/${processId}`;
       }
-      case ImportContextAction.CONNECT: {
-        return `http://localhost:4200/processes/retry/${importProcessId}`;
+      case ImportContextAction.RETRY: {
+        return `http://localhost:4200/processes/retry/${processId}`;
       }
       default: {
         throw new Error('Unknown contex action inside OAuth2 callback');
@@ -140,11 +122,12 @@ class OAuth2Service {
     }
   }
 
-  private createErrorRedirectUri(context?: IOAuth2CallbackContext) {
-    if (context === undefined) {
+  private createErrorRedirectUri(callbackProcess?: IOAuth2CallbackProcess) {
+    if (callbackProcess === undefined) {
       const errorMessage = 'Could not find callback context';
       return `http://localhost:4200/imports/errorMessage=${errorMessage}`;
     } else {
+      const { context } = callbackProcess;
       const { action } = context;
       const errorMessage = 'Error while OAuth2 callback';
 

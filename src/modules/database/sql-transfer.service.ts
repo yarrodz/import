@@ -10,7 +10,9 @@ import {
   createSelectDataQuery,
   paginateQuery
 } from './connector/sql.query-builder';
-import IPaginationFunction from '../transfer/interfaces/pagination-function.interface';
+import IPaginationFunction from '../transfer/interfaces/offset-pagination-function.interface';
+import IOffsetPaginationFunction from '../transfer/interfaces/offset-pagination-function.interface';
+import IOffsetPagination from '../transfer/interfaces/offset-pagination.interface';
 
 class SqlTranserService {
   private importProcessesRepository: ImportProcessesRepository;
@@ -31,7 +33,7 @@ class SqlTranserService {
     let sqlConnector: SqlConnector;
     try {
       const { source, database } = impt;
-      const { connection, table, limitPerSecond } = database;
+      const { connection, table } = database;
       const processId = process._id;
       const dialect = SQLDialectMap[source];
 
@@ -41,27 +43,16 @@ class SqlTranserService {
       });
       await sqlConnector.connect();
 
-      const offset = process.processedDatasetsCount;
-
       //transfer from table
       if (table) {
-        await this.transferFromTable(
-          impt,
-          processId,
-          sqlConnector,
-          source,
-          offset,
-          limitPerSecond
-        );
+        await this.transferFromTable(impt, processId, sqlConnector, source);
         //transfer from custom select
       } else {
         await this.transferFromCustomSelect(
           impt,
           processId,
           sqlConnector,
-          source,
-          offset,
-          limitPerSecond
+          source
         );
       }
       sqlConnector.disconnect();
@@ -75,26 +66,22 @@ class SqlTranserService {
     impt: IImportDocument,
     processId: string,
     sqlConnector: SqlConnector,
-    dialect: string,
-    offset: number,
-    limitPerSecond: number
+    dialect: string
   ) {
-    const { database, fields } = impt;
-    const { idColumn, table } = database;
+    const { database, fields, idColumn } = impt;
+    const { table, limit } = database;
 
     const countQuery = createSelectCountQuery(table);
     const datasetsCount = await sqlConnector.queryResult(countQuery);
+    console.log('datasetsCount: ', datasetsCount);
     await this.importProcessesRepository.update(processId, { datasetsCount });
 
     const requestedFields = createRequestedFields(fields, idColumn);
 
-    await this.transferHelper.paginationTransfer(
+    await this.transferHelper.offsetPaginationTransfer(
       impt,
       processId,
-      idColumn,
-      datasetsCount,
-      offset,
-      limitPerSecond,
+      limit,
       this.tablePaginationFunction,
       sqlConnector,
       dialect,
@@ -108,64 +95,58 @@ class SqlTranserService {
     impt: IImportDocument,
     processId: string,
     sqlConnector: SqlConnector,
-    dialect: string,
-    offset: number,
-    limitPerSecond: number
+    dialect: string
   ) {
-    const { database } = impt;
-    const { idColumn, customSelect, datasetsCount } = database;
+    const { database, datasetsCount } = impt;
+    const { customSelect, limit } = database;
 
     await this.importProcessesRepository.update(processId, { datasetsCount });
 
-    await this.transferHelper.paginationTransfer(
+    await this.transferHelper.offsetPaginationTransfer(
       impt,
       processId,
-      idColumn,
-      datasetsCount,
-      offset,
-      limitPerSecond,
+      limit,
       this.customSelectPaginationFunction,
       sqlConnector,
       dialect,
-      customSelect,
-      idColumn
+      customSelect
     );
   }
 
-  private tablePaginationFunction: IPaginationFunction = async (
-    offset: number,
-    limitPerSecond: number,
+  private tablePaginationFunction: IOffsetPaginationFunction = async (
+    offsetPagination: IOffsetPagination,
     sqlConnector: SqlConnector,
     dialect: string,
     table: string,
     idColumn: string,
     requestedFields: string[]
   ) => {
+    const { offset, limit } = offsetPagination;
     const rowsQuery = createSelectDataQuery(
       dialect,
       table,
       idColumn,
       offset,
-      limitPerSecond,
+      limit,
       requestedFields
     );
     return await sqlConnector.queryRows(rowsQuery);
   };
 
   private customSelectPaginationFunction: IPaginationFunction = async (
-    offset: number,
-    limitPerSecond: number,
+    offsetPagination: IOffsetPagination,
     sqlConnector: SqlConnector,
     dialect: string,
     customSelect: string,
     idColumn: string
   ) => {
+    const { offset, limit } = offsetPagination;
     const paginatedQuery = paginateQuery(
       dialect,
       customSelect,
       idColumn,
       offset,
-      limitPerSecond
+      limit
     );
     return await sqlConnector.queryRows(paginatedQuery);
   };

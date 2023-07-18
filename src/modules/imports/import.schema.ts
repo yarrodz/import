@@ -12,7 +12,10 @@ export interface IImport {
   database?: IDatabase;
   api?: IApi;
   // imap?: IImap;
-  fields: IField[];
+  limitRequestsPerSecond: number;
+  fields?: IField[];
+  idColumn: string;
+  datasetsCount?: number;
 }
 
 export interface IImportDocument extends IImport, Document {}
@@ -26,8 +29,10 @@ const ImportSchema = new Schema<IImport>({
   },
   database: { type: DatabaseSchema, required: false },
   api: { type: ApiSchema, required: false },
-  // imap: { type: ImapSchema, requred: false },
-  fields: [{ type: FieldSchema }]
+  fields: [{ type: FieldSchema }],
+  limitRequestsPerSecond: { type: Number, required: false },
+  idColumn: { type: String, required: true },
+  datasetsCount: { type: Number, required: false }
 });
 
 export default mongoose.model<IImportDocument>('Import', ImportSchema);
