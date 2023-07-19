@@ -2,34 +2,28 @@ import { Request } from 'express';
 
 import ImportProcessesRepository from './import-processes.repository';
 import ImportsRepository from '../imports/imports.repository';
+import SqlImportService from '../sql/sql-import.service';
+import ApiImportService from '../api/api-import.service';
 import ResponseHandler from '../../utils/response-handler/response-handler';
 import { ImportStatus } from './enums/import-status.enum';
-import ConnectionService from '../connection/connection.service';
-import TransferService from '../transfer/transfer.service';
-import IImportContext from '../imports/interfaces/import-context.interface';
-import { ImportContextAction } from '../imports/enums/import-context-action.enum';
-import { ConnectionState } from '../connection/enums/connection-state.enum';
-import OAuth2AuthUriHelper from '../oauth2/oauth2-auth-uri.helper';
+import { ImportSource } from '../imports/enums/import-source.enum';
 
 class ImportProcessesService {
   private importProcessesRepository: ImportProcessesRepository;
   private importsRepository: ImportsRepository;
-  private connectionService: ConnectionService;
-  private transferService: TransferService;
-  private oAuth2AuthUriHelper: OAuth2AuthUriHelper;
+  private sqlImportService: SqlImportService;
+  private apiImportService: ApiImportService;
 
   constructor(
     importProcessesRepository: ImportProcessesRepository,
     importsRepository: ImportsRepository,
-    connectionService: ConnectionService,
-    transferService: TransferService,
-    oAuth2AuthUriHelper: OAuth2AuthUriHelper
+    sqlImportService: SqlImportService,
+    apiImportService: ApiImportService
   ) {
     this.importProcessesRepository = importProcessesRepository;
     this.importsRepository = importsRepository;
-    this.connectionService = connectionService;
-    this.transferService = transferService;
-    this.oAuth2AuthUriHelper = oAuth2AuthUriHelper;
+    this.sqlImportService = sqlImportService;
+    this.apiImportService = apiImportService;
   }
 
   async findAll(unit: string): Promise<ResponseHandler> {
@@ -123,7 +117,6 @@ class ImportProcessesService {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
       }
-      const { _id: importId } = impt;
 
       const pendingImport =
         await this.importProcessesRepository.findPendingByUnit(
@@ -137,29 +130,23 @@ class ImportProcessesService {
         return responseHandler;
       }
 
-      const context: IImportContext = {
-        action: ImportContextAction.RELOAD,
-        importId,
-        processId: id
-      };
-      const connectionState = await this.connectionService.connect(importId);
-      if (connectionState === ConnectionState.OAUTH2_REQUIRED) {
-        const authUri = await this.oAuth2AuthUriHelper.createUri(
-          req,
-          impt,
-          context
-        );
-        responseHandler.setSuccess(201, authUri);
-        return responseHandler;
+      const { source } = impt;
+
+      switch (source) {
+        case ImportSource.SQL: {
+          return await this.sqlImportService.reload(impt, process);
+        }
+        case ImportSource.API: {
+          return await this.apiImportService.reload(req, impt, process);
+        }
+        default: {
+          responseHandler.setError(
+            400,
+            `Error while reloading import. Unknown import source '${source}'.`
+          );
+          return responseHandler;
+        }
       }
-
-      await this.importProcessesRepository.update(id, {
-        status: ImportStatus.PENDING
-      });
-
-      this.transferService.transfer(importId, id);
-      responseHandler.setSuccess(200, id);
-      return responseHandler;
     } catch (error) {
       responseHandler.setError(500, error.message);
       return responseHandler;
@@ -190,33 +177,23 @@ class ImportProcessesService {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
       }
-      const { _id: importId } = impt;
+      const { source } = impt;
 
-      const context: IImportContext = {
-        action: ImportContextAction.RETRY,
-        importId,
-        processId: id
-      };
-      const connectionState = await this.connectionService.connect(importId);
-      if (connectionState === ConnectionState.OAUTH2_REQUIRED) {
-        const authUri = await this.oAuth2AuthUriHelper.createUri(
-          req,
-          impt,
-          context
-        );
-        responseHandler.setSuccess(201, authUri);
-        return responseHandler;
+      switch (source) {
+        case ImportSource.SQL: {
+          return await this.sqlImportService.retry(impt, process);
+        }
+        case ImportSource.API: {
+          return await this.apiImportService.retry(req, impt, process);
+        }
+        default: {
+          responseHandler.setError(
+            400,
+            `Error while reloading import. Unknown import source '${source}'.`
+          );
+          return responseHandler;
+        }
       }
-
-      await this.importProcessesRepository.update(id, {
-        attempts: 0,
-        status: ImportStatus.PENDING,
-        errorMessage: null
-      });
-
-      this.transferService.transfer(importId, id);
-      responseHandler.setSuccess(200, id);
-      return responseHandler;
     } catch (error) {
       responseHandler.setError(500, error.message);
       return responseHandler;

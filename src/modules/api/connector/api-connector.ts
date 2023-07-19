@@ -72,10 +72,6 @@ class ApiConnector {
   }
 
   private paginateRequest(pagination: IOffsetPagination | ICursorPagination) {
-    // console.log("this.request: ", this.request);
-    // console.log("this.paginationType: ", this.paginationType);
-    // console.log("this.paginationOptions: ", this.paginationOptions);
-    // console.log("pagination: ", pagination);
     this.paginateRequestHelper.paginate(
       this.request,
       this.paginationType,

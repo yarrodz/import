@@ -36,24 +36,12 @@ const io = Websocket.getInstance(httpServer);
 const { importsRouter, importProcessesRouter, oAuthRouter } = setupImport(
   io,
   recordModel,
-  datasetModel,
-  5,
-  5000
+  datasetModel
 );
 
 app.use('/imports', importsRouter.router);
 app.use('/import-processes', importProcessesRouter.router);
 app.use('', oAuthRouter.router);
-
-// app.post('/set-session', (req, res) => {
-//   req.session['myValue'] = 'Hello from session';
-//   res.send('Session value set');
-// });
-
-// app.get('/get-session', (req, res) => {
-//   const sessionValue = req.session['myValue'];
-//   res.send(sessionValue || 'no');
-// });
 
 async function start() {
   try {

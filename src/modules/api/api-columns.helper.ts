@@ -1,12 +1,12 @@
 import ApiConnector from './connector/api-connector';
 import { IImport, IImportDocument } from '../imports/import.schema';
 import { TransferType } from '../transfer/enums/transfer-type.enum';
-import { IColumn } from '../columns/interfaces/column.interface';
+import { IColumn } from '../columns/column.interface';
 import IOffsetPagination from '../transfer/interfaces/offset-pagination.interface';
 import ICursorPagination from '../transfer/interfaces/cursor-pagination.interface';
 import resolvePath from '../../utils/resolve-path/resolve-path';
 
-class ApiColumnsService {
+class ApiColumnsHelper {
   public async find(impt: IImportDocument): Promise<IColumn[] | string> {
     try {
       const { api, idColumn } = impt;
@@ -131,4 +131,4 @@ class ApiColumnsService {
   // }
 }
 
-export default ApiColumnsService;
+export default ApiColumnsHelper;

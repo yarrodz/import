@@ -16,7 +16,9 @@ class PaginateRequestHelper {
     if (!paginationOptions || !pagination) {
       return;
     }
-    switch (paginationOptions.placement) {
+    const { placement } = paginationOptions;
+
+    switch (placement) {
       case RequestPaginationPlacement.QUERY_PARAMETERS:
         this.paginateQueryParams(
           request,
@@ -35,7 +37,7 @@ class PaginateRequestHelper {
         break;
       default: {
         throw new Error(
-          'Error while paginating request. Unknown pagination placement.'
+          `Error while paginating request. Unknown pagination placement: '${placement}'.`
         );
       }
     }
@@ -47,7 +49,6 @@ class PaginateRequestHelper {
     paginationOptions: IRequestPaginationOptions,
     pagination: IOffsetPagination | ICursorPagination
   ) {
-    console.log('paginationType: ', paginationType);
     switch (paginationType) {
       case TransferType.OFFSET_PAGINATION: {
         const { offsetParameter, limitParameter } = paginationOptions;
@@ -71,7 +72,7 @@ class PaginateRequestHelper {
       }
       default: {
         throw new Error(
-          'Error while paginating request. Unknown pagination type.'
+          `Error while paginating request. Unknown pagination type: '${paginationType}'.`
         );
       }
     }
@@ -106,7 +107,7 @@ class PaginateRequestHelper {
       }
       default: {
         throw new Error(
-          'Error while paginating request. Unknown pagination type.'
+          `Error while paginating request. Unknown pagination type: '${paginationType}'.`
         );
       }
     }

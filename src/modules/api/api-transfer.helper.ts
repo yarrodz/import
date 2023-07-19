@@ -1,5 +1,7 @@
 import ImportProcessesRepository from '../import-processes/import-processes.repository';
-import TransferHelper from '../transfer/transfer.helper';
+import ChunkTransferHelper from '../transfer/chunk-transfer.helper';
+import OffsetPaginationTransferHelper from '../transfer/offset-pagination-transfer.helper';
+import CursorPaginationTransferHelper from '../transfer/cursor-pagination-transfer.helper';
 import { IImportDocument } from '../imports/import.schema';
 import { IImportProcessDocument } from '../import-processes/import-process.schema';
 import { TransferType } from '../transfer/enums/transfer-type.enum';
@@ -10,16 +12,22 @@ import ICursorPagination from '../transfer/interfaces/cursor-pagination.interfac
 import resolvePath from '../../utils/resolve-path/resolve-path';
 import IOffsetPagination from '../transfer/interfaces/offset-pagination.interface';
 
-class ApiTransferService {
+class ApiTransferHelper {
   private importProcessesRepository: ImportProcessesRepository;
-  private transferHelper: TransferHelper;
+  private chunkTransferHelper: ChunkTransferHelper;
+  private offsetPaginationTransferHelper: OffsetPaginationTransferHelper;
+  private cursorPaginationTransferHelper: CursorPaginationTransferHelper;
 
   constructor(
     importProcessesRepository: ImportProcessesRepository,
-    transferHelper: TransferHelper
+    chunkTransferHelper: ChunkTransferHelper,
+    offsetPaginationTransferHelper: OffsetPaginationTransferHelper,
+    cursorPaginationTransferHelper: CursorPaginationTransferHelper
   ) {
     this.importProcessesRepository = importProcessesRepository;
-    this.transferHelper = transferHelper;
+    this.chunkTransferHelper = chunkTransferHelper;
+    this.offsetPaginationTransferHelper = offsetPaginationTransferHelper;
+    this.cursorPaginationTransferHelper = cursorPaginationTransferHelper;
   }
 
   public async transfer(
@@ -56,25 +64,28 @@ class ApiTransferService {
     offset: number
   ) {
     const { api } = impt;
+    const { datasetsPath } = api;
     const apiConnector = new ApiConnector(api);
     await apiConnector.authorizeRequest();
 
-    let retrievedDatasets = await apiConnector.send();
+    const response = await apiConnector.send();
+    let datasets = resolvePath(response, datasetsPath) as object[];
     await this.importProcessesRepository.update(processId, {
-      datasetsCount: retrievedDatasets.length
+      datasetsCount: datasets.length
     });
 
-    retrievedDatasets = retrievedDatasets.slice(
-      offset,
-      retrievedDatasets.length
-    );
+    datasets = datasets.slice(offset, datasets.length);
     let chunkedDatasets = JSON.parse(
-      JSON.stringify(this.chunkArray(retrievedDatasets, 100))
+      JSON.stringify(this.chunkArray(datasets, 100))
     ) as object[][];
 
-    retrievedDatasets = null;
+    datasets = null;
 
-    await this.transferHelper.chunkTransfer(impt, processId, chunkedDatasets);
+    await this.chunkTransferHelper.chunkTransfer(
+      impt,
+      processId,
+      chunkedDatasets
+    );
   }
 
   private async offsetPaginationTranfer(
@@ -89,7 +100,7 @@ class ApiTransferService {
     await apiConnector.authorizeRequest();
 
     await this.importProcessesRepository.update(processId, { datasetsCount });
-    await this.transferHelper.offsetPaginationTransfer(
+    await this.offsetPaginationTransferHelper.offsetPaginationTransfer(
       impt,
       processId,
       limitValue,
@@ -111,7 +122,7 @@ class ApiTransferService {
     await apiConnector.authorizeRequest();
 
     await this.importProcessesRepository.update(processId, { datasetsCount });
-    await this.transferHelper.cursorPaginationTransfer(
+    await this.cursorPaginationTransferHelper.cursorPaginationTransfer(
       impt,
       processId,
       limitValue,
@@ -172,4 +183,4 @@ class ApiTransferService {
   // }
 }
 
-export default ApiTransferService;
+export default ApiTransferHelper;

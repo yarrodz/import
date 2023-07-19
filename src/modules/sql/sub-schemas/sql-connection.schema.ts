@@ -1,6 +1,6 @@
 import { Schema } from 'mongoose';
 
-export interface IDatabaseConnection {
+export interface ISqlConnection {
   username: string;
   password: string;
   database: string;
@@ -8,7 +8,7 @@ export interface IDatabaseConnection {
   port: number;
 }
 
-export const DatabaseConnectionSchema = new Schema<IDatabaseConnection>(
+export const SqlConnectionSchema = new Schema<ISqlConnection>(
   {
     username: { type: String, required: true },
     password: { type: String, required: true },

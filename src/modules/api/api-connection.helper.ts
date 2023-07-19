@@ -1,15 +1,15 @@
 import ImportsRepository from '../imports/imports.repository';
 import OAuth2RefreshTokenHelper from '../oauth2/oath2-refresh-token.helper';
 import { IImportDocument } from '../imports/import.schema';
-import { TransferType } from '../transfer/enums/transfer-type.enum';
 import ApiConnector from './connector/api-connector';
-import { RequestAuthType } from './enums/request-auth-type.enum';
-import { ConnectionState } from '../connection/enums/connection-state.enum';
 import { IApi } from './api.schema';
+import { TransferType } from '../transfer/enums/transfer-type.enum';
+import { RequestAuthType } from './enums/request-auth-type.enum';
+import { ConnectionState } from '../connection/connection-state.enum';
 import ICursorPagination from '../transfer/interfaces/cursor-pagination.interface';
 import IOffsetPagination from '../transfer/interfaces/offset-pagination.interface';
 
-class ApiConnectionSerice {
+class ApiConnectionHelper {
   private importsRepository: ImportsRepository;
   private oAuth2RefreshTokenHelper: OAuth2RefreshTokenHelper;
 
@@ -25,6 +25,7 @@ class ApiConnectionSerice {
     try {
       const { api, _id: importId } = impt;
       let { transferType, auth } = api;
+      console.log(transferType);
 
       if (auth?.type === RequestAuthType.OAUTH2) {
         const { oauth2 } = auth;
@@ -79,15 +80,11 @@ class ApiConnectionSerice {
         await apiConnector.send(pagination);
         break;
       }
-      // case TransferType.STREAM: {
-      //   response = await this.findStreamColumns(api);
-      //   break;
-      // }
       default: {
-        throw new Error('Unknown transfer type for API.');
+        throw new Error(`Unknown API transfer type: '${transferType}'.`);
       }
     }
   }
 }
 
-export default ApiConnectionSerice;
+export default ApiConnectionHelper;

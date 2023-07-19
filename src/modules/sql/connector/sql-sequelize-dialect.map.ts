@@ -1,4 +1,4 @@
-export const SQLDialectMap = {
+export const SqlSequelizeDialectMap = {
   MySQL: 'mysql',
   PostgreSQL: 'postgres',
   'Microsoft SQL Server': 'mssql',

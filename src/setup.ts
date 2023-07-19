@@ -14,9 +14,7 @@ import OAuthRouter from './modules/oauth2/oauth2.router';
 export default function setupImport(
   io: IO,
   recordModel: Model<IRecord>,
-  datasetModel: Model<IDataset>,
-  maxAttempts: number,
-  attemptDelayTime: number
+  datasetModel: Model<IDataset>
 ): {
   importsRouter: ImportsRouter;
   importProcessesRouter: ImportProcessesRouter;
@@ -30,9 +28,7 @@ export default function setupImport(
       io,
       datasetsRepository,
       importsRepository,
-      importProcessesRepository,
-      maxAttempts,
-      attemptDelayTime
+      importProcessesRepository
     );
 
   const { importsController, importProcessesController, oAuthController } =

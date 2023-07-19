@@ -1,29 +1,31 @@
 import { IImportDocument } from '../imports/import.schema';
 import ImportProcessesRepository from '../import-processes/import-processes.repository';
-import TransferHelper from '../transfer/transfer.helper';
+import OffsetPaginationTransferHelper from '../transfer/offset-pagination-transfer.helper';
 import { IImportProcessDocument } from '../import-processes/import-process.schema';
-import { SqlConnector } from './connector/sql.connection';
-import { SQLDialectMap } from './connector/sql.dialect-map';
+import { SqlConnector } from './connector/sql.connector';
 import { createRequestedFields } from './connector/create-requested-fields';
 import {
   createSelectCountQuery,
   createSelectDataQuery,
   paginateQuery
 } from './connector/sql.query-builder';
-import IPaginationFunction from '../transfer/interfaces/offset-pagination-function.interface';
+import { SqlSequelizeDialectMap } from './connector/sql-sequelize-dialect.map';
+import { Dialect as SequelizeDialect } from 'sequelize';
 import IOffsetPaginationFunction from '../transfer/interfaces/offset-pagination-function.interface';
 import IOffsetPagination from '../transfer/interfaces/offset-pagination.interface';
+import { SqlDialect } from './enums/sql-dialect.enum';
+import { SqlImportTarget } from './enums/sql-import-target.enum';
 
-class SqlTranserService {
+class SqlTransferHelper {
   private importProcessesRepository: ImportProcessesRepository;
-  private transferHelper: TransferHelper;
+  private offsetPaginationTransferHelper: OffsetPaginationTransferHelper;
 
   constructor(
     importProcessesRepository: ImportProcessesRepository,
-    transferHelper: TransferHelper
+    offsetPaginationTransferHelper: OffsetPaginationTransferHelper
   ) {
     this.importProcessesRepository = importProcessesRepository;
-    this.transferHelper = transferHelper;
+    this.offsetPaginationTransferHelper = offsetPaginationTransferHelper;
   }
 
   public async transfer(
@@ -32,33 +34,39 @@ class SqlTranserService {
   ): Promise<void> {
     let sqlConnector: SqlConnector;
     try {
-      const { source, database } = impt;
-      const { connection, table } = database;
+      const { sql } = impt;
+      const { connection, target, table, dialect } = sql;
       const processId = process._id;
-      const dialect = SQLDialectMap[source];
+      const sequelizeDialect = SqlSequelizeDialectMap[
+        dialect
+      ] as SequelizeDialect;
 
       sqlConnector = new SqlConnector({
-        ...connection,
-        dialect
+        ...JSON.parse(JSON.stringify(connection)),
+        dialect: sequelizeDialect
       });
       await sqlConnector.connect();
 
       //transfer from table
-      if (table) {
-        await this.transferFromTable(impt, processId, sqlConnector, source);
-        //transfer from custom select
-      } else {
-        await this.transferFromCustomSelect(
-          impt,
-          processId,
-          sqlConnector,
-          source
-        );
+      switch (target) {
+        case SqlImportTarget.TABLE: {
+          await this.transferFromTable(impt, processId, sqlConnector, dialect);
+          //transfer from custom select
+          break;
+        }
+        case SqlImportTarget.SELECT: {
+          await this.transferFromSelect(impt, processId, sqlConnector, dialect);
+          break;
+        }
+        default: {
+          throw new Error(`Unknown sql import target: ${target}`);
+        }
       }
       sqlConnector.disconnect();
     } catch (error) {
+      console.error(error);
       sqlConnector.disconnect();
-      throw error;
+      throw new Error(`Error while sql transfer: ${error.message}`);
     }
   }
 
@@ -68,17 +76,16 @@ class SqlTranserService {
     sqlConnector: SqlConnector,
     dialect: string
   ) {
-    const { database, fields, idColumn } = impt;
-    const { table, limit } = database;
+    const { sql, fields, idColumn } = impt;
+    const { table, limit } = sql;
 
     const countQuery = createSelectCountQuery(table);
     const datasetsCount = await sqlConnector.queryResult(countQuery);
-    console.log('datasetsCount: ', datasetsCount);
     await this.importProcessesRepository.update(processId, { datasetsCount });
 
     const requestedFields = createRequestedFields(fields, idColumn);
 
-    await this.transferHelper.offsetPaginationTransfer(
+    await this.offsetPaginationTransferHelper.offsetPaginationTransfer(
       impt,
       processId,
       limit,
@@ -91,32 +98,32 @@ class SqlTranserService {
     );
   }
 
-  private async transferFromCustomSelect(
+  private async transferFromSelect(
     impt: IImportDocument,
     processId: string,
     sqlConnector: SqlConnector,
-    dialect: string
+    dialect: SqlDialect
   ) {
-    const { database, datasetsCount } = impt;
-    const { customSelect, limit } = database;
+    const { sql, datasetsCount } = impt;
+    const { select, limit } = sql;
 
     await this.importProcessesRepository.update(processId, { datasetsCount });
 
-    await this.transferHelper.offsetPaginationTransfer(
+    await this.offsetPaginationTransferHelper.offsetPaginationTransfer(
       impt,
       processId,
       limit,
-      this.customSelectPaginationFunction,
+      this.selectPaginationFunction,
       sqlConnector,
       dialect,
-      customSelect
+      select
     );
   }
 
   private tablePaginationFunction: IOffsetPaginationFunction = async (
     offsetPagination: IOffsetPagination,
     sqlConnector: SqlConnector,
-    dialect: string,
+    dialect: SqlDialect,
     table: string,
     idColumn: string,
     requestedFields: string[]
@@ -133,17 +140,17 @@ class SqlTranserService {
     return await sqlConnector.queryRows(rowsQuery);
   };
 
-  private customSelectPaginationFunction: IPaginationFunction = async (
+  private selectPaginationFunction: IOffsetPaginationFunction = async (
     offsetPagination: IOffsetPagination,
     sqlConnector: SqlConnector,
-    dialect: string,
-    customSelect: string,
+    dialect: SqlDialect,
+    select: string,
     idColumn: string
   ) => {
     const { offset, limit } = offsetPagination;
     const paginatedQuery = paginateQuery(
       dialect,
-      customSelect,
+      select,
       idColumn,
       offset,
       limit
@@ -152,4 +159,4 @@ class SqlTranserService {
   };
 }
 
-export default SqlTranserService;
+export default SqlTransferHelper;

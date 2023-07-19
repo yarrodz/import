@@ -1,19 +1,17 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
 import { ImportSource } from './enums/import-source.enum';
-import { DatabaseSchema, IDatabase } from '../database/database.schema';
-import { FieldSchema, IField } from './sub-schemas/field.schema';
+import { SqlSchema, ISql } from '../sql/sql.schema';
 import { ApiSchema, IApi } from '../api/api.schema';
-// import { IImap, ImapSchema } from './sub-schemas/imap.schema';
+import { FieldSchema, IField } from './sub-schemas/field.schema';
 
 export interface IImport {
   unit: Types.ObjectId | string;
   source: ImportSource;
-  database?: IDatabase;
+  sql?: ISql;
   api?: IApi;
-  // imap?: IImap;
-  limitRequestsPerSecond: number;
   fields?: IField[];
+  limitRequestsPerSecond: number;
   idColumn: string;
   datasetsCount?: number;
 }
@@ -27,10 +25,10 @@ const ImportSchema = new Schema<IImport>({
     enum: Object.values(ImportSource),
     required: true
   },
-  database: { type: DatabaseSchema, required: false },
+  sql: { type: SqlSchema, required: false },
   api: { type: ApiSchema, required: false },
-  fields: [{ type: FieldSchema }],
   limitRequestsPerSecond: { type: Number, required: false },
+  fields: [{ type: FieldSchema }],
   idColumn: { type: String, required: true },
   datasetsCount: { type: Number, required: false }
 });

@@ -2,41 +2,31 @@ import { Request } from 'express';
 
 import ImportsRepository from './imports.repository';
 import ImportProcessesRepository from '../import-processes/import-processes.repository';
-import ConnectionService from '../connection/connection.service';
-import ColumnsService from '../columns/columns.service';
-import TransferService from '../transfer/transfer.service';
+import SqlImportService from '../sql/sql-import.service';
+import ApiImportService from '../api/api-import.service';
 import ResponseHandler from '../../utils/response-handler/response-handler';
-import { FieldValidator } from './validators/field.validator';
-import { ImportValidator } from './validators/import.validator';
+import { ImportValidator } from './import.validator';
 import { IImport } from './import.schema';
+import { FieldValidator } from './validators/field.validator';
 import { IField } from './sub-schemas/field.schema';
-import IImportContext from './interfaces/import-context.interface';
-import { ImportContextAction } from './enums/import-context-action.enum';
-import { ConnectionState } from '../connection/enums/connection-state.enum';
-import OAuth2AuthUriHelper from '../oauth2/oauth2-auth-uri.helper';
+import { ImportSource } from './enums/import-source.enum';
 
 class ImportsService {
   private importsRepository: ImportsRepository;
   private importProcessesRepository: ImportProcessesRepository;
-  private connectionService: ConnectionService;
-  private columnsService: ColumnsService;
-  private transferService: TransferService;
-  private oAuth2AuthUriHelper: OAuth2AuthUriHelper;
+  private sqlImportService: SqlImportService;
+  private apiImportService: ApiImportService;
 
   constructor(
     importsRepository: ImportsRepository,
     importProcessesRepository: ImportProcessesRepository,
-    connectionService: ConnectionService,
-    columnsService: ColumnsService,
-    transferService: TransferService,
-    oAuth2AuthUriHelper: OAuth2AuthUriHelper
+    sqlImportService: SqlImportService,
+    apiImportService: ApiImportService
   ) {
     this.importsRepository = importsRepository;
     this.importProcessesRepository = importProcessesRepository;
-    this.connectionService = connectionService;
-    this.columnsService = columnsService;
-    this.transferService = transferService;
-    this.oAuth2AuthUriHelper = oAuth2AuthUriHelper;
+    this.sqlImportService = sqlImportService;
+    this.apiImportService = apiImportService;
   }
 
   async findAll(unit: string): Promise<ResponseHandler> {
@@ -55,58 +45,33 @@ class ImportsService {
     req: Request,
     createImportInput: IImport
   ): Promise<ResponseHandler> {
-    const responseHandler = new ResponseHandler();
+    let responseHandler = new ResponseHandler();
     try {
       const { error } = ImportValidator.validate(createImportInput);
       if (error) {
-        console.log('errrr: ', error);
         responseHandler.setError(400, error);
         return responseHandler;
       }
-
-      console.log('1');
       const impt = await this.importsRepository.create(createImportInput);
-      const { _id: importId } = impt;
-      console.log('2');
+      const { source } = impt;
 
-      const context: IImportContext = {
-        action: ImportContextAction.CONNECT,
-        importId
-      };
-      const connectionState = await this.connectionService.connect(importId);
-      if (connectionState === ConnectionState.OAUTH2_REQUIRED) {
-        const authUri = await this.oAuth2AuthUriHelper.createUri(
-          req,
-          impt,
-          context
-        );
-        responseHandler.setSuccess(201, authUri);
-        return responseHandler;
+      switch (source) {
+        case ImportSource.SQL: {
+          return await this.sqlImportService.connect(impt);
+        }
+        case ImportSource.API: {
+          return await this.apiImportService.connect(req, impt);
+        }
+        default: {
+          responseHandler.setError(
+            400,
+            `Error while creating import. Unknown import source '${source}'.`
+          );
+          return responseHandler;
+        }
       }
-      console.log('3');
-
-      const columns = await this.columnsService.find(importId);
-      console.log('4');
-
-      const idColumnUnique = await this.columnsService.checkIdColumnUniqueness(
-        importId
-      );
-      if (!idColumnUnique) {
-        responseHandler.setError(
-          409,
-          'Provided id column includes duplicate values'
-        );
-        return responseHandler;
-      }
-      console.log('5');
-
-      responseHandler.setSuccess(200, {
-        importId,
-        columns
-      });
-      return responseHandler;
     } catch (error) {
-      console.log('create Error: ', error);
+      console.log(error)
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -130,38 +95,28 @@ class ImportsService {
         responseHandler.setError(400, error);
         return responseHandler;
       }
-      await this.importsRepository.update(id, updateImportInput);
 
-      const connectionState = await this.connectionService.connect(id);
-      if (connectionState === ConnectionState.OAUTH2_REQUIRED) {
-        const context: IImportContext = {
-          action: ImportContextAction.CONNECT,
-          importId: id
-        };
-
-        const authUri = await this.oAuth2AuthUriHelper.createUri(req, impt, context);
-        responseHandler.setSuccess(201, authUri);
-        return responseHandler;
-      }
-
-      const columns = await this.columnsService.find(id);
-      const idColumnUnique = await this.columnsService.checkIdColumnUniqueness(
-        id
+      const updatedImport = await this.importsRepository.update(
+        id,
+        updateImportInput
       );
+      const { source } = impt;
 
-      if (!idColumnUnique) {
-        responseHandler.setError(
-          409,
-          'Provided id column includes duplicate values'
-        );
-        return responseHandler;
+      switch (source) {
+        case ImportSource.SQL: {
+          return await this.sqlImportService.connect(updatedImport);
+        }
+        case ImportSource.API: {
+          return await this.apiImportService.connect(req, updatedImport);
+        }
+        default: {
+          responseHandler.setError(
+            400,
+            `Error while creating import. Unknown import source '${source}'.`
+          );
+          return responseHandler;
+        }
       }
-
-      responseHandler.setSuccess(200, {
-        importId: id,
-        columns
-      });
-      return responseHandler;
     } catch (error) {
       responseHandler.setError(500, error.message);
       return responseHandler;
@@ -193,39 +148,24 @@ class ImportsService {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
       }
+      const { source } = impt;
 
-      const context: IImportContext = {
-        action: ImportContextAction.CONNECT,
-        importId: id
-      };
-      const connectionState = await this.connectionService.connect(id);
-      if (connectionState === ConnectionState.OAUTH2_REQUIRED) {
-        const authUri = await this.oAuth2AuthUriHelper.createUri(req, impt, context);
-        responseHandler.setSuccess(201, authUri);
-        return responseHandler;
+      switch (source) {
+        case ImportSource.SQL: {
+          return await this.sqlImportService.connect(impt);
+        }
+        case ImportSource.API: {
+          return await this.apiImportService.connect(req, impt);
+        }
+        default: {
+          responseHandler.setError(
+            400,
+            `Error while creating import. Unknown import source '${source}'.`
+          );
+          return responseHandler;
+        }
       }
-
-      const columns = await this.columnsService.find(id);
-
-      // const idColumnUnique = await this.columnsService.checkIdColumnUniqueness(
-      //   importId
-      // );
-
-      // if (!idColumnUnique) {
-      //   responseHandler.setError(
-      //     409,
-      //     'Provided id column includes duplicate values'
-      //   );
-      //   return responseHandler;
-      // }
-
-      responseHandler.setSuccess(200, {
-        importId: id,
-        columns
-      });
-      return responseHandler;
     } catch (error) {
-      console.log('connect Error: ', error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -254,6 +194,7 @@ class ImportsService {
       const updatedImport = await this.importsRepository.update(id, {
         fields: fieldInputs
       });
+
       responseHandler.setSuccess(200, updatedImport);
       return responseHandler;
     } catch (error) {
@@ -283,29 +224,23 @@ class ImportsService {
         return responseHandler;
       }
 
-      const context: IImportContext = {
-        action: ImportContextAction.START,
-        importId: id
-      };
-      const connectionState = await this.connectionService.connect(id);
-      if (connectionState === ConnectionState.OAUTH2_REQUIRED) {
-        const authUri = await this.oAuth2AuthUriHelper.createUri(req, impt, context);
-        responseHandler.setSuccess(201, authUri);
-        return responseHandler;
+      const { source } = impt;
+
+      switch (source) {
+        case ImportSource.SQL: {
+          return await this.sqlImportService.start(impt);
+        }
+        case ImportSource.API: {
+          return await this.apiImportService.start(req, impt);
+        }
+        default: {
+          responseHandler.setError(
+            400,
+            `Error while starting import. Unknown import source '${source}'.`
+          );
+          return responseHandler;
+        }
       }
-
-      const process = await this.importProcessesRepository.create({
-        unit: impt.unit as string,
-        import: id
-      });
-      const { _id: processId } = process;
-
-      // We dont need to wait till import executes,
-      // We send of id import process
-      // Client send websocket request and then sends event 'join' with processId
-      this.transferService.transfer(id, processId);
-      responseHandler.setSuccess(200, processId);
-      return responseHandler;
     } catch (error) {
       responseHandler.setError(500, error.message);
       return responseHandler;

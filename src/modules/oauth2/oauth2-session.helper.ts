@@ -15,9 +15,10 @@ class OAuth2SessionHelper {
       this.session.oAuth2CallbackProcesses || [];
 
     //remove OAuth2 process by import id  if exists
-    this.session.oAuth2CallbackProcesses.filter(
-      (p) => p.context.importId !== process.context.importId
-    );
+    this.session.oAuth2CallbackProcesses =
+      this.session.oAuth2CallbackProcesses.filter(
+        (p) => p.context.importId !== process.context.importId
+      );
 
     this.session.oAuth2CallbackProcesses.push(process);
   }
@@ -38,7 +39,8 @@ class OAuth2SessionHelper {
   }
 
   public removeCallbackProcess(state: string) {
-    this.session.oAuth2CallbackProcesses.filter((p) => p.state !== state);
+    this.session.oAuth2CallbackProcesses =
+      this.session.oAuth2CallbackProcesses.filter((p) => p.state !== state);
   }
 }
 

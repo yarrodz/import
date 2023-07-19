@@ -2,7 +2,7 @@ import ICursorPagination from './cursor-pagination.interface';
 
 export interface ICursorPaginationFunctionResponse {
   cursor?: string;
-  datasets?: object[];
+  datasets: object[];
 }
 
 export default interface ICursorPaginationFunction {

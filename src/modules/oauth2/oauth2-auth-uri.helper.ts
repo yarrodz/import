@@ -22,10 +22,6 @@ class OAuth2AuthUriHelper {
     context: IOAuth2CallbackContext
   ) => {
     const oAuth2SessionHelper = new OAuth2SessionHelper(req.session);
-    // console.log(impt)
-    // console.log(impt.api)
-    // console.log(impt.api.auth)
-    // console.log(impt.api.auth.oauth2)
     const { oauth2 } = impt.api.auth;
     const { auth_uri, use_code_verifier } = oauth2;
 

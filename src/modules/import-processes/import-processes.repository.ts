@@ -4,7 +4,6 @@ import {
   IImportProcess,
   IImportProcessDocument
 } from './import-process.schema';
-import { CreateImportProcessInput } from './inputs/create-imort-process.input';
 import { ImportStatus } from './enums/import-status.enum';
 
 class ImportProcessesRepository {
@@ -15,7 +14,7 @@ class ImportProcessesRepository {
   }
 
   async create(
-    input: CreateImportProcessInput
+    input: Partial<IImportProcess>
   ): Promise<IImportProcessDocument> {
     try {
       return await this.importProcessModel.create(input);

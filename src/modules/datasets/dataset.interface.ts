@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema, Types } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 import { IRecord } from '../records/record.interface';
 

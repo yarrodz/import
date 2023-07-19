@@ -1,98 +1,106 @@
 import { Server as IO } from 'socket.io';
 
-import ColumnsService from '../modules/columns/columns.service';
 import DatasetsRepository from '../modules/datasets/datasets.repository';
 import ImportProcessesRepository from '../modules/import-processes/import-processes.repository';
 import ImportProcessesService from '../modules/import-processes/import-processes.service';
 import ImportsRepository from '../modules/imports/imports.repository';
 import ImportsService from '../modules/imports/imports.service';
-import TransferHelper from '../modules/transfer/transfer.helper';
-import TransferService from '../modules/transfer/transfer.service';
-import SqlColumnsService from '../modules/database/sql-columns.service';
-import SqlTranserService from '../modules/database/sql-transfer.service';
-import ApiColumnsService from '../modules/api/api-columns.service';
-import ApiTransferService from '../modules/api/api-transfer.service';
 import OAuthService from '../modules/oauth2/oauth2.service';
-import ApiConnectionSerice from '../modules/api/api-connection.service';
-import ConnectionService from '../modules/connection/connection.service';
 import OAuth2AuthUriHelper from '../modules/oauth2/oauth2-auth-uri.helper';
 import OAuth2RefreshTokenHelper from '../modules/oauth2/oath2-refresh-token.helper';
-import SqlConnectionSerice from '../modules/database/sql-connection.service';
+import SqlTransferHelper from '../modules/sql/sql-transfer.helper';
+import ChunkTransferHelper from '../modules/transfer/chunk-transfer.helper';
+import TransferStepHelper from '../modules/transfer/transfer-step.helper';
+import OffsetPaginationTransferHelper from '../modules/transfer/offset-pagination-transfer.helper';
+import CursorPaginationTransferHelper from '../modules/transfer/cursor-pagination-transfer.helper';
+import ApiTransferHelper from '../modules/api/api-transfer.helper';
+import ApiConnectionHelper from '../modules/api/api-connection.helper';
+import SqlColumnsHelper from '../modules/sql/sql-columns.helper';
+import ApiColumnsHelper from '../modules/api/api-columns.helper';
+import ApiImportService from '../modules/api/api-import.service';
+import SqlImportService from '../modules/sql/sql-import.service';
 
 export default function setupServices(
   io: IO,
   datasetsRepository: DatasetsRepository,
   importsRepository: ImportsRepository,
-  importProcessesRepository: ImportProcessesRepository,
-  maxAttempts: number,
-  delayAttempt: number
+  importProcessesRepository: ImportProcessesRepository
 ): {
   importsService: ImportsService;
   importProcessesService: ImportProcessesService;
   oAuth2Service: OAuthService;
 } {
-  const transferHelper = new TransferHelper(
+  const transferStepHelper = new TransferStepHelper(
     io,
     datasetsRepository,
     importProcessesRepository
   );
-  const sqlTranserService = new SqlTranserService(
-    importProcessesRepository,
-    transferHelper
-  );
-  const apiTransferService = new ApiTransferService(
-    importProcessesRepository,
-    transferHelper
-  );
-  const transferService = new TransferService(
+  const chunkTransferHelper = new ChunkTransferHelper(
     io,
-    importsRepository,
+    transferStepHelper,
+    importProcessesRepository
+  );
+  const offsetPaginationTransferHelper = new OffsetPaginationTransferHelper(
+    io,
+    transferStepHelper,
+    importProcessesRepository
+  );
+  const cursorPaginationTransferHelper = new CursorPaginationTransferHelper(
+    io,
+    transferStepHelper,
+    importProcessesRepository
+  );
+
+  const sqlTransferHelper = new SqlTransferHelper(
     importProcessesRepository,
-    sqlTranserService,
-    apiTransferService,
-    maxAttempts,
-    delayAttempt
+    offsetPaginationTransferHelper
+  );
+  const apiTransferHelper = new ApiTransferHelper(
+    importProcessesRepository,
+    chunkTransferHelper,
+    offsetPaginationTransferHelper,
+    cursorPaginationTransferHelper
   );
 
   const oAuth2AuthUriHelper = new OAuth2AuthUriHelper();
   const oAuth2RefreshTokenHelper = new OAuth2RefreshTokenHelper(
     importsRepository
   );
-  const oAuth2Service = new OAuthService(importsRepository);
 
-  const sqlConnectionService = new SqlConnectionSerice();
-  const apiConnectionService = new ApiConnectionSerice(
+  const apiConnectionHelper = new ApiConnectionHelper(
     importsRepository,
     oAuth2RefreshTokenHelper
   );
-  const connectionService = new ConnectionService(
-    importsRepository,
-    sqlConnectionService,
-    apiConnectionService
-  );
 
-  const sqlColumnsService = new SqlColumnsService();
-  const apiColumnsService = new ApiColumnsService();
-  const columnsService = new ColumnsService(
-    importsRepository,
-    sqlColumnsService,
-    apiColumnsService
+  const sqlColumnsHelper = new SqlColumnsHelper();
+  const apiColumnsHelper = new ApiColumnsHelper();
+
+  const oAuth2Service = new OAuthService(importsRepository);
+
+  const sqlImportService = new SqlImportService(
+    sqlColumnsHelper,
+    sqlTransferHelper,
+    importProcessesRepository
+  );
+  const apiImportService = new ApiImportService(
+    apiConnectionHelper,
+    apiColumnsHelper,
+    apiTransferHelper,
+    oAuth2AuthUriHelper,
+    importProcessesRepository
   );
 
   const importsService = new ImportsService(
     importsRepository,
     importProcessesRepository,
-    connectionService,
-    columnsService,
-    transferService,
-    oAuth2AuthUriHelper
+    sqlImportService,
+    apiImportService
   );
   const importProcessesService = new ImportProcessesService(
     importProcessesRepository,
     importsRepository,
-    connectionService,
-    transferService,
-    oAuth2AuthUriHelper
+    sqlImportService,
+    apiImportService
   );
 
   return {

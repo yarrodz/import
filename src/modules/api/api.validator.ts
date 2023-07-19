@@ -5,7 +5,7 @@ import { RequestPaginationValidator } from './sub-validators/api-sub-validators/
 import { RequestResponseType } from './enums/request-response-type.enum';
 import { TransferType } from '../transfer/enums/transfer-type.enum';
 
-export const apiValidator = Joi.object({
+export const ApiValidator = Joi.object({
   method: Joi.string()
     .valid(...Object.values(RequestMethod))
     .required(),

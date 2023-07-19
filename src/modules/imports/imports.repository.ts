@@ -10,10 +10,8 @@ class ImportsRepository {
 
   async create(input: IImport): Promise<IImportDocument> {
     try {
-      console.log('input: ', input);
       return await this.importsModel.create(input);
     } catch (error) {
-      console.log('err: ', error);
       throw new error(
         `Error while query for creating import: ${error.message}`
       );
@@ -39,7 +37,7 @@ class ImportsRepository {
   async update(
     id: string,
     updateQuery: UpdateQuery<IImport>
-  ): Promise<IImport> {
+  ): Promise<IImportDocument> {
     try {
       return await this.importsModel.findByIdAndUpdate(id, updateQuery, {
         new: true

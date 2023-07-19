@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema, Types } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export interface IRecord {
   value: any;
