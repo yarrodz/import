@@ -16,6 +16,12 @@ const CODE_CHALANGE_METHOD = 'S256';
 const OAUTH2_REDIRECT_URI = 'http://localhost:3000/oauth-callback/';
 
 class OAuth2AuthUriHelper {
+  private oAuth2RedirectUri: string;
+
+  constructor(oAuth2RedirectUri: string) {
+    this.oAuth2RedirectUri = oAuth2RedirectUri;
+  }
+
   public createUri = async (
     req: Request,
     impt: IImportDocument,
@@ -62,7 +68,7 @@ class OAuth2AuthUriHelper {
       prompt: PROMPT,
       access_type: ACCESS_TYPE,
       response_type: RESPONSE_TYPE,
-      redirect_uri: OAUTH2_REDIRECT_URI
+      redirect_uri: this.oAuth2RedirectUri
     };
 
     if (scope) {

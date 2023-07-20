@@ -71,7 +71,6 @@ class ImportsService {
         }
       }
     } catch (error) {
-      console.log(error)
       responseHandler.setError(500, error.message);
       return responseHandler;
     }

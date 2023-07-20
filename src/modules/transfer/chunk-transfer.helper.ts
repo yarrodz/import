@@ -25,47 +25,28 @@ class ChunkTransferHelper {
     processId: string,
     chunkedDatasets: object[][]
   ) {
-    try {
-      const { idColumn } = impt;
-
-      while (chunkedDatasets.length) {
-        const refreshedProcess = await this.importProcessesRepository.findById(
-          processId
-        );
-        if (refreshedProcess.status === ImportStatus.PAUSED) {
-          this.io
-            .to(processId.toString())
-            .emit('importProcess', refreshedProcess);
-          return;
-        }
-        const chunk = chunkedDatasets.shift();
-        await this.transferStepHelper.transferStep(
-          impt,
-          processId,
-          chunk,
-          idColumn
-        );
+    while (chunkedDatasets.length) {
+      const refreshedProcess = await this.importProcessesRepository.findById(
+        processId
+      );
+      if (refreshedProcess.status === ImportStatus.PAUSED) {
+        this.io
+          .to(processId.toString())
+          .emit('importProcess', refreshedProcess);
+        return;
       }
-
-      const completedProcess = await this.importProcessesRepository.update(
-        processId,
-        {
-          status: ImportStatus.COMPLETED,
-          errorMessage: null
-        }
-      );
-      this.io.to(processId.toString()).emit('importProcess', completedProcess);
-    } catch (error) {
-      console.error(`Error while chunk transfer: ${error}`);
-      const failedProcess = await this.importProcessesRepository.update(
-        processId,
-        {
-          status: ImportStatus.FAILED,
-          errorMessage: error.message
-        }
-      );
-      this.io.to(processId.toString()).emit('importProcess', failedProcess);
+      const chunk = chunkedDatasets.shift();
+      await this.transferStepHelper.transferStep(impt, processId, chunk);
     }
+
+    const completedProcess = await this.importProcessesRepository.update(
+      processId,
+      {
+        status: ImportStatus.COMPLETED,
+        errorMessage: null
+      }
+    );
+    this.io.to(processId.toString()).emit('importProcess', completedProcess);
   }
 }
 

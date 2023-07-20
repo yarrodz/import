@@ -1,6 +1,8 @@
-import { IImportDocument } from '../imports/import.schema';
 import ImportProcessesRepository from '../import-processes/import-processes.repository';
+import ImportTransferFailureHandler from '../transfer/import-transfer-failure.handler';
 import OffsetPaginationTransferHelper from '../transfer/offset-pagination-transfer.helper';
+import IImportTransferFunction from '../transfer/interfaces/import-transfer-function.interface';
+import { IImportDocument } from '../imports/import.schema';
 import { IImportProcessDocument } from '../import-processes/import-process.schema';
 import { SqlConnector } from './connector/sql.connector';
 import { createRequestedFields } from './connector/create-requested-fields';
@@ -18,24 +20,28 @@ import { SqlImportTarget } from './enums/sql-import-target.enum';
 
 class SqlTransferHelper {
   private importProcessesRepository: ImportProcessesRepository;
+  private importTransferFailureHandler: ImportTransferFailureHandler;
   private offsetPaginationTransferHelper: OffsetPaginationTransferHelper;
 
   constructor(
     importProcessesRepository: ImportProcessesRepository,
+    importTransferFailureHandler: ImportTransferFailureHandler,
     offsetPaginationTransferHelper: OffsetPaginationTransferHelper
   ) {
     this.importProcessesRepository = importProcessesRepository;
+    this.importTransferFailureHandler = importTransferFailureHandler;
     this.offsetPaginationTransferHelper = offsetPaginationTransferHelper;
   }
 
-  public async transfer(
+  public transfer: IImportTransferFunction = async (
     impt: IImportDocument,
     process: IImportProcessDocument
-  ): Promise<void> {
+  ) => {
     let sqlConnector: SqlConnector;
     try {
+
       const { sql } = impt;
-      const { connection, target, table, dialect } = sql;
+      const { connection, target, dialect } = sql;
       const processId = process._id;
       const sequelizeDialect = SqlSequelizeDialectMap[
         dialect
@@ -64,11 +70,15 @@ class SqlTransferHelper {
       }
       sqlConnector.disconnect();
     } catch (error) {
-      console.error(error);
       sqlConnector.disconnect();
-      throw new Error(`Error while sql transfer: ${error.message}`);
+      this.importTransferFailureHandler.handle(
+        error,
+        this.transfer,
+        impt,
+        process
+      );
     }
-  }
+  };
 
   private async transferFromTable(
     impt: IImportDocument,

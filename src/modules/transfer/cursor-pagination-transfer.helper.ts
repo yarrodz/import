@@ -6,6 +6,7 @@ import { IImportDocument } from '../imports/import.schema';
 import { ImportStatus } from '../import-processes/enums/import-status.enum';
 import ICursorPaginationFunction from './interfaces/cursor-pagination-function.interface';
 import ICursorPagination from './interfaces/cursor-pagination.interface';
+import sleep from '../../utils/sleep/sleep';
 
 class CursorPaginationTransferHelper {
   private io: IO;
@@ -29,92 +30,72 @@ class CursorPaginationTransferHelper {
     cursorPaginationFunction: ICursorPaginationFunction,
     ...cursorPaginationFunctionParams: any[]
   ) {
-    try {
-      const { idColumn, datasetsCount, limitRequestsPerSecond } = impt;
+    const { limitRequestsPerSecond } = impt;
 
-      const prosess = await this.importProcessesRepository.findById(processId);
-      let { processedDatasetsCount } = prosess;
-      while (processedDatasetsCount < datasetsCount) {
-        let requestCounter = 0;
-        const startDate = new Date();
+    const prosess = await this.importProcessesRepository.findById(processId);
+    let { processedDatasetsCount, datasetsCount } = prosess;
+    while (processedDatasetsCount < datasetsCount) {
+      let requestCounter = 0;
+      const startDate = new Date();
 
-        while (requestCounter < limitRequestsPerSecond) {
-          requestCounter++;
-          const refreshedProcess =
-            await this.importProcessesRepository.findById(processId);
-          if (refreshedProcess.status === ImportStatus.PAUSED) {
-            this.io
-              .to(processId.toString())
-              .emit('importProcess', refreshedProcess);
-            return;
-          }
-
-          processedDatasetsCount = refreshedProcess.processedDatasetsCount;
-          if (processedDatasetsCount >= datasetsCount) {
-            break;
-          }
-
-          const cursorPagination: ICursorPagination = {
-            cursor: refreshedProcess.cursor,
-            limit
-          };
-
-          const { cursor, datasets } = await cursorPaginationFunction(
-            cursorPagination,
-            ...cursorPaginationFunctionParams
-          );
-
-          await this.transferStepHelper.transferStep(
-            impt,
-            processId,
-            datasets,
-            idColumn,
-            cursor
-          );
-
-          if (!cursor || datasets.length === 0) {
-            break;
-          }
+      while (requestCounter < limitRequestsPerSecond) {
+        requestCounter++;
+        const refreshedProcess = await this.importProcessesRepository.findById(
+          processId
+        );
+        if (refreshedProcess.status === ImportStatus.PAUSED) {
+          this.io
+            .to(processId.toString())
+            .emit('importProcess', refreshedProcess);
+          return;
         }
-        const endDate = new Date();
-        const requestsExectionTime = endDate.getTime() - startDate.getTime();
-        console.log('requestsExectionTime: ', requestsExectionTime);
-        console.log('----------------');
-        // If step executed faster than second. we have to wait for the remaining time so that there is a second in the sum
-        if (requestsExectionTime < 1000) {
-          const remainingToSecond = 1000 - requestsExectionTime;
-          console.log('remainingToSecond: ', remainingToSecond);
-          await this.sleep(remainingToSecond);
+
+        processedDatasetsCount = refreshedProcess.processedDatasetsCount;
+        if (processedDatasetsCount >= datasetsCount) {
+          break;
+        }
+
+        const cursorPagination: ICursorPagination = {
+          cursor: refreshedProcess.cursor,
+          limit
+        };
+
+        const { cursor, datasets } = await cursorPaginationFunction(
+          cursorPagination,
+          ...cursorPaginationFunctionParams
+        );
+
+        await this.transferStepHelper.transferStep(
+          impt,
+          processId,
+          datasets,
+          cursor
+        );
+
+        if (!cursor || datasets.length === 0) {
+          break;
         }
       }
-      
-      const completedProcess = await this.importProcessesRepository.update(
-        processId,
-        {
-          status: ImportStatus.COMPLETED,
-          errorMessage: null
-        }
-      );
-      this.io
-        .to(processId.toString())
-        .emit('importProcess', completedProcess);
-    } catch (error) {
-      console.error(`Error while cursor pagination transfer: ${error}`);
-      const failedProcess = await this.importProcessesRepository.update(
-        processId,
-        {
-          status: ImportStatus.FAILED,
-          errorMessage: error.message
-        }
-      );
-      this.io.to(processId.toString()).emit('importProcess', failedProcess);
+      const endDate = new Date();
+      const requestsExectionTime = endDate.getTime() - startDate.getTime();
+      // console.log('requestsExectionTime: ', requestsExectionTime);
+      // console.log('----------------');
+      // If step executed faster than second. we have to wait for the remaining time so that there is a second in the sum
+      if (requestsExectionTime < 1000) {
+        const remainingToSecond = 1000 - requestsExectionTime;
+        // console.log('remainingToSecond: ', remainingToSecond);
+        await sleep(remainingToSecond);
+      }
     }
-  }
 
-  private async sleep(time: number) {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(undefined), time);
-    });
+    const completedProcess = await this.importProcessesRepository.update(
+      processId,
+      {
+        status: ImportStatus.COMPLETED,
+        errorMessage: null
+      }
+    );
+    this.io.to(processId.toString()).emit('importProcess', completedProcess);
   }
 }
 

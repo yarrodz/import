@@ -52,13 +52,8 @@ class ApiConnector {
     this.responseType = responseType;
   }
 
-  public async send(
-    pagination?: IOffsetPagination | ICursorPagination
-  ): Promise<object[]> {
+  public async sendRequest(): Promise<object[]> {
     try {
-      if (pagination) {
-        this.paginateRequest(pagination);
-      }
       const response = await axios(this.request);
       const parsedResponse = this.parseResponse(response, this.responseType);
       return parsedResponse;
@@ -71,7 +66,7 @@ class ApiConnector {
     await this.authRequestHelper.auth(this.request, this.auth);
   }
 
-  private paginateRequest(pagination: IOffsetPagination | ICursorPagination) {
+  public paginateRequest(pagination: IOffsetPagination | ICursorPagination) {
     this.paginateRequestHelper.paginate(
       this.request,
       this.paginationType,

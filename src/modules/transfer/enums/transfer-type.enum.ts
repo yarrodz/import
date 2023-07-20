@@ -1,6 +1,5 @@
 export enum TransferType {
+  CHUNK = 'Chunk',
   OFFSET_PAGINATION = 'Offset Pagination',
-  CURSOR_PAGINATION = 'Cursor Pagination',
-  CHUNK = 'Chunk'
-  // STREAM = 'Stream'
+  CURSOR_PAGINATION = 'Cursor Pagination'
 }

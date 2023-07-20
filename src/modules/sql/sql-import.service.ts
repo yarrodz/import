@@ -63,7 +63,7 @@ class SqlImportService {
       // We dont need to wait till import executes,
       // We send of id import process
       // Client send websocket request and then sends event 'join' with processId
-      this.sqlTransferHelper.transfer(impt, processId);
+      this.sqlTransferHelper.transfer(impt, process);
       responseHandler.setSuccess(200, processId);
       return responseHandler;
     } catch (error) {
@@ -88,7 +88,7 @@ class SqlImportService {
       // We dont need to wait till import executes,
       // We send of id import process
       // Client send websocket request and then sends event 'join' with processId
-      this.sqlTransferHelper.transfer(impt, processId);
+      this.sqlTransferHelper.transfer(impt, process);
       responseHandler.setSuccess(200, processId);
       return responseHandler;
     } catch (error) {
@@ -115,7 +115,7 @@ class SqlImportService {
       // We dont need to wait till import executes,
       // We send of id import process
       // Client send websocket request and then sends event 'join' with processId
-      this.sqlTransferHelper.transfer(impt, processId);
+      this.sqlTransferHelper.transfer(impt, process);
       responseHandler.setSuccess(200, processId);
       return responseHandler;
     } catch (error) {

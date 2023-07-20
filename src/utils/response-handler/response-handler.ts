@@ -6,9 +6,9 @@ export default class ResponseHandler {
   constructor(
     private type?: ResponseHandlerType,
     private statusCode?: number,
-    private result?: string | object,
-    private message?: string | object,
-    private redirectLink?: string
+    private result?: any,
+    private message?: any,
+    private redirectUri?: string
   ) {}
 
   setSuccess(statusCode: number, result: any) {
@@ -17,16 +17,16 @@ export default class ResponseHandler {
     this.result = result;
   }
 
-  setError(statusCode: number, message: string | object) {
+  setError(statusCode: number, message: any) {
     this.type = ResponseHandlerType.ERROR;
     this.statusCode = statusCode;
     this.message = message;
   }
 
-  setRedirect(link: string) {
+  setRedirect(uri: string) {
     this.type = ResponseHandlerType.REDIRECT;
     this.statusCode = 201;
-    this.redirectLink = link;
+    this.redirectUri = uri;
   }
 
   send(res: Response) {
@@ -38,10 +38,10 @@ export default class ResponseHandler {
         res.status(this.statusCode).json({ message: this.message });
         break;
       case ResponseHandlerType.REDIRECT:
-        res.status(this.statusCode).redirect(this.redirectLink);
+        res.status(this.statusCode).redirect(this.redirectUri);
         break;
       default:
-        throw new Error('Unknown response handler type.');
+        throw new Error(`Unknown response handler type.`);
     }
   }
 }

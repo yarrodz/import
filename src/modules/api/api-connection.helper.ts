@@ -25,7 +25,6 @@ class ApiConnectionHelper {
     try {
       const { api, _id: importId } = impt;
       let { transferType, auth } = api;
-      console.log(transferType);
 
       if (auth?.type === RequestAuthType.OAUTH2) {
         const { oauth2 } = auth;
@@ -62,7 +61,7 @@ class ApiConnectionHelper {
     await apiConnector.authorizeRequest();
     switch (transferType) {
       case TransferType.CHUNK: {
-        await apiConnector.send();
+        await apiConnector.sendRequest();
         break;
       }
       case TransferType.OFFSET_PAGINATION: {
@@ -70,14 +69,16 @@ class ApiConnectionHelper {
           offset: 0,
           limit: 1
         };
-        await apiConnector.send(pagination);
+        apiConnector.paginateRequest(pagination);
+        await apiConnector.sendRequest();
         break;
       }
       case TransferType.CURSOR_PAGINATION: {
         const pagination: ICursorPagination = {
           limit: 1
         };
-        await apiConnector.send(pagination);
+        apiConnector.paginateRequest(pagination);
+        await apiConnector.sendRequest();
         break;
       }
       default: {

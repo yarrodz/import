@@ -1,5 +1,5 @@
 import ApiConnector from './connector/api-connector';
-import { IImport, IImportDocument } from '../imports/import.schema';
+import { IImportDocument } from '../imports/import.schema';
 import { TransferType } from '../transfer/enums/transfer-type.enum';
 import { IColumn } from '../columns/column.interface';
 import IOffsetPagination from '../transfer/interfaces/offset-pagination.interface';
@@ -7,18 +7,18 @@ import ICursorPagination from '../transfer/interfaces/cursor-pagination.interfac
 import resolvePath from '../../utils/resolve-path/resolve-path';
 
 class ApiColumnsHelper {
-  public async find(impt: IImportDocument): Promise<IColumn[] | string> {
+  public async find(impt: IImportDocument): Promise<IColumn[]> {
     try {
-      const { api, idColumn } = impt;
+      const { api } = impt;
       const { transferType, datasetsPath } = api;
 
       const apiConnector = new ApiConnector(api);
       await apiConnector.authorizeRequest();
 
-      let response: object[] = [];
+      let response: object;
       switch (transferType) {
         case TransferType.CHUNK: {
-          response = await apiConnector.send();
+          response = await apiConnector.sendRequest();
           break;
         }
         case TransferType.OFFSET_PAGINATION: {
@@ -26,23 +26,21 @@ class ApiColumnsHelper {
             offset: 0,
             limit: 1
           };
-          response = await apiConnector.send(pagination);
+          apiConnector.paginateRequest(pagination);
+          response = await apiConnector.sendRequest();
           break;
         }
         case TransferType.CURSOR_PAGINATION: {
           const pagination: ICursorPagination = {
             limit: 1
           };
-          response = await apiConnector.send(pagination);
+          apiConnector.paginateRequest(pagination);
+          response = await apiConnector.sendRequest();
           break;
         }
-        // case TransferType.STREAM: {
-        //   response = await this.findStreamColumns(api);
-        //   break;
-        // }
         default: {
           throw new Error(
-            'Error wlile searching for columns. Unknown transfer type.'
+            `Error wlile searching for columns. Unknown transfer type: '${transferType}'.`
           );
         }
       }
@@ -58,7 +56,7 @@ class ApiColumnsHelper {
     }
   }
 
-  public async checkIdColumnUniqueness(impt: Omit<IImport, 'fields'>) {
+  public async checkIdColumnUniqueness(impt: IImportDocument) {
     try {
       const { api, idColumn } = impt;
       const { transferType, datasetsPath } = api;
@@ -68,7 +66,7 @@ class ApiColumnsHelper {
 
       switch (transferType) {
         case TransferType.CHUNK: {
-          const response = await apiConnector.send();
+          const response = await apiConnector.sendRequest();
           const datasets = resolvePath(response, datasetsPath) as object[];
           return this.checkKeyValuesUniqueness(datasets, idColumn);
         }
@@ -78,10 +76,6 @@ class ApiColumnsHelper {
         case TransferType.CURSOR_PAGINATION: {
           return true;
         }
-        // case TransferType.STREAM: {
-        //   response = await this.findStreamColumns(api);
-        //   break;
-        // }
         default: {
           throw new Error('Unknown transfer type.');
         }
@@ -93,19 +87,30 @@ class ApiColumnsHelper {
     }
   }
 
-  private findNestedObjectTypes(obj: any): any {
+  private findNestedObjectTypes(obj: any): IColumn[] {
     if (typeof obj === 'object' && obj !== null) {
       return Object.entries(obj).reduce((acc, [key, value]) => {
-        acc[key] = this.findNestedObjectTypes(value);
+        const type = typeof value;
+        const column: IColumn = {
+          name: key,
+          type:
+            type === 'object' && value !== null
+              ? this.findNestedObjectTypes(value)
+              : type
+        };
+
+        if (column.name !== '') {
+          acc.push(column);
+        }
         return acc;
-      }, {});
+      }, []);
     } else {
-      return typeof obj;
+      return [];
     }
   }
 
   private checkKeyValuesUniqueness(array: object[], key: string) {
-    var uniqueValues = [];
+    const uniqueValues = [];
 
     array.forEach(function (object) {
       if (!uniqueValues.includes(object)) {
@@ -115,20 +120,6 @@ class ApiColumnsHelper {
 
     return uniqueValues.length === array.length;
   }
-
-  // private async streamRequest(api: IApi) {
-  //   const apiConnector = new ApiConnector(api);
-  //   const stream = (await apiConnector.send()) as unknown as ReadStream;
-  //   const datasets = await new Promise((resolve) => {
-  //     stream.on('data', (chunk) => {
-  //       stream.destroy();
-  //       apiConnector.abort();
-  //       const datasets = JSON.parse(chunk.toString());
-  //       resolve(datasets);
-  //     });
-  //   });
-  //   return datasets as object[];
-  // }
 }
 
 export default ApiColumnsHelper;

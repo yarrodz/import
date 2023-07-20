@@ -28,14 +28,12 @@ class TransferStepHelper {
     impt: IImportDocument,
     processId: string,
     datasets: object[],
-    idColumn: string,
     cursor?: string
   ) {
     const transormedDatasets = await this.transformDatasets(
       impt,
       processId,
-      datasets,
-      idColumn
+      datasets
     );
 
     await this.insertDatasets(transormedDatasets);
@@ -59,49 +57,46 @@ class TransferStepHelper {
   private async transformDatasets(
     impt: IImportDocument,
     processId: string,
-    retrievedDatasets: object[],
-    idColumn: string
+    datasets: object[]
   ) {
-    const importId = impt._id;
-    const unitId = impt.unit;
-    const fields = impt.fields;
+    const { _id: importId, unit: unitId, fields, idColumn } = impt;
 
-    const datasets = [];
-    retrievedDatasets.forEach(async (retrievedDataset) => {
+    const transformedDatasets = [];
+    datasets.forEach(async (dataset) => {
       try {
-        const sourceDatasetId = retrievedDataset[idColumn];
+        const sourceDatasetId = dataset[idColumn];
         if (sourceDatasetId === null) {
           throw new Error('The id field contains a null value');
         }
 
-        const records = this.transformRecords(fields, retrievedDataset);
-        const dataset = {
+        const records = this.transformRecords(fields, dataset);
+        const transformedDataset = {
           unit: unitId,
           import: importId,
           sourceDatasetId: sourceDatasetId,
           records
         };
 
-        datasets.push(dataset);
+        transformedDatasets.push(transformedDataset);
       } catch (error) {
         await this.importProcessesRepository.update(processId, {
           $push: {
-            log: `Cannot parse dataset: '${JSON.stringify(
-              retrievedDataset
-            )}', Error: '${error.message}'`
+            log: `Cannot parse dataset: '${JSON.stringify(dataset)}', Error: '${
+              error.message
+            }'`
           }
         });
       }
     });
 
-    return datasets;
+    return transformedDatasets;
   }
 
-  private transformRecords(fields: IField[], sourceDataset: object) {
+  private transformRecords(fields: IField[], dataset: object) {
     const records = [];
     fields.forEach(({ feature, source }) => {
-      const featureId = feature._id;
-      const value = resolvePath(sourceDataset, source);
+      const { _id: featureId } = feature;
+      const value = resolvePath(dataset, source);
       const parsedValue = this.parseValue(feature, value);
 
       const record = {
@@ -153,7 +148,7 @@ class TransferStepHelper {
         })
       );
     } catch (error) {
-      throw new Error(`Error while transfer datasets: ${error.message}`);
+      throw new Error(`Error while insert datasets: ${error.message}.`);
     }
   }
 }

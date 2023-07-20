@@ -14,7 +14,6 @@ export const ApiValidator = Joi.object({
   headers: Joi.object().optional().allow(null),
   params: Joi.object().optional().allow(null),
   body: Joi.object().optional().allow(null),
-  // body: RequestBodyValidator.optional().allow(null),
   transferType: Joi.string()
     .valid(...Object.values(TransferType))
     .required(),

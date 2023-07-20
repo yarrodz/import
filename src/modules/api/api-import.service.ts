@@ -12,6 +12,7 @@ import { ImportContextAction } from '../imports/enums/import-context-action.enum
 import { ConnectionState } from '../connection/connection-state.enum';
 import { IImportProcessDocument } from '../import-processes/import-process.schema';
 import { ImportStatus } from '../import-processes/enums/import-status.enum';
+import ImportsRepository from '../imports/imports.repository';
 
 class ApiImportService {
   private apiConnectionHelper: ApiConnectionHelper;
@@ -19,19 +20,22 @@ class ApiImportService {
   private apiTransferHelper: ApiTransferHelper;
   private oAuth2AuthUriHelper: OAuth2AuthUriHelper;
   private importProcessesRepository: ImportProcessesRepository;
+  private importsRepository: ImportsRepository;
 
   constructor(
     apiConnectionHelper: ApiConnectionHelper,
     apiColumnsHelper: ApiColumnsHelper,
     apiTransferHelper: ApiTransferHelper,
     oAuth2AuthUriHelper: OAuth2AuthUriHelper,
-    importProcessesRepository: ImportProcessesRepository
+    importProcessesRepository: ImportProcessesRepository,
+    importsRepository: ImportsRepository
   ) {
     this.apiConnectionHelper = apiConnectionHelper;
     this.apiColumnsHelper = apiColumnsHelper;
     this.apiTransferHelper = apiTransferHelper;
     this.oAuth2AuthUriHelper = oAuth2AuthUriHelper;
     this.importProcessesRepository = importProcessesRepository;
+    this.importsRepository = importsRepository;
   }
 
   async connect(req: Request, impt: IImportDocument): Promise<ResponseHandler> {
@@ -54,8 +58,10 @@ class ApiImportService {
         return responseHandler;
       }
 
+      const updatedImport = await this.importsRepository.findById(importId);
+
       const idColumnUnique =
-        await this.apiColumnsHelper.checkIdColumnUniqueness(impt);
+        await this.apiColumnsHelper.checkIdColumnUniqueness(updatedImport);
       if (!idColumnUnique) {
         responseHandler.setError(
           409,
@@ -64,7 +70,7 @@ class ApiImportService {
         return responseHandler;
       }
 
-      const columns = await this.apiColumnsHelper.find(impt);
+      const columns = await this.apiColumnsHelper.find(updatedImport);
 
       responseHandler.setSuccess(200, {
         importId,
@@ -72,7 +78,6 @@ class ApiImportService {
       });
       return responseHandler;
     } catch (error) {
-      console.log(error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -98,6 +103,8 @@ class ApiImportService {
         return responseHandler;
       }
 
+      const updatedImport = await this.importsRepository.findById(importId);
+
       const process = await this.importProcessesRepository.create({
         unit: impt.unit as string,
         import: importId
@@ -107,7 +114,7 @@ class ApiImportService {
       // We dont need to wait till import executes,
       // We send of id import process
       // Client send websocket request and then sends event 'join' with processId
-      this.apiTransferHelper.transfer(impt, processId);
+      this.apiTransferHelper.transfer(updatedImport, process);
       responseHandler.setSuccess(200, processId);
       return responseHandler;
     } catch (error) {
@@ -142,6 +149,8 @@ class ApiImportService {
         return responseHandler;
       }
 
+      const updatedImport = await this.importsRepository.findById(importId);
+
       await this.importProcessesRepository.update(processId, {
         status: ImportStatus.PENDING
       });
@@ -149,7 +158,7 @@ class ApiImportService {
       // We dont need to wait till import executes,
       // We send of id import process
       // Client send websocket request and then sends event 'join' with processId
-      this.apiTransferHelper.transfer(impt, processId);
+      this.apiTransferHelper.transfer(updatedImport, process);
       responseHandler.setSuccess(200, processId);
       return responseHandler;
     } catch (error) {
@@ -184,6 +193,8 @@ class ApiImportService {
         return responseHandler;
       }
 
+      const updatedImport = await this.importsRepository.findById(importId);
+
       await this.importProcessesRepository.update(processId, {
         attempts: 0,
         status: ImportStatus.PENDING,
@@ -193,7 +204,7 @@ class ApiImportService {
       // We dont need to wait till import executes,
       // We send of id import process
       // Client send websocket request and then sends event 'join' with processId
-      this.apiTransferHelper.transfer(impt, processId);
+      this.apiTransferHelper.transfer(updatedImport, process);
       responseHandler.setSuccess(200, processId);
       return responseHandler;
     } catch (error) {

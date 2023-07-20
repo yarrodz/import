@@ -14,9 +14,17 @@ const OAUTH2_REDIRECT_URI = 'http://localhost:3000/oauth-callback/';
 
 class OAuth2Service {
   private importsRepository: ImportsRepository;
+  private oAuth2RedirectUri: string;
+  private clientUri: string;
 
-  constructor(importsRepository: ImportsRepository) {
+  constructor(
+    importsRepository: ImportsRepository,
+    oAuth2RedirectUri: string,
+    clientUri: string
+  ) {
     this.importsRepository = importsRepository;
+    this.oAuth2RedirectUri = oAuth2RedirectUri;
+    this.clientUri = clientUri;
   }
 
   oAuth2Callback = async (req: Request) => {
@@ -86,7 +94,7 @@ class OAuth2Service {
       code,
       client_id,
       grant_type: GRANT_TYPE,
-      redirect_uri: OAUTH2_REDIRECT_URI
+      redirect_uri: this.oAuth2RedirectUri
     };
 
     if (client_secret) {
@@ -105,16 +113,16 @@ class OAuth2Service {
     const { action, importId, processId } = context;
     switch (action) {
       case ImportContextAction.CONNECT: {
-        return `http://localhost:4200/imports/connect/${importId}`;
+        return `${this.clientUri}imports/connect/${importId}`;
       }
       case ImportContextAction.START: {
-        return `http://localhost:4200/imports/start/${importId}`;
+        return `${this.clientUri}imports/start/${importId}`;
       }
       case ImportContextAction.RELOAD: {
-        return `http://localhost:4200/processes/reload/${processId}`;
+        return `${this.clientUri}processes/reload/${processId}`;
       }
       case ImportContextAction.RETRY: {
-        return `http://localhost:4200/processes/retry/${processId}`;
+        return `${this.clientUri}processes/retry/${processId}`;
       }
       default: {
         throw new Error('Unknown contex action inside OAuth2 callback');
@@ -125,7 +133,7 @@ class OAuth2Service {
   private createErrorRedirectUri(callbackProcess?: IOAuth2CallbackProcess) {
     if (callbackProcess === undefined) {
       const errorMessage = 'Could not find callback context';
-      return `http://localhost:4200/imports/errorMessage=${errorMessage}`;
+      return `${this.clientUri}imports/errorMessage=${errorMessage}`;
     } else {
       const { context } = callbackProcess;
       const { action } = context;
@@ -134,11 +142,11 @@ class OAuth2Service {
       switch (action) {
         case ImportContextAction.CONNECT:
         case ImportContextAction.START: {
-          return `http://localhost:4200/imports/errorMessage=${errorMessage}`;
+          return `${this.clientUri}imports/errorMessage=${errorMessage}`;
         }
         case ImportContextAction.RELOAD:
         case ImportContextAction.RETRY: {
-          return `http://localhost:4200/processes/errorMessage=${errorMessage}`;
+          return `${this.clientUri}processes/errorMessage=${errorMessage}`;
         }
         default: {
           throw new Error('Unknown contex action inside OAuth2 callback');

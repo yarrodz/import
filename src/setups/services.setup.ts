@@ -19,16 +19,23 @@ import SqlColumnsHelper from '../modules/sql/sql-columns.helper';
 import ApiColumnsHelper from '../modules/api/api-columns.helper';
 import ApiImportService from '../modules/api/api-import.service';
 import SqlImportService from '../modules/sql/sql-import.service';
+import ImportTransferFailureHandler from '../modules/transfer/import-transfer-failure.handler';
 
 export default function setupServices(
   io: IO,
   datasetsRepository: DatasetsRepository,
   importsRepository: ImportsRepository,
-  importProcessesRepository: ImportProcessesRepository
+  importProcessesRepository: ImportProcessesRepository,
+  maxAttempts: number,
+  attemptDelayTime: number,
+  oAuth2RedirectUri: string,
+  clientUri: string
 ): {
   importsService: ImportsService;
   importProcessesService: ImportProcessesService;
   oAuth2Service: OAuthService;
+  sqlTransferHelper: SqlTransferHelper;
+  apiTransferHelper: ApiTransferHelper;
 } {
   const transferStepHelper = new TransferStepHelper(
     io,
@@ -50,21 +57,35 @@ export default function setupServices(
     transferStepHelper,
     importProcessesRepository
   );
+  const importTransferFailureHandler = new ImportTransferFailureHandler(
+    io,
+    importProcessesRepository,
+    maxAttempts,
+    attemptDelayTime
+  );
 
   const sqlTransferHelper = new SqlTransferHelper(
     importProcessesRepository,
+    importTransferFailureHandler,
     offsetPaginationTransferHelper
   );
+
   const apiTransferHelper = new ApiTransferHelper(
     importProcessesRepository,
+    importTransferFailureHandler,
     chunkTransferHelper,
     offsetPaginationTransferHelper,
     cursorPaginationTransferHelper
   );
 
-  const oAuth2AuthUriHelper = new OAuth2AuthUriHelper();
+  const oAuth2AuthUriHelper = new OAuth2AuthUriHelper(oAuth2RedirectUri);
   const oAuth2RefreshTokenHelper = new OAuth2RefreshTokenHelper(
     importsRepository
+  );
+  const oAuth2Service = new OAuthService(
+    importsRepository,
+    oAuth2RedirectUri,
+    clientUri
   );
 
   const apiConnectionHelper = new ApiConnectionHelper(
@@ -74,8 +95,6 @@ export default function setupServices(
 
   const sqlColumnsHelper = new SqlColumnsHelper();
   const apiColumnsHelper = new ApiColumnsHelper();
-
-  const oAuth2Service = new OAuthService(importsRepository);
 
   const sqlImportService = new SqlImportService(
     sqlColumnsHelper,
@@ -87,7 +106,8 @@ export default function setupServices(
     apiColumnsHelper,
     apiTransferHelper,
     oAuth2AuthUriHelper,
-    importProcessesRepository
+    importProcessesRepository,
+    importsRepository
   );
 
   const importsService = new ImportsService(
@@ -106,6 +126,8 @@ export default function setupServices(
   return {
     importsService,
     importProcessesService,
-    oAuth2Service
+    oAuth2Service,
+    sqlTransferHelper,
+    apiTransferHelper
   };
 }

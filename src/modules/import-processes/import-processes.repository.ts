@@ -35,7 +35,7 @@ class ImportProcessesRepository {
 
   async findById(id: string | Types.ObjectId): Promise<IImportProcessDocument> {
     try {
-      return await this.importProcessModel.findById(id).lean();
+      return await this.importProcessModel.findById(id);
     } catch (error) {
       throw new error(`Error while quering import process: ${error.message}`);
     }
@@ -46,6 +46,15 @@ class ImportProcessesRepository {
       unit,
       status: ImportStatus.PENDING
     });
+  }
+
+  async findPending(): Promise<IImportProcessDocument[]> {
+    try {
+      return await this.importProcessModel
+        .find({ status: ImportStatus.PENDING });
+    } catch (error) {
+      throw new error(`Error while quering import processes: ${error.message}`);
+    }
   }
 
   async update(

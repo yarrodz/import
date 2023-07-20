@@ -6,7 +6,7 @@ import session from 'express-session';
 import cors from 'cors';
 
 import Websocket from './utils/websocket/websocket';
-import setupImport from './setup';
+import setupImport, { ISetupParams } from './setup';
 import { recordModel } from './record.schema';
 import { datasetModel } from './dataset.schema';
 
@@ -33,15 +33,25 @@ app.use(
 const httpServer = createServer(app);
 const io = Websocket.getInstance(httpServer);
 
-const { importsRouter, importProcessesRouter, oAuthRouter } = setupImport(
+const setupParams: ISetupParams = {
   io,
   recordModel,
-  datasetModel
-);
+  datasetModel,
+  maxAttempts: 3,
+  attemptDelayTime: 1000,
+  oAuth2RedirectUri: 'http://localhost:3000/oauth-callback/',
+  clientUri: 'http://localhost:4200/'
+};
+const {
+  importsRouter,
+  importProcessesRouter,
+  oAuth2Router,
+  reloadPendingImportProcesses
+} = setupImport(setupParams);
 
 app.use('/imports', importsRouter.router);
 app.use('/import-processes', importProcessesRouter.router);
-app.use('', oAuthRouter.router);
+app.use('', oAuth2Router.router);
 
 async function start() {
   try {
@@ -49,6 +59,7 @@ async function start() {
     httpServer.listen(PORT, () =>
       console.log(`Server listening on port: ${PORT}`)
     );
+    reloadPendingImportProcesses();
   } catch (error) {
     console.error(error);
   }

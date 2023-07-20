@@ -9,7 +9,9 @@ class AuthRequestHelper {
     if (!auth) {
       return;
     }
-    switch (auth.type) {
+    const { type } = auth;
+
+    switch (type) {
       case RequestAuthType.API_KEY: {
         this.apiKeyAuth(request, auth);
         break;
@@ -27,7 +29,9 @@ class AuthRequestHelper {
         break;
       }
       default: {
-        throw new Error('Error while authrizing request. Unknown auth type');
+        throw new Error(
+          `Error while authorizing request. Unknown auth type: ${type}.`
+        );
       }
     }
   }
@@ -53,7 +57,8 @@ class AuthRequestHelper {
   }
 
   private basicAuth(request: AxiosRequestConfig, auth: IRequestAuth) {
-    request.auth = auth.basicDigest;
+    const { basicDigest } = auth;
+    request.auth = basicDigest;
   }
 
   private bearerAuth(request: AxiosRequestConfig, auth: IRequestAuth) {

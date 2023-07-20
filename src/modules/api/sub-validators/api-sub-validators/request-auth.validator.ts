@@ -11,11 +11,7 @@ export const RequestAuthValidator = Joi.object({
     .valid(...Object.values(RequestAuthType))
     .required(),
   apiKey: ApiKeyValidator.optional().allow(null),
-  // apiKey: Joi.object().optional().allow(null),
   basicDigest: BasicDigestValidator.optional().allow(null),
-  // basicDigest: Joi.object().optional().allow(null),
   bearer: BearerValidator.optional().allow(null),
-  // bearer: Joi.object().optional().allow(null),
   oauth2: OAuth2Validator.optional().allow(null)
-  // oauth2: Joi.object().optional().allow(null)
 });

@@ -2,27 +2,27 @@ import ImportProcessesController from '../modules/import-processes/import-proces
 import ImportProcessesRouter from '../modules/import-processes/import-processes.router';
 import ImportsController from '../modules/imports/imports.controller';
 import ImportsRouter from '../modules/imports/imports.router';
-import OAuthController from '../modules/oauth2/oauth2.controller';
-import OAuthRouter from '../modules/oauth2/oauth2.router';
+import OAuth2Controller from '../modules/oauth2/oauth2.controller';
+import OAuth2Router from '../modules/oauth2/oauth2.router';
 
 export default function setupRouters(
   importsController: ImportsController,
   importProcessesController: ImportProcessesController,
-  oAuthController: OAuthController
+  oAuth2Controller: OAuth2Controller
 ): {
   importsRouter: ImportsRouter;
   importProcessesRouter: ImportProcessesRouter;
-  oAuthRouter: OAuthRouter;
+  oAuth2Router: OAuth2Router;
 } {
   const importsRouter = new ImportsRouter(importsController);
   const importProcessesRouter = new ImportProcessesRouter(
     importProcessesController
   );
-  const oAuthRouter = new OAuthRouter(oAuthController);
+  const oAuth2Router = new OAuth2Router(oAuth2Controller);
 
   return {
     importsRouter,
     importProcessesRouter,
-    oAuthRouter
+    oAuth2Router
   };
 }

@@ -22,10 +22,6 @@ class SqlColumnsHelper {
         dialect
       ] as SequelizeDialect;
 
-      console.log({
-        ...connection,
-        dialect: sequelizeDialect
-      })
       sqlConnector = new SqlConnector({
         ...JSON.parse(JSON.stringify(connection)),
         dialect: sequelizeDialect
@@ -61,7 +57,6 @@ class SqlColumnsHelper {
       sqlConnector.disconnect();
       return columns;
     } catch (error) {
-      console.error(error);
       sqlConnector.disconnect();
       throw error;
     }
@@ -109,7 +104,6 @@ class SqlColumnsHelper {
       sqlConnector.disconnect();
       return isUnique;
     } catch (error) {
-      console.error(error);
       sqlConnector.disconnect();
       throw new Error(
         `Error while checking column uniqueness: ${error.message}`

@@ -1,4 +1,4 @@
 export interface IColumn {
   name: string;
-  type: string;
+  type: string | IColumn[];
 }

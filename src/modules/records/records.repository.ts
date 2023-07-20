@@ -20,7 +20,9 @@ class RecordsRepository {
           dataset: datasetId
         };
       });
-      return await this.recordModel.insertMany(recordsToCreate) as IRecordDocument[];
+      return (await this.recordModel.insertMany(
+        recordsToCreate
+      )) as IRecordDocument[];
     } catch (error) {
       throw new Error(`Error while inserting records: ${error.message}`);
     }

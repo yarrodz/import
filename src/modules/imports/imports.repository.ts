@@ -28,7 +28,7 @@ class ImportsRepository {
 
   async findById(id: string | Types.ObjectId): Promise<IImportDocument> {
     try {
-      return await this.importsModel.findById(id).lean();
+      return await this.importsModel.findById(id);
     } catch (error) {
       throw new error(`Error while quering import: ${error.message}`);
     }
