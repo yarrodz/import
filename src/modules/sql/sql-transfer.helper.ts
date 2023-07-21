@@ -6,17 +6,17 @@ import { IImportDocument } from '../imports/import.schema';
 import { IImportProcessDocument } from '../import-processes/import-process.schema';
 import { SqlConnector } from './connector/sql.connector';
 import { createRequestedFields } from './connector/create-requested-fields';
-import {
-  createSelectCountQuery,
-  createSelectDataQuery,
-  paginateQuery
-} from './connector/sql.query-builder';
 import { SqlSequelizeDialectMap } from './connector/sql-sequelize-dialect.map';
 import { Dialect as SequelizeDialect } from 'sequelize';
 import IOffsetPaginationFunction from '../transfer/interfaces/offset-pagination-function.interface';
 import IOffsetPagination from '../transfer/interfaces/offset-pagination.interface';
 import { SqlDialect } from './enums/sql-dialect.enum';
 import { SqlImportTarget } from './enums/sql-import-target.enum';
+import {
+  createSqlTableCountQuery,
+  createSqlTableFindDataQuery
+} from './connector/sql-table.query-builder';
+import { paginateSqlSelect } from './connector/sql-select.query-builder';
 
 class SqlTransferHelper {
   private importProcessesRepository: ImportProcessesRepository;
@@ -39,7 +39,6 @@ class SqlTransferHelper {
   ) => {
     let sqlConnector: SqlConnector;
     try {
-
       const { sql } = impt;
       const { connection, target, dialect } = sql;
       const processId = process._id;
@@ -48,20 +47,18 @@ class SqlTransferHelper {
       ] as SequelizeDialect;
 
       sqlConnector = new SqlConnector({
-        ...JSON.parse(JSON.stringify(connection)),
+        ...connection,
         dialect: sequelizeDialect
       });
       await sqlConnector.connect();
 
-      //transfer from table
       switch (target) {
         case SqlImportTarget.TABLE: {
           await this.transferFromTable(impt, processId, sqlConnector, dialect);
-          //transfer from custom select
           break;
         }
         case SqlImportTarget.SELECT: {
-          await this.transferFromSelect(impt, processId, sqlConnector, dialect);
+          await this.transferFromSelect(impt, processId, sqlConnector);
           break;
         }
         default: {
@@ -89,7 +86,7 @@ class SqlTransferHelper {
     const { sql, fields, idColumn } = impt;
     const { table, limit } = sql;
 
-    const countQuery = createSelectCountQuery(table);
+    const countQuery = createSqlTableCountQuery(table);
     const datasetsCount = await sqlConnector.queryResult(countQuery);
     await this.importProcessesRepository.update(processId, { datasetsCount });
 
@@ -111,10 +108,9 @@ class SqlTransferHelper {
   private async transferFromSelect(
     impt: IImportDocument,
     processId: string,
-    sqlConnector: SqlConnector,
-    dialect: SqlDialect
+    sqlConnector: SqlConnector
   ) {
-    const { sql, datasetsCount } = impt;
+    const { sql, datasetsCount, idColumn } = impt;
     const { select, limit } = sql;
 
     await this.importProcessesRepository.update(processId, { datasetsCount });
@@ -125,8 +121,8 @@ class SqlTransferHelper {
       limit,
       this.selectPaginationFunction,
       sqlConnector,
-      dialect,
-      select
+      select,
+      idColumn
     );
   }
 
@@ -139,7 +135,7 @@ class SqlTransferHelper {
     requestedFields: string[]
   ) => {
     const { offset, limit } = offsetPagination;
-    const rowsQuery = createSelectDataQuery(
+    const rowsQuery = createSqlTableFindDataQuery(
       dialect,
       table,
       idColumn,
@@ -153,18 +149,11 @@ class SqlTransferHelper {
   private selectPaginationFunction: IOffsetPaginationFunction = async (
     offsetPagination: IOffsetPagination,
     sqlConnector: SqlConnector,
-    dialect: SqlDialect,
     select: string,
     idColumn: string
   ) => {
     const { offset, limit } = offsetPagination;
-    const paginatedQuery = paginateQuery(
-      dialect,
-      select,
-      idColumn,
-      offset,
-      limit
-    );
+    const paginatedQuery = paginateSqlSelect(select, idColumn, offset, limit);
     return await sqlConnector.queryRows(paginatedQuery);
   };
 }

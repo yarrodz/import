@@ -1,29 +1,28 @@
 import { SqlConnector } from './connector/sql.connector';
-import {
-  createCheckSelectColumnUniquenessQuery,
-  createCheckTableColumnUniquenessQuery,
-  createSelectColumnsQuery,
-  createSelectDataQuery,
-  paginateQuery
-} from './connector/sql.query-builder';
 import { IImport, IImportDocument } from '../imports/import.schema';
 import { IColumn } from '../columns/column.interface';
 import { SqlSequelizeDialectMap } from './connector/sql-sequelize-dialect.map';
 import { Dialect as SequelizeDialect } from 'sequelize';
 import { SqlImportTarget } from './enums/sql-import-target.enum';
+import {
+  createCheckSqlTableIdColumnUniquenessQuery,
+  createSqlTableFindColumnsQuery,
+  createSqlTableFindDataQuery
+} from './connector/sql-table.query-builder';
+import { paginateSqlSelect } from './connector/sql-select.query-builder';
 
 class SqlColumnsHelper {
   public async find(impt: IImportDocument): Promise<IColumn[]> {
     let sqlConnector: SqlConnector;
     try {
-      const { source, sql, idColumn } = impt;
+      const { sql, idColumn } = impt;
       const { connection, target, table, select, dialect } = sql;
       const sequelizeDialect = SqlSequelizeDialectMap[
         dialect
       ] as SequelizeDialect;
 
       sqlConnector = new SqlConnector({
-        ...JSON.parse(JSON.stringify(connection)),
+        ...connection,
         dialect: sequelizeDialect
       });
       await sqlConnector.connect();
@@ -36,17 +35,23 @@ class SqlColumnsHelper {
             columns = await this.selectColumnsFromSchema(
               sqlConnector,
               table,
-              source
+              dialect
             );
             //Maybe user have no access to information schema then we receive columns from dataset
           } catch (error) {
-            const query = createSelectDataQuery(source, table, idColumn, 0, 1);
+            const query = createSqlTableFindDataQuery(
+              dialect,
+              table,
+              idColumn,
+              0,
+              1
+            );
             columns = await this.selectColumnsFromDataset(sqlConnector, query);
           }
           break;
         }
         case SqlImportTarget.SELECT: {
-          const query = paginateQuery(source, select, idColumn, 0, 1);
+          const query = paginateSqlSelect(select, idColumn, 0, 1);
           columns = await this.selectColumnsFromDataset(sqlConnector, query);
           break;
         }
@@ -65,14 +70,14 @@ class SqlColumnsHelper {
   public async checkIdColumnUniqueness(impt: Omit<IImport, 'fields'>) {
     let sqlConnector: SqlConnector;
     try {
-      const { source, sql, idColumn } = impt;
-      const { connection, target, table, select, dialect } = sql;
+      const { sql, idColumn } = impt;
+      const { connection, target, table, dialect } = sql;
       const sequelizeDialect = SqlSequelizeDialectMap[
         dialect
       ] as SequelizeDialect;
 
       sqlConnector = new SqlConnector({
-        ...JSON.parse(JSON.stringify(connection)),
+        ...connection,
         dialect: sequelizeDialect
       });
       await sqlConnector.connect();
@@ -80,8 +85,8 @@ class SqlColumnsHelper {
       let isUnique: boolean;
       switch (target) {
         case SqlImportTarget.TABLE: {
-          const query = createCheckTableColumnUniquenessQuery(
-            source,
+          const query = createCheckSqlTableIdColumnUniquenessQuery(
+            dialect,
             idColumn,
             table
           );
@@ -89,12 +94,13 @@ class SqlColumnsHelper {
           break;
         }
         case SqlImportTarget.SELECT: {
-          const query = createCheckSelectColumnUniquenessQuery(
-            source,
-            idColumn,
-            select
-          );
-          isUnique = await sqlConnector.queryResult(query);
+          // const query = createCheckSelectColumnUniquenessQuery(
+          //   source,
+          //   idColumn,
+          //   select
+          // );
+          // isUnique = await sqlConnector.queryResult(query);
+          isUnique = true;
           break;
         }
         default: {
@@ -116,7 +122,7 @@ class SqlColumnsHelper {
     table: string,
     dialect: string
   ): Promise<IColumn[]> {
-    const columnsQuery = createSelectColumnsQuery(table, dialect);
+    const columnsQuery = createSqlTableFindColumnsQuery(table, dialect);
     const retrievedColumns = await sqlConnector.queryRows(columnsQuery);
     return retrievedColumns.map((column) => {
       return {

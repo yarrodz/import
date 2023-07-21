@@ -51,10 +51,12 @@ class DatasetsRepository {
     sourceDatasetId: string
   ) {
     try {
-      return await this.datasetModel.findOne({
-        import: importId,
-        sourceDatasetId
-      });
+      return await this.datasetModel
+        .findOne({
+          import: importId,
+          sourceDatasetId
+        })
+        .lean();
     } catch (error) {
       throw new Error(`Error while searching the dataset: ${error.message}`);
     }

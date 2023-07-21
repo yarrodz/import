@@ -46,7 +46,9 @@ class ApiColumnsHelper {
       }
 
       const datasets = resolvePath(response, datasetsPath);
+      // console.log("datasets: ", datasets);
       const dataset = datasets[0];
+      // console.log('dateset: ', dataset)
       const columns: IColumn[] = this.findNestedObjectTypes(dataset);
       return columns;
     } catch (error) {

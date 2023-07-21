@@ -10,7 +10,8 @@ class ImportsRepository {
 
   async create(input: IImport): Promise<IImportDocument> {
     try {
-      return await this.importsModel.create(input);
+      const impt = await this.importsModel.create(input);
+      return impt.toObject();
     } catch (error) {
       throw new error(
         `Error while query for creating import: ${error.message}`
@@ -28,7 +29,7 @@ class ImportsRepository {
 
   async findById(id: string | Types.ObjectId): Promise<IImportDocument> {
     try {
-      return await this.importsModel.findById(id);
+      return await this.importsModel.findById(id).lean();
     } catch (error) {
       throw new error(`Error while quering import: ${error.message}`);
     }
@@ -39,9 +40,11 @@ class ImportsRepository {
     updateQuery: UpdateQuery<IImport>
   ): Promise<IImportDocument> {
     try {
-      return await this.importsModel.findByIdAndUpdate(id, updateQuery, {
-        new: true
-      });
+      return await this.importsModel
+        .findByIdAndUpdate(id, updateQuery, {
+          new: true
+        })
+        .lean();
     } catch (error) {
       throw new error(
         `Error while query for updating import: ${error.message}`

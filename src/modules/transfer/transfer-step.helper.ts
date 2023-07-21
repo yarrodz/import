@@ -64,7 +64,7 @@ class TransferStepHelper {
     const transformedDatasets = [];
     datasets.forEach(async (dataset) => {
       try {
-        const sourceDatasetId = dataset[idColumn];
+        const sourceDatasetId = resolvePath(dataset, idColumn);
         if (sourceDatasetId === null) {
           throw new Error('The id field contains a null value');
         }

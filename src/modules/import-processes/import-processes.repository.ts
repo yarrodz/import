@@ -17,7 +17,8 @@ class ImportProcessesRepository {
     input: Partial<IImportProcess>
   ): Promise<IImportProcessDocument> {
     try {
-      return await this.importProcessModel.create(input);
+      const process = await this.importProcessModel.create(input);
+      return process.toObject()
     } catch (error) {
       throw new error(
         `Error while query for creating import: ${error.message}`
@@ -35,23 +36,26 @@ class ImportProcessesRepository {
 
   async findById(id: string | Types.ObjectId): Promise<IImportProcessDocument> {
     try {
-      return await this.importProcessModel.findById(id);
+      return await this.importProcessModel.findById(id).lean();
     } catch (error) {
       throw new error(`Error while quering import process: ${error.message}`);
     }
   }
 
   async findPendingByUnit(unit: string): Promise<IImportProcessDocument> {
-    return await this.importProcessModel.findOne({
-      unit,
-      status: ImportStatus.PENDING
-    });
+    return await this.importProcessModel
+      .findOne({
+        unit,
+        status: ImportStatus.PENDING
+      })
+      .lean();
   }
 
   async findPending(): Promise<IImportProcessDocument[]> {
     try {
       return await this.importProcessModel
-        .find({ status: ImportStatus.PENDING });
+        .find({ status: ImportStatus.PENDING })
+        .lean();
     } catch (error) {
       throw new error(`Error while quering import processes: ${error.message}`);
     }
@@ -62,9 +66,11 @@ class ImportProcessesRepository {
     updateQuery: UpdateQuery<IImportProcess>
   ): Promise<IImportProcessDocument> {
     try {
-      return await this.importProcessModel.findByIdAndUpdate(id, updateQuery, {
-        new: true
-      });
+      return await this.importProcessModel
+        .findByIdAndUpdate(id, updateQuery, {
+          new: true
+        })
+        .lean();
     } catch (error) {
       throw new error(
         `Error while query for updating import process: ${error.message}`
