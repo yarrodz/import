@@ -1,4 +1,4 @@
-export default interface IOAuth2AuthUriParams {
+export default interface OAuth2AuthUriParams {
   client_id: string;
   client_secret?: string;
   code_challenge_method?: string;

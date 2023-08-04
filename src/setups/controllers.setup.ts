@@ -1,27 +1,28 @@
-import ImportProcessesController from '../modules/import-processes/import-processes.controller';
-import ImportProcessesService from '../modules/import-processes/import-processes.service';
-import ImportsController from '../modules/imports/imports.controller';
-import ImportsService from '../modules/imports/imports.service';
-import OAuth2Controller from '../modules/oauth2/oauth2.controller';
 import OAuth2Service from '../modules/oauth2/oauth2.service';
+import SynchronizationsService from '../modules/synchronizations/synchronizations.service';
+import SynchronizationsController from '../modules/synchronizations/synchronizations.controller';
+import OAuth2Controller from '../modules/oauth2/oauth2.controller';
+import TransfersService from '../modules/transfers/transfers.service';
+import TransfersController from '../modules/transfers/transfers.controller';
 
 export default function setupControllers(
-  importsService: ImportsService,
-  importProcessesService: ImportProcessesService,
+  synchronizationsService: SynchronizationsService,
+  transfersService: TransfersService,
   oAuth2Service: OAuth2Service
 ): {
-  importsController: ImportsController;
-  importProcessesController: ImportProcessesController;
-  oAuthController: OAuth2Controller;
+  synchronizationsController: SynchronizationsController;
+  transfersController: TransfersController;
+  oAuth2Controller: OAuth2Controller;
 } {
-  const importsController = new ImportsController(importsService);
-  const importProcessesController = new ImportProcessesController(
-    importProcessesService
+  const synchronizationsController = new SynchronizationsController(
+    synchronizationsService
   );
-  const oAuthController = new OAuth2Controller(oAuth2Service);
+  const transfersController = new TransfersController(transfersService);
+  const oAuth2Controller = new OAuth2Controller(oAuth2Service);
+
   return {
-    importsController,
-    importProcessesController,
-    oAuthController
+    synchronizationsController,
+    transfersController,
+    oAuth2Controller
   };
 }

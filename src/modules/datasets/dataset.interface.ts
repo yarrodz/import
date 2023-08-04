@@ -1,12 +1,9 @@
-import { Document, Types } from 'mongoose';
+import Record from '../records/record.interface';
+import Synchronization from '../synchronizations/interfaces/synchronization.interface';
 
-import { IRecord } from '../records/record.interface';
-
-export interface IDataset {
-  unit: Types.ObjectId | string;
-  records: IRecord[];
-  import?: Types.ObjectId | string;
-  sourceDatasetId?: string;
+export default interface Dataset {
+  id: string;
+  records: Record[];
+  synchronization: Synchronization;
+  sourceId?: string;
 }
-
-export interface IDatasetDocument extends IDataset, Document {}

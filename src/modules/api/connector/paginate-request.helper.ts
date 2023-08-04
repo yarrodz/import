@@ -1,19 +1,19 @@
 import { AxiosRequestConfig } from 'axios';
 
-import { IRequestPaginationOptions } from '../sub-schemas/api-sub-schemas/request-pagination-options.schema';
-import { RequestPaginationPlacement } from '../enums/request-paginanation-placement';
-import IOffsetPagination from '../../transfer/interfaces/offset-pagination.interface';
-import ICursorPagination from '../../transfer/interfaces/cursor-pagination.interface';
-import { TransferType } from '../../transfer/enums/transfer-type.enum';
+import { TransferMethod } from '../../transfers/enums/transfer-method.enum';
+import RequestPaginationOptions from '../interfaces/request-pagination-options.interface';
+import OffsetPagination from '../../transfers/interfaces/offset-pagination.interface';
+import CursorPagination from '../../transfers/interfaces/cursor-pagination.interface';
+import { RequestPaginationPlacement } from '../enums/request-pagination-placement';
 
 class PaginateRequestHelper {
-  public paginate(
+  public static paginate(
     request: AxiosRequestConfig,
-    paginationType: TransferType,
-    paginationOptions: IRequestPaginationOptions,
-    pagination: IOffsetPagination | ICursorPagination
+    paginationType: TransferMethod,
+    paginationOptions?: RequestPaginationOptions,
+    pagination?: OffsetPagination | CursorPagination
   ) {
-    if (!paginationOptions || !pagination) {
+    if (paginationOptions === undefined || pagination === undefined) {
       return;
     }
     const { placement } = paginationOptions;
@@ -43,31 +43,31 @@ class PaginateRequestHelper {
     }
   }
 
-  private paginateQueryParams(
+  private static paginateQueryParams(
     request: AxiosRequestConfig,
-    paginationType: TransferType,
-    paginationOptions: IRequestPaginationOptions,
-    pagination: IOffsetPagination | ICursorPagination
+    paginationType: TransferMethod,
+    paginationOptions: RequestPaginationOptions,
+    pagination: OffsetPagination | CursorPagination
   ) {
     switch (paginationType) {
-      case TransferType.OFFSET_PAGINATION: {
-        const { offsetParameter, limitParameter } = paginationOptions;
-        const { offset, limit } = pagination as IOffsetPagination;
+      case TransferMethod.OFFSET_PAGINATION: {
+        const { offsetParameterName, limitParameterName } = paginationOptions;
+        const { offset, limit } = pagination as OffsetPagination;
 
         request.params = request.params || {};
 
-        request.params[offsetParameter] = offset;
-        request.params[limitParameter] = limit;
+        request.params[offsetParameterName] = offset;
+        request.params[limitParameterName] = limit;
         break;
       }
-      case TransferType.CURSOR_PAGINATION: {
-        const { cursorParameter, limitParameter } = paginationOptions;
-        const { cursor, limit } = pagination as ICursorPagination;
+      case TransferMethod.CURSOR_PAGINATION: {
+        const { cursorParameterName, limitParameterName } = paginationOptions;
+        const { cursor, limit } = pagination as CursorPagination;
 
         request.params = request.params || {};
 
-        request.params[cursorParameter] = cursor;
-        request.params[limitParameter] = limit;
+        request.params[cursorParameterName] = cursor;
+        request.params[limitParameterName] = limit;
         break;
       }
       default: {
@@ -78,31 +78,31 @@ class PaginateRequestHelper {
     }
   }
 
-  private paginateBody(
+  private static paginateBody(
     request: AxiosRequestConfig,
-    paginationType: TransferType,
-    paginationOptions: IRequestPaginationOptions,
-    pagination: IOffsetPagination | ICursorPagination
+    paginationType: TransferMethod,
+    paginationOptions: RequestPaginationOptions,
+    pagination: OffsetPagination | CursorPagination
   ) {
     switch (paginationType) {
-      case TransferType.OFFSET_PAGINATION: {
-        const { offsetParameter, limitParameter } = paginationOptions;
-        const { offset, limit } = pagination as IOffsetPagination;
+      case TransferMethod.OFFSET_PAGINATION: {
+        const { offsetParameterName, limitParameterName } = paginationOptions;
+        const { offset, limit } = pagination as OffsetPagination;
 
         request.data = request.data || {};
 
-        request.data[offsetParameter] = offset;
-        request.data[limitParameter] = limit;
+        request.data[offsetParameterName] = offset;
+        request.data[limitParameterName] = limit;
         break;
       }
-      case TransferType.CURSOR_PAGINATION: {
-        const { cursorParameter, limitParameter } = paginationOptions;
-        const { cursor, limit } = pagination as ICursorPagination;
+      case TransferMethod.CURSOR_PAGINATION: {
+        const { cursorParameterName, limitParameterName } = paginationOptions;
+        const { cursor, limit } = pagination as CursorPagination;
 
         request.data = request.data || {};
 
-        request.data[cursorParameter] = cursor;
-        request.data[limitParameter] = limit;
+        request.data[cursorParameterName] = cursor;
+        request.data[limitParameterName] = limit;
         break;
       }
       default: {

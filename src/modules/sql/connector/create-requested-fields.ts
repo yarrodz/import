@@ -1,6 +1,6 @@
-import { IField } from '../../imports/sub-schemas/field.schema';
+import ImportField from '../../synchronizations/interfaces/import-field.interface';
 
-export function createRequestedFields(fields: IField[], idColumn: string) {
+export function createRequestedFields(fields: ImportField[], idColumn: string) {
   const requestedFields = fields.map(({ source }) => source);
   if (!requestedFields.includes(idColumn)) {
     requestedFields.push(idColumn);

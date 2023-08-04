@@ -1,4 +1,4 @@
-export default interface IOAuth2CallbackBody {
+export default interface OAuth2CallbackBody {
   grant_type: string;
   code: string;
   client_id: string;

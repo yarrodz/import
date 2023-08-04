@@ -1,4 +1,4 @@
 export enum ConnectionState {
-  CONNECTED = 'connected',
+  CONNECTED = 'Connected',
   OAUTH2_REQUIRED = 'OAuth2 required'
 }

@@ -1,30 +1,31 @@
 import { AxiosRequestConfig } from 'axios';
 
-import { IRequestAuth } from '../sub-schemas/api-sub-schemas/request-auth.shema';
-import { RequestAuthType } from '../enums/request-auth-type.enum';
 import { ApiKeyPlacement } from '../enums/api-key-placement.enum';
+import ApiConnection from '../interfaces/api-connection.interface';
+import { ApiConnectionType } from '../enums/api-connection-type.enum';
 
 class AuthRequestHelper {
-  public async auth(request: AxiosRequestConfig, auth: IRequestAuth) {
-    if (!auth) {
+  public static async auth(request: AxiosRequestConfig, auth?: ApiConnection) {
+    if (auth === undefined) {
       return;
     }
+
     const { type } = auth;
 
     switch (type) {
-      case RequestAuthType.API_KEY: {
+      case ApiConnectionType.API_KEY: {
         this.apiKeyAuth(request, auth);
         break;
       }
-      case RequestAuthType.BASIC: {
+      case ApiConnectionType.BASIC: {
         this.basicAuth(request, auth);
         break;
       }
-      case RequestAuthType.BEARER_TOKEN: {
+      case ApiConnectionType.BEARER_TOKEN: {
         this.bearerAuth(request, auth);
         break;
       }
-      case RequestAuthType.OAUTH2: {
+      case ApiConnectionType.OAUTH2: {
         this.oauth2(request, auth);
         break;
       }
@@ -36,7 +37,7 @@ class AuthRequestHelper {
     }
   }
 
-  private apiKeyAuth(request: AxiosRequestConfig, auth: IRequestAuth) {
+  private static apiKeyAuth(request: AxiosRequestConfig, auth: ApiConnection) {
     const { key, value, placement } = auth.apiKey;
     switch (placement) {
       case ApiKeyPlacement.HEADERS: {
@@ -56,18 +57,21 @@ class AuthRequestHelper {
     }
   }
 
-  private basicAuth(request: AxiosRequestConfig, auth: IRequestAuth) {
+  private static basicAuth(request: AxiosRequestConfig, auth: ApiConnection) {
     const { basicDigest } = auth;
     request.auth = basicDigest;
   }
 
-  private bearerAuth(request: AxiosRequestConfig, auth: IRequestAuth) {
+  private static bearerAuth(request: AxiosRequestConfig, auth: ApiConnection) {
     const { token } = auth.bearer;
     request.headers = request.headers || {};
     request.headers.Authorization = `Bearer ${token}`;
   }
 
-  private async oauth2(request: AxiosRequestConfig, auth: IRequestAuth) {
+  private static async oauth2(
+    request: AxiosRequestConfig,
+    auth: ApiConnection
+  ) {
     const { access_token } = auth.oauth2;
     if (access_token) {
       request.headers = request.headers || {};

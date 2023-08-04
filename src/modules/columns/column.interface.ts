@@ -1,4 +1,4 @@
-export interface IColumn {
+export default interface Column {
   name: string;
-  type: string | IColumn[];
+  type: string | Column[];
 }

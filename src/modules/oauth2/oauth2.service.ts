@@ -1,35 +1,31 @@
 import { Request } from 'express';
-import axios, { AxiosBasicCredentials, AxiosRequestConfig } from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
+import { iFrameConnection, iFrameSynchronization } from 'iframe-ai';
 
-import OAuth2SessionHelper from './oauth2-session.helper';
 import ResponseHandler from '../../utils/response-handler/response-handler';
-import ImportsRepository from '../imports/imports.repository';
-import IOAuth2CallbackBody from './interfaces/oauth2-callback-body.interface';
-import IOAuth2SessionCallbackParams from './interfaces/oauth2-session-callback-params.interface';
-import { ImportContextAction } from '../imports/enums/import-context-action.enum';
-import IOAuth2CallbackProcess from './interfaces/oauth2-callback-process.interface';
+import OAuth2CallbackProcess from './interfaces/oauth2-callback-process.interface';
+import OAuth2CallbackBody from './interfaces/oauth2-callback-body.interface';
+import dbClient from '../../utils/db-client/db-client';
+import OAuth2SessionHelper from './helpers/oauth2-session.helper';
+import OAuth2SessionCallbackParams from './interfaces/oauth2-session-callback-params.interface';
+import { SynchronizationContextAction } from '../synchronizations/enums/synchronization-context-action.enum';
+import transformIFrameInstance from '../../utils/transform-iFrame-instance/transform-iFrame-instance';
 
 const GRANT_TYPE = 'authorization_code';
 const OAUTH2_REDIRECT_URI = 'http://localhost:3000/oauth-callback/';
 
 class OAuth2Service {
-  private importsRepository: ImportsRepository;
   private oAuth2RedirectUri: string;
   private clientUri: string;
 
-  constructor(
-    importsRepository: ImportsRepository,
-    oAuth2RedirectUri: string,
-    clientUri: string
-  ) {
-    this.importsRepository = importsRepository;
+  constructor(oAuth2RedirectUri: string, clientUri: string) {
     this.oAuth2RedirectUri = oAuth2RedirectUri;
     this.clientUri = clientUri;
   }
 
   oAuth2Callback = async (req: Request) => {
     const responseHandler = new ResponseHandler();
-    let callbackProcess: IOAuth2CallbackProcess;
+    let callbackProcess: OAuth2CallbackProcess;
     try {
       const { session, query } = req;
       const { code, state } = query;
@@ -42,9 +38,9 @@ class OAuth2Service {
 
       const { params, context } = callbackProcess;
       const { token_uri, client_id, client_secret } = params;
-      const { importId } = context;
+      const { synchronizationId } = context;
 
-      const body: IOAuth2CallbackBody = this.createCallbackBody(
+      const body: OAuth2CallbackBody = this.createCallbackBody(
         code as string,
         params
       );
@@ -62,22 +58,36 @@ class OAuth2Service {
         config.auth = {
           username: client_id,
           password: client_secret
-        } as AxiosBasicCredentials;
+        };
       }
 
       const response = await axios(config);
 
       const { access_token, refresh_token } = response.data;
 
-      await this.importsRepository.update(importId as string, {
-        'api.auth.oauth2.access_token': access_token,
-        'api.auth.oauth2.refresh_token': refresh_token
-      });
+      let connection = await new iFrameSynchronization(
+        dbClient,
+        {},
+        synchronizationId
+      ).getConnection();
+      connection = transformIFrameInstance(connection);
+
+      await new iFrameConnection(
+        dbClient,
+        {
+          oauth2: {
+            access_token,
+            refresh_token
+          }
+        },
+        connection.id
+      ).save();
 
       const successRedirectUri = this.createSuccessRedirectUri(callbackProcess);
       responseHandler.setRedirect(successRedirectUri);
       return responseHandler;
     } catch (error) {
+      console.error('error: ', error);
       const errorRedirectUri = this.createErrorRedirectUri(callbackProcess);
       responseHandler.setRedirect(errorRedirectUri);
       return responseHandler;
@@ -86,11 +96,11 @@ class OAuth2Service {
 
   private createCallbackBody(
     code: string,
-    params: IOAuth2SessionCallbackParams
-  ): IOAuth2CallbackBody {
+    params: OAuth2SessionCallbackParams
+  ): OAuth2CallbackBody {
     const { client_id, client_secret, code_verifier } = params;
 
-    const body: IOAuth2CallbackBody = {
+    const body: OAuth2CallbackBody = {
       code,
       client_id,
       grant_type: GRANT_TYPE,
@@ -108,21 +118,21 @@ class OAuth2Service {
     return body;
   }
 
-  private createSuccessRedirectUri(callbackProcess: IOAuth2CallbackProcess) {
+  private createSuccessRedirectUri(callbackProcess: OAuth2CallbackProcess) {
     const { context } = callbackProcess;
-    const { action, importId, processId } = context;
+    const { action, synchronizationId, transferId } = context;
     switch (action) {
-      case ImportContextAction.CONNECT: {
-        return `${this.clientUri}imports/connect/${importId}`;
+      case SynchronizationContextAction.CONNECT: {
+        return `${this.clientUri}imports/Connect/${synchronizationId}`;
       }
-      case ImportContextAction.START: {
-        return `${this.clientUri}imports/start/${importId}`;
+      case SynchronizationContextAction.IMPORT: {
+        return `${this.clientUri}imports/start/${synchronizationId}`;
       }
-      case ImportContextAction.RELOAD: {
-        return `${this.clientUri}processes/reload/${processId}`;
+      case SynchronizationContextAction.RELOAD: {
+        return `${this.clientUri}processes/reload/${transferId}`;
       }
-      case ImportContextAction.RETRY: {
-        return `${this.clientUri}processes/retry/${processId}`;
+      case SynchronizationContextAction.RETRY: {
+        return `${this.clientUri}processes/retry/${transferId}`;
       }
       default: {
         throw new Error('Unknown contex action inside OAuth2 callback');
@@ -130,7 +140,7 @@ class OAuth2Service {
     }
   }
 
-  private createErrorRedirectUri(callbackProcess?: IOAuth2CallbackProcess) {
+  private createErrorRedirectUri(callbackProcess?: OAuth2CallbackProcess) {
     if (callbackProcess === undefined) {
       const errorMessage = 'Could not find callback context';
       return `${this.clientUri}imports/errorMessage=${errorMessage}`;
@@ -140,13 +150,13 @@ class OAuth2Service {
       const errorMessage = 'Error while OAuth2 callback';
 
       switch (action) {
-        case ImportContextAction.CONNECT:
-        case ImportContextAction.START: {
-          return `${this.clientUri}imports/errorMessage=${errorMessage}`;
+        case SynchronizationContextAction.CONNECT:
+        case SynchronizationContextAction.IMPORT: {
+          return `${this.clientUri}imports/error/message=${errorMessage}`;
         }
-        case ImportContextAction.RELOAD:
-        case ImportContextAction.RETRY: {
-          return `${this.clientUri}processes/errorMessage=${errorMessage}`;
+        case SynchronizationContextAction.RELOAD:
+        case SynchronizationContextAction.RETRY: {
+          return `${this.clientUri}processes/error/message=${errorMessage}`;
         }
         default: {
           throw new Error('Unknown contex action inside OAuth2 callback');
