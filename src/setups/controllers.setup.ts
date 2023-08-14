@@ -1,27 +1,26 @@
 import OAuth2Service from '../modules/oauth2/oauth2.service';
-import SynchronizationsService from '../modules/synchronizations/synchronizations.service';
-import SynchronizationsController from '../modules/synchronizations/synchronizations.controller';
 import OAuth2Controller from '../modules/oauth2/oauth2.controller';
 import TransfersService from '../modules/transfers/transfers.service';
 import TransfersController from '../modules/transfers/transfers.controller';
+import ImportsService from '../modules/imports/imports.service';
+import ImportsController from '../modules/imports/imports.controller';
+import ConnectionsController from '../modules/connections/connections.controller';
 
 export default function setupControllers(
-  synchronizationsService: SynchronizationsService,
+  importsService: ImportsService,
   transfersService: TransfersService,
   oAuth2Service: OAuth2Service
 ): {
-  synchronizationsController: SynchronizationsController;
+  importsController: ImportsController;
   transfersController: TransfersController;
   oAuth2Controller: OAuth2Controller;
 } {
-  const synchronizationsController = new SynchronizationsController(
-    synchronizationsService
-  );
+  const importsController = new ImportsController(importsService);
   const transfersController = new TransfersController(transfersService);
   const oAuth2Controller = new OAuth2Controller(oAuth2Service);
 
   return {
-    synchronizationsController,
+    importsController,
     transfersController,
     oAuth2Controller
   };

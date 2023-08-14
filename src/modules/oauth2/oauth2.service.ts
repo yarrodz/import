@@ -1,26 +1,25 @@
 import { Request } from 'express';
 import axios, { AxiosRequestConfig } from 'axios';
-import { iFrameConnection, iFrameSynchronization } from 'iframe-ai';
 
-import ResponseHandler from '../../utils/response-handler/response-handler';
+import ConnectionsRepository from '../connections/connections.repository';
 import OAuth2CallbackProcess from './interfaces/oauth2-callback-process.interface';
 import OAuth2CallbackBody from './interfaces/oauth2-callback-body.interface';
-import dbClient from '../../utils/db-client/db-client';
 import OAuth2SessionHelper from './helpers/oauth2-session.helper';
 import OAuth2SessionCallbackParams from './interfaces/oauth2-session-callback-params.interface';
-import { SynchronizationContextAction } from '../synchronizations/enums/synchronization-context-action.enum';
-import transformIFrameInstance from '../../utils/transform-iFrame-instance/transform-iFrame-instance';
+import ResponseHandler from '../../utils/response-handler/response-handler';
+import { ContextAction } from '../imports/enums/context-action-enum';
 
 const GRANT_TYPE = 'authorization_code';
-const OAUTH2_REDIRECT_URI = 'http://localhost:3000/oauth-callback/';
 
 class OAuth2Service {
   private oAuth2RedirectUri: string;
   private clientUri: string;
+  private connectionsRepository: ConnectionsRepository;
 
   constructor(oAuth2RedirectUri: string, clientUri: string) {
     this.oAuth2RedirectUri = oAuth2RedirectUri;
     this.clientUri = clientUri;
+    this.connectionsRepository = new ConnectionsRepository();
   }
 
   oAuth2Callback = async (req: Request) => {
@@ -38,7 +37,7 @@ class OAuth2Service {
 
       const { params, context } = callbackProcess;
       const { token_uri, client_id, client_secret } = params;
-      const { synchronizationId } = context;
+      const { connectionId } = context;
 
       const body: OAuth2CallbackBody = this.createCallbackBody(
         code as string,
@@ -65,29 +64,18 @@ class OAuth2Service {
 
       const { access_token, refresh_token } = response.data;
 
-      let connection = await new iFrameSynchronization(
-        dbClient,
-        {},
-        synchronizationId
-      ).getConnection();
-      connection = transformIFrameInstance(connection);
-
-      await new iFrameConnection(
-        dbClient,
-        {
-          oauth2: {
-            access_token,
-            refresh_token
-          }
-        },
-        connection.id
-      ).save();
+      await this.connectionsRepository.update({
+        id: connectionId,
+        oauth2: {
+          access_token,
+          refresh_token
+        }
+      });
 
       const successRedirectUri = this.createSuccessRedirectUri(callbackProcess);
       responseHandler.setRedirect(successRedirectUri);
       return responseHandler;
     } catch (error) {
-      console.error('error: ', error);
       const errorRedirectUri = this.createErrorRedirectUri(callbackProcess);
       responseHandler.setRedirect(errorRedirectUri);
       return responseHandler;
@@ -120,19 +108,19 @@ class OAuth2Service {
 
   private createSuccessRedirectUri(callbackProcess: OAuth2CallbackProcess) {
     const { context } = callbackProcess;
-    const { action, synchronizationId, transferId } = context;
+    const { action, importId, transferId } = context;
     switch (action) {
-      case SynchronizationContextAction.CONNECT: {
-        return `${this.clientUri}imports/Connect/${synchronizationId}`;
+      case ContextAction.GET_COLUMNS: {
+        return `${this.clientUri}imports/get_columns/${importId}`;
       }
-      case SynchronizationContextAction.IMPORT: {
-        return `${this.clientUri}imports/start/${synchronizationId}`;
+      case ContextAction.IMPORT: {
+        return `${this.clientUri}imports/import/${importId}`;
       }
-      case SynchronizationContextAction.RELOAD: {
-        return `${this.clientUri}processes/reload/${transferId}`;
+      case ContextAction.RELOAD: {
+        return `${this.clientUri}transfers/reload/${transferId}`;
       }
-      case SynchronizationContextAction.RETRY: {
-        return `${this.clientUri}processes/retry/${transferId}`;
+      case ContextAction.RETRY: {
+        return `${this.clientUri}transfers/retry/${transferId}`;
       }
       default: {
         throw new Error('Unknown contex action inside OAuth2 callback');
@@ -142,21 +130,20 @@ class OAuth2Service {
 
   private createErrorRedirectUri(callbackProcess?: OAuth2CallbackProcess) {
     if (callbackProcess === undefined) {
-      const errorMessage = 'Could not find callback context';
-      return `${this.clientUri}imports/errorMessage=${errorMessage}`;
+      return `${this.clientUri}imports/error/message=Could not find callback context`;
     } else {
       const { context } = callbackProcess;
       const { action } = context;
       const errorMessage = 'Error while OAuth2 callback';
 
       switch (action) {
-        case SynchronizationContextAction.CONNECT:
-        case SynchronizationContextAction.IMPORT: {
+        case ContextAction.GET_COLUMNS:
+        case ContextAction.IMPORT: {
           return `${this.clientUri}imports/error/message=${errorMessage}`;
         }
-        case SynchronizationContextAction.RELOAD:
-        case SynchronizationContextAction.RETRY: {
-          return `${this.clientUri}processes/error/message=${errorMessage}`;
+        case ContextAction.RELOAD:
+        case ContextAction.RETRY: {
+          return `${this.clientUri}imports/error/message=${errorMessage}`;
         }
         default: {
           throw new Error('Unknown contex action inside OAuth2 callback');

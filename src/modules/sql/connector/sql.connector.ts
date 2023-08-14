@@ -1,10 +1,13 @@
-import { Sequelize, Options, QueryTypes } from 'sequelize';
+import { Sequelize, QueryTypes, Dialect as SequelizeDialect } from 'sequelize';
+import { SqlSequelizeDialectMap } from './sql-sequelize-dialect.map';
+import { SqlConnectionConfig } from '../interfaces/sql.connection.interface';
 
 export class SqlConnector {
   private connection: Sequelize;
 
-  constructor(options: Options) {
-    this.connection = new Sequelize({ ...options, logging: false });
+  constructor(options: SqlConnectionConfig) {
+    const dialect = SqlSequelizeDialectMap[options.dialect] as SequelizeDialect;
+    this.connection = new Sequelize({ ...options, dialect, logging: false });
   }
 
   async connect(): Promise<void> {

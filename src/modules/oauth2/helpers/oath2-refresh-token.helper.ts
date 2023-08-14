@@ -1,20 +1,20 @@
 import axios, { AxiosRequestConfig } from 'axios';
-import { iFrameSynchronization, iFrameConnection } from 'iframe-ai';
 
-import Synchronization from '../../synchronizations/interfaces/synchronization.interface';
-import ApiConnection from '../../api/interfaces/api-connection.interface';
+import ConnectionsRepository from '../../connections/connections.repository';
 import OAuth2RefreshTokenBody from '../interfaces/oauts2-refresh-token-body';
-import dbClient from '../../../utils/db-client/db-client';
-import transformIFrameInstance from '../../../utils/transform-iFrame-instance/transform-iFrame-instance';
+import ApiConnection from '../../api/interfaces/api-connection.interface';
 
 const GRANT_TYPE = 'refresh_token';
 
 class OAuth2RefreshTokenHelper {
-  constructor() {}
+  private connectionsRepository: ConnectionsRepository;
 
-  public refresh = async (synchronization: Synchronization) => {
-    const { id: synchronizationId } = synchronization;
-    const connection = synchronization.connection as ApiConnection;
+  constructor() {
+    this.connectionsRepository = new ConnectionsRepository();
+  }
+
+  public refresh = async (connection: ApiConnection) => {
+    const { id: connectionId } = connection;
     const { oauth2 } = connection;
     const { client_id, client_secret, token_uri, refresh_token, scope } =
       oauth2;
@@ -46,40 +46,20 @@ class OAuth2RefreshTokenHelper {
 
       const { access_token } = response.data;
 
-      let connection = await iFrameSynchronization(
-        dbClient,
-        {},
-        synchronizationId
-      ).getConnection();
-      connection = transformIFrameInstance(connection);
-
-      await iFrameConnection(
-        dbClient,
-        {
-          oauth2: {
-            access_token
-          }
-        },
-        connection.id
-      ).save();
+      await this.connectionsRepository.update({
+        id: connectionId,
+        oauth2: {
+          access_token
+        }
+      });
     } catch (error) {
-      let connection = await iFrameSynchronization(
-        dbClient,
-        {},
-        synchronizationId
-      ).getConnection();
-      connection = transformIFrameInstance(connection);
-
-      await iFrameConnection(
-        dbClient,
-        {
-          oauth2: {
-            access_token: null,
-            refresh_token: null
-          }
-        },
-        connection.id
-      ).save();
+      await this.connectionsRepository.update({
+        id: connectionId,
+        oauth2: {
+          access_token: null,
+          refresh_token: null
+        }
+      });
       throw new Error(
         `Error while refreshing oauth2 access token. Access and refresh tokens were removed: ${error.message}`
       );

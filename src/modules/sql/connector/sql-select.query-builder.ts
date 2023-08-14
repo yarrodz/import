@@ -11,8 +11,8 @@ export function paginateSqlSelect(
   const limitPattern = /{{limit}}/;
 
   paginatedSelect = paginatedSelect.replace(idPattern, idColumn);
-  paginatedSelect = paginatedSelect.replace(offsetPattern, offset.toString());
-  paginatedSelect = paginatedSelect.replace(limitPattern, limit.toString());
+  paginatedSelect = paginatedSelect.replace(offsetPattern, String(offset));
+  paginatedSelect = paginatedSelect.replace(limitPattern, String(limit));
 
   return paginatedSelect;
 }

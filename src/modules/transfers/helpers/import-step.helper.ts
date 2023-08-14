@@ -1,26 +1,27 @@
 import { Server as IO } from 'socket.io';
 
-import { iFrameDataset, iFrameTransfer } from 'iframe-ai';
-import Synchronization from '../../synchronizations/interfaces/synchronization.interface';
-import dbClient from '../../../utils/db-client/db-client';
 import Transfer from '../interfaces/transfer.interface';
 import resolvePath from '../../../utils/resolve-path/resolve-path';
 import Feature from '../../features/feature.interafce';
 import { FeatureType } from '../../features/feature-type.enum';
 import Dataset from '../../datasets/dataset.interface';
-import ImportField from '../../synchronizations/interfaces/import-field.interface';
-import transformIFrameInstance from '../../../utils/transform-iFrame-instance/transform-iFrame-instance';
+import ImportField from '../../imports/interfaces/import-field.interface';
 import sleep from '../../../utils/sleep/sleep';
+import TransfersRepository from '../transfers.repository';
+import SqlImport from '../../sql/interfaces/sql-import.interface';
+import ApiImport from '../../api/interfaces/api-import.interface';
 
 class ImportStepHelper {
   private io: IO;
+  private transfersRepository: TransfersRepository;
 
   constructor(io: IO) {
     this.io = io;
+    this.transfersRepository = new TransfersRepository();
   }
 
-  public async importStep(
-    synchronization: Synchronization,
+  public async step(
+    impt: SqlImport | ApiImport,
     transfer: Transfer,
     datasets: object[],
     cursor?: string
@@ -28,97 +29,76 @@ class ImportStepHelper {
     const { id: transferId } = transfer;
 
     const transormedDatasets = await this.transformDatasets(
-      synchronization,
+      impt,
       transfer,
       datasets
     );
 
-    // console.log('transormedDatasets: ', transormedDatasets);
-    console.log('datasets.length: ', datasets.length);
-    console.log('transormedDatasets.length: ', transormedDatasets.length);
-
     await this.insertDatasets(transormedDatasets);
 
-    console.log('after');
+    const updatedTransfer = await this.transfersRepository.update({
+      id: transferId,
+      cursor,
+      offset: transfer.offset + datasets.length,
+      transferedDatasetsCount:
+        transfer.transferedDatasetsCount + transormedDatasets.length,
+      retryAttempts: 0
+    });
 
-    console.log(
-      'transfer.processedDatasetsCount: ',
-      transfer.processedDatasetsCount
-    );
-    let updatedTransfer = await new iFrameTransfer(
-      dbClient,
-      {
-        attempts: 0,
-        errorMessage: null,
-        cursor,
-        processedDatasetsCount:
-          transfer.processedDatasetsCount + datasets.length,
-        transferedDatasetsCount:
-          transfer.processedDatasetsCount + transormedDatasets.length
-      },
-      transferId
-    ).save();
-    updatedTransfer = transformIFrameInstance(updatedTransfer);
-
-    // this.io.to(transferId.toString()).emit('importProcess', updatedTransfer);
+    this.io.to(String(transferId)).emit('transfer', updatedTransfer);
   }
 
   private async transformDatasets(
-    synchronization: Synchronization,
+    impt: SqlImport | ApiImport,
     transfer: Transfer,
     datasets: object[]
   ) {
-    const {
-      id: synchronizationId,
-      unit,
-      import: impt,
-      idParameterName
-    } = synchronization;
-    const { id: transferId } = transfer;
+    const { id: importId, unit, idKey } = impt;
+    let { id: transferId, log } = transfer;
     const { fields } = impt;
-    const { id: unitId } = unit;
+    // const { id: unitId } = unit;
+    const unitId = 1221;
 
     const transformedDatasets = [];
     datasets.forEach(async (dataset) => {
       try {
-        const sourceId = resolvePath(dataset, idParameterName);
+        const sourceId = resolvePath(dataset, idKey);
         if (sourceId === null) {
           throw new Error('The id field contains a null value');
         }
 
-        const records = this.transformRecords(fields, dataset);
+        const records = this.transformRecords(dataset, fields);
         const transformedDataset = {
           unitId,
-          synchronizationId,
+          importId,
           sourceId,
           records
         };
 
         transformedDatasets.push(transformedDataset);
       } catch (error) {
-        // await new iFrameTransfer(
-        //   dbClient,
-        //   {
-        //     log: transfer.log.push(
-        //       `Cannot parse dataset: '${JSON.stringify(dataset)}', Error: '${
-        //         error.message
-        //       }'`
-        //     )
-        //   },
-        //   transferId
-        // ).save();
+        log.push(
+          `Cannot parse dataset: '${JSON.stringify(dataset)}', Error: '${
+            error.message
+          }'`
+        );
+
+        await this.transfersRepository.update({
+          id: transferId,
+          log
+        });
       }
     });
 
     return transformedDatasets;
   }
 
-  private transformRecords(fields: ImportField[], dataset: object) {
+  private transformRecords(dataset: object, fields: ImportField[]) {
     const records = [];
     fields.forEach(({ feature, source }) => {
       const { id: featureId } = feature;
-      const value = dataset[source];
-      const parsedValue = this.parseValue(feature, value);
+      const value = resolvePath(dataset, source);
+      const parsedValue = this.parseValue(value, feature);
 
       const record = {
         value: parsedValue,

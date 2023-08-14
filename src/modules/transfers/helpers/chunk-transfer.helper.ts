@@ -1,61 +1,56 @@
 import { Server as IO } from 'socket.io';
-import { iFrameTransfer } from 'iframe-ai';
 
 import ImportStepHelper from './import-step.helper';
-import Synchronization from '../../synchronizations/interfaces/synchronization.interface';
-import Transfer from '../interfaces/transfer.interface';
-import dbClient from '../../../utils/db-client/db-client';
+import TransfersRepository from '../transfers.repository';
+import ChunkTransferParams from '../interfaces/chunk-transfer-params.interface';
 import { TransferStatus } from '../enums/transfer-status.enum';
-import transformIFrameInstance from '../../../utils/transform-iFrame-instance/transform-iFrame-instance';
 
 class ChunkTransferHelper {
   private io: IO;
   private importStepHelper: ImportStepHelper;
+  private transfersRepository: TransfersRepository;
 
   constructor(io: IO, importStepHelper: ImportStepHelper) {
     this.io = io;
     this.importStepHelper = importStepHelper;
+    this.transfersRepository = new TransfersRepository();
   }
 
-  public async chunkTransfer(
-    synchronization: Synchronization,
-    transfer: Transfer,
-    chunkedDatasets: object[][]
-  ) {
-    let { id: transferId } = transfer;
+  public async transfer(params: ChunkTransferParams) {
+    let { import: impt, transfer, datasets, chunkLength } = params;
+    const { id: transferId, offset } = transfer;
+
+    let slicedDatasets = datasets.slice(offset, datasets.length);
+    datasets = null;
+    const chunkedDatasets = this.chunkObjectArray(slicedDatasets, chunkLength);
+    slicedDatasets = null;
 
     while (chunkedDatasets.length) {
-      let refreshedTransfer = await new iFrameTransfer(dbClient).load(
-        transferId
-      );
-      refreshedTransfer = transformIFrameInstance(refreshedTransfer);
-      transferId = refreshedTransfer.id;
-
+      const refreshedTransfer = await this.transfersRepository.get(transferId);
       if (refreshedTransfer.status === TransferStatus.PAUSED) {
-        this.io
-          .to(refreshedTransfer.toString())
-          .emit('transfer', refreshedTransfer);
+        this.io.to(String(transferId)).emit('transfer', refreshedTransfer);
         return;
       }
-      const chunk = chunkedDatasets.shift();
-      await this.importStepHelper.importStep(
-        synchronization,
-        refreshedTransfer,
-        chunk
-      );
+
+      const datasetsChunk = chunkedDatasets.shift();
+      await this.importStepHelper.step(impt, refreshedTransfer, datasetsChunk);
     }
 
-    let completedTransfer = await new iFrameTransfer(
-      dbClient,
-      {
-        status: TransferStatus.COMPLETED,
-        errorMessage: null
-      },
-      transferId
-    ).save();
-    completedTransfer = transformIFrameInstance(completedTransfer);
+    const completedTransfer = this.transfersRepository.update({
+      id: transferId,
+      status: TransferStatus.COMPLETED
+    });
+    this.io.to(String(transferId)).emit('transfer', completedTransfer);
+  }
 
-    console.log('completedTransfer: ', completedTransfer);
+  // chunkObjectArray([1,2,3,4,5,6,7,8,9], 3) => [[1,2,3],[4,5,6],[7,8,9]]
+  private chunkObjectArray(array: object[], chunkLength: number) {
+    const chunkedArray = [];
+    for (let i = 0; i < array.length; i += chunkLength) {
+      const chunk = array.slice(i, i + chunkLength);
+      chunkedArray.push(chunk);
+    }
+    return chunkedArray;
   }
 }
 

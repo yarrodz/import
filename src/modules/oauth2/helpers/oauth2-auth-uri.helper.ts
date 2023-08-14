@@ -3,18 +3,16 @@ import { Request } from 'express';
 
 import OAuth2SessionHelper from './oauth2-session.helper';
 import OAuth2SessionCallbackParams from '../interfaces/oauth2-session-callback-params.interface';
-import Synchronization from '../../synchronizations/interfaces/synchronization.interface';
-import SynchronizationContext from '../../synchronizations/interfaces/synchronization-context.interface';
-import ApiConnection from '../../api/interfaces/api-connection.interface';
 import OAuth2CallbackProcess from '../interfaces/oauth2-callback-process.interface';
-import { OAuth2 } from '../interfaces/oauth2.interface';
 import OAuth2AuthUriParams from '../interfaces/oauth2-auth-uri-params.interface';
+import ApiConnection from '../../api/interfaces/api-connection.interface';
+import { OAuth2 } from '../interfaces/oauth2.interface';
+import Context from '../../imports/interfaces/context.interface';
 
 const PROMPT = 'consent';
 const ACCESS_TYPE = 'offline';
 const RESPONSE_TYPE = 'code';
 const CODE_CHALANGE_METHOD = 'S256';
-const OAUTH2_REDIRECT_URI = 'http://localhost:3000/oauth-callback/';
 
 class OAuth2AuthUriHelper {
   private oAuth2RedirectUri: string;
@@ -25,12 +23,10 @@ class OAuth2AuthUriHelper {
 
   public createUri = async (
     req: Request,
-    synchronization: Synchronization,
-    context: SynchronizationContext
+    connection: ApiConnection,
+    context: Context
   ) => {
     const oAuth2SessionHelper = new OAuth2SessionHelper(req.session);
-    const { id: synchronizationId } = synchronization;
-    const connection = synchronization.connection as ApiConnection;
     const { oauth2 } = connection;
     const { auth_uri, use_code_verifier } = oauth2;
 

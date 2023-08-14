@@ -1,33 +1,32 @@
 import { Server as IO } from 'socket.io';
-import { iFrameTransfer } from 'iframe-ai';
 
-import Synchronization from '../../synchronizations/interfaces/synchronization.interface';
+import TransfersRepository from '../transfers.repository';
+import OuterTransferFunction from '../interfaces/outer-transfer-function.interface';
 import Transfer from '../interfaces/transfer.interface';
-import dbClient from '../../../utils/db-client/db-client';
 import { TransferStatus } from '../enums/transfer-status.enum';
 import sleep from '../../../utils/sleep/sleep';
-import TransferFunction from '../interfaces/transfer-function.interface';
-import transformIFrameInstance from '../../../utils/transform-iFrame-instance/transform-iFrame-instance';
+import TransferFailureHandleParams from '../interfaces/transfer-failure-handle-params.interface';
+import SqlImport from '../../sql/interfaces/sql-import.interface';
+import ApiImport from '../../api/interfaces/api-import.interface';
 
 class TransferFailureHandler {
   private io: IO;
+  private transfersRepository: TransfersRepository;
 
   constructor(io: IO) {
     this.io = io;
+    this.transfersRepository = new TransfersRepository();
   }
 
-  public async handle(
-    error: Error,
-    transferFunction: TransferFunction,
-    synchronization: Synchronization,
-    transfer: Transfer
-  ): Promise<void> {
-    console.error('error: ', error);
-    const { retryOptions } = synchronization;
+  public async handle(params: TransferFailureHandleParams): Promise<void> {
+    const { error, outerTransferFunction, import: impt, transfer } = params;
     const { id: transferId } = transfer;
+    const { retryOptions } = impt;
     const { maxAttempts, attemptTimeDelay } = retryOptions;
-    let refreshedTransfer = await new iFrameTransfer(dbClient).load(transferId);
-    refreshedTransfer = transformIFrameInstance(refreshedTransfer);
+
+    console.log('handle error: ', error);
+
+    const refreshedTransfer = await this.transfersRepository.get(transferId);
     const { retryAttempts } = refreshedTransfer;
 
     switch (retryAttempts) {
@@ -36,8 +35,9 @@ class TransferFailureHandler {
         break;
       default:
         await this.retryTransfer(
-          transferFunction,
-          synchronization,
+          error,
+          outerTransferFunction,
+          impt,
           refreshedTransfer,
           attemptTimeDelay
         );
@@ -46,37 +46,43 @@ class TransferFailureHandler {
   }
 
   private async failTransfer(error: Error, transfer: Transfer): Promise<void> {
-    const { id: transferId } = transfer;
-    let failedTransfer = await new iFrameTransfer(
-      dbClient,
-      {
-        status: TransferStatus.FAILED,
-        errorMessage: error.message
-      },
-      transferId
-    ).save();
-    failedTransfer = transformIFrameInstance(failedTransfer);
-    this.io.to(transferId.toString()).emit('transfer', failedTransfer);
+    const { id: transferId, log } = transfer;
+
+    log.push(`Transfer was failed with error: ${error.message}`);
+
+    const failedTransfer = await this.transfersRepository.update({
+      id: transferId,
+      status: TransferStatus.FAILED,
+      log
+    });
+    this.io.to(String(transferId)).emit('transfer', failedTransfer);
   }
 
   private async retryTransfer(
-    transferFunction: TransferFunction,
-    synchronization: Synchronization,
+    error: Error,
+    outerTransferFunction: OuterTransferFunction,
+    impt: SqlImport | ApiImport,
     transfer: Transfer,
     attemptTimeDelay: number
   ): Promise<void> {
-    const { id: transferId } = transfer;
+    let { id: transferId, log, retryAttempts } = transfer;
+    retryAttempts++;
 
-    let retriedTransfer = await new iFrameTransfer(
-      dbClient,
-      {
-        retryAttempts: transfer.retryAttempts + 1
-      },
-      transferId
-    ).save();
-    retriedTransfer = transformIFrameInstance(retriedTransfer);
+    log.push(
+      `Transfer was failed with error: ${error.message}. Retrying transfer after ${attemptTimeDelay}ms. ${retryAttempts} retry attempts left.`
+    );
+
+    const retriedTransfer = await this.transfersRepository.update({
+      id: transferId,
+      retryAttempts
+    });
+    this.io.to(String(transferId)).emit('transfer', retriedTransfer);
+
     await sleep(attemptTimeDelay);
-    await transferFunction(synchronization, retriedTransfer);
+    await outerTransferFunction({
+      import: impt,
+      transfer: retriedTransfer
+    });
   }
 }
 

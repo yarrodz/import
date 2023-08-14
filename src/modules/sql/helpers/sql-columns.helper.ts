@@ -1,6 +1,4 @@
 import { SqlConnector } from '../connector/sql.connector';
-import { SqlSequelizeDialectMap } from '../connector/sql-sequelize-dialect.map';
-import { Dialect as SequelizeDialect } from 'sequelize';
 import { SqlImportTarget } from '../enums/sql-import-target.enum';
 import {
   createCheckSqlTableIdColumnUniquenessQuery,
@@ -8,28 +6,18 @@ import {
   createSqlTableFindDataQuery
 } from '../connector/sql-table.query-builder';
 import { paginateSqlSelect } from '../connector/sql-select.query-builder';
-import Synchronization from '../../synchronizations/interfaces/synchronization.interface';
 import Column from '../../columns/column.interface';
 import SqlImport from '../interfaces/sql-import.interface';
-import SqlConnection from '../interfaces/sql.connection.interface';
 
 class SqlColumnsHelper {
-  public async find(synchronization: Synchronization): Promise<Column[]> {
+  public async find(impt: SqlImport): Promise<Column[]> {
     let sqlConnector: SqlConnector;
     try {
-      const impt = synchronization.import as SqlImport;
-      const connection = synchronization.connection as SqlConnection;
-      const { idParameterName } = synchronization;
-      const { target, table, select } = impt;
-      const { dialect } = connection;
+      const { connection, idKey, target, table, select } = impt;
+      const { config } = connection;
+      const { dialect } = config;
 
-      const sequelizeDialect = SqlSequelizeDialectMap[
-        dialect
-      ] as SequelizeDialect;
-      sqlConnector = new SqlConnector({
-        ...connection,
-        dialect: sequelizeDialect
-      });
+      sqlConnector = new SqlConnector(config);
       await sqlConnector.connect();
 
       let columns: Column[] = [];
@@ -47,7 +35,7 @@ class SqlColumnsHelper {
             const query = createSqlTableFindDataQuery(
               dialect,
               table,
-              idParameterName,
+              idKey,
               0,
               1
             );
@@ -56,7 +44,7 @@ class SqlColumnsHelper {
           break;
         }
         case SqlImportTarget.SELECT: {
-          const query = paginateSqlSelect(select, idParameterName, 0, 1);
+          const query = paginateSqlSelect(select, idKey, 0, 1);
           columns = await this.selectColumnsFromDataset(sqlConnector, query);
           break;
         }
@@ -72,22 +60,14 @@ class SqlColumnsHelper {
     }
   }
 
-  public async checkIdColumnUniqueness(synchronization: Synchronization) {
+  public async checkIdColumnUniqueness(impt: SqlImport) {
     let sqlConnector: SqlConnector;
     try {
-      const impt = synchronization.import as SqlImport;
-      const connection = synchronization.connection as SqlConnection;
-      const { idParameterName } = synchronization;
-      const { target, table } = impt;
-      const { dialect } = connection;
+      const { connection, idKey, target, table, select } = impt;
+      const { config } = connection;
+      const { dialect } = config;
 
-      const sequelizeDialect = SqlSequelizeDialectMap[
-        dialect
-      ] as SequelizeDialect;
-      sqlConnector = new SqlConnector({
-        ...connection,
-        dialect: sequelizeDialect
-      });
+      sqlConnector = new SqlConnector(config);
       await sqlConnector.connect();
 
       let isUnique: boolean;
@@ -95,19 +75,13 @@ class SqlColumnsHelper {
         case SqlImportTarget.TABLE: {
           const query = createCheckSqlTableIdColumnUniquenessQuery(
             dialect,
-            idParameterName,
+            idKey,
             table
           );
           isUnique = await sqlConnector.queryResult(query);
           break;
         }
         case SqlImportTarget.SELECT: {
-          // const query = createCheckSelectColumnUniquenessQuery(
-          //   source,
-          //   idColumn,
-          //   select
-          // );
-          // isUnique = await sqlConnector.queryResult(query);
           isUnique = true;
           break;
         }

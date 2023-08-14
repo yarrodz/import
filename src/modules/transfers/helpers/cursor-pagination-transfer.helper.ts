@@ -1,109 +1,85 @@
 import { Server as IO } from 'socket.io';
-import { iFrameTransfer } from 'iframe-ai';
 
 import ImportStepHelper from './import-step.helper';
-import Synchronization from '../../synchronizations/interfaces/synchronization.interface';
-import Transfer from '../interfaces/transfer.interface';
-import CursorPaginationFunction from '../interfaces/cursor-pagination-function.interface';
-import dbClient from '../../../utils/db-client/db-client';
+import TransfersRepository from '../transfers.repository';
+import CursorPaginationTransferParams from '../interfaces/cursor-pagination-transfer-params.interface';
 import { TransferStatus } from '../enums/transfer-status.enum';
 import CursorPagination from '../interfaces/cursor-pagination.interface';
 import sleep from '../../../utils/sleep/sleep';
-import transformIFrameInstance from '../../../utils/transform-iFrame-instance/transform-iFrame-instance';
 
 class CursorPaginationTransferHelper {
   private io: IO;
   private importStepHelper: ImportStepHelper;
+  private transfersRepository: TransfersRepository;
 
   constructor(io: IO, importStepHelper: ImportStepHelper) {
     this.io = io;
     this.importStepHelper = importStepHelper;
+    this.transfersRepository = new TransfersRepository();
   }
 
-  public async cursorPaginationTransfer(
-    synchronization: Synchronization,
-    transfer: Transfer,
-    limit: number,
-    cursorPaginationFunction: CursorPaginationFunction,
-    ...cursorPaginationFunctionParams: any[]
-  ) {
-    const { limitRequestsPerSecond } = synchronization;
-    let { id: transferId } = transfer;
+  public async transfer(params: CursorPaginationTransferParams) {
+    const { import: impt, transfer, limitPerStep, paginationFunction } = params;
+    const { fn: paginationFn, params: paginationFnParams } = paginationFunction;
+    const { limitRequestsPerSecond } = impt;
+    let { id: transferId, offset, datasetsCount } = transfer;
 
-    let { processedDatasetsCount, totalDatasetsCount } = transfer;
-    console.log('processedDatasetsCount: ', processedDatasetsCount);
-    console.log('totalDatasetsCount: ', totalDatasetsCount);
-    console.log('typeof totalDatasetsCount: ', typeof totalDatasetsCount);
+    let datasets = [];
+    let requestCounter = 0;
+    let requestsExectionTime = 0;
+    do {
+      const stepStartDate = new Date();
+      const refreshedTransfer = await this.transfersRepository.get(transferId);
+      if (refreshedTransfer.status === TransferStatus.PAUSED) {
+        this.io.to(String(transferId)).emit('transfer', refreshedTransfer);
+        return;
+      }
 
-    while (processedDatasetsCount < totalDatasetsCount) {
-      let requestCounter = 0;
-      const startDate = new Date();
+      if (datasetsCount && refreshedTransfer.offset >= datasetsCount) {
+        break;
+      }
 
-      console.log('requestCounter: ', requestCounter);
-      while (requestCounter < limitRequestsPerSecond) {
-        requestCounter++;
-        let refreshedTransfer = await new iFrameTransfer(dbClient).load(
-          transferId
-        );
-        refreshedTransfer = transformIFrameInstance(refreshedTransfer);
-        transferId = refreshedTransfer.id;
-        console.log('refreshedTransfer: ', refreshedTransfer);
-        if (refreshedTransfer.status === TransferStatus.PAUSED) {
-          this.io
-            .to(refreshedTransfer.toString())
-            .emit('importProcess', refreshedTransfer);
-          return;
-        }
+      const cursorPagination: CursorPagination = {
+        cursor: refreshedTransfer.cursor,
+        limit: limitPerStep
+      };
 
-        processedDatasetsCount = refreshedTransfer.processedDatasetsCount;
-        if (processedDatasetsCount >= totalDatasetsCount) {
-          break;
-        }
+      // TO DO NOT REDECLARE DATASETS!!!!!!!!!!!!!!!!!!!!
+      const { cursor, datasets } = await paginationFn(
+        cursorPagination,
+        ...paginationFnParams
+      );
 
-        const cursorPagination: CursorPagination = {
-          cursor: refreshedTransfer.cursor,
-          limit
-        };
+      await this.importStepHelper.step(
+        impt,
+        refreshedTransfer,
+        datasets,
+        cursor
+      );
 
-        const { cursor, datasets } = await cursorPaginationFunction(
-          cursorPagination,
-          ...cursorPaginationFunctionParams
-        );
+      if (!cursor) {
+        break;
+      }
 
-        await this.importStepHelper.importStep(
-          synchronization,
-          refreshedTransfer,
-          datasets,
-          cursor
-        );
+      const stepEndDate = new Date();
+      const stepExectionTime = stepEndDate.getTime() - stepStartDate.getTime();
+      requestCounter++;
+      requestsExectionTime += stepExectionTime;
 
-        if (!cursor || datasets.length === 0) {
-          break;
+      if (requestCounter === limitRequestsPerSecond) {
+        requestCounter = 0;
+        if (requestsExectionTime < 1000) {
+          const remainingToSecond = 1000 - requestsExectionTime;
+          await sleep(remainingToSecond);
         }
       }
-      const endDate = new Date();
-      const requestsExectionTime = endDate.getTime() - startDate.getTime();
-      // console.log('requestsExectionTime: ', requestsExectionTime);
-      // console.log('----------------');
-      // If step executed faster than second. we have to wait for the remaining time so that there is a second in the sum
-      if (requestsExectionTime < 1000) {
-        const remainingToSecond = 1000 - requestsExectionTime;
-        // console.log('remainingToSecond: ', remainingToSecond);
-        await sleep(remainingToSecond);
-      }
-    }
+    } while (datasets.length);
 
-    let completedTransfer = await new iFrameTransfer(
-      dbClient,
-      {
-        status: TransferStatus.COMPLETED,
-        errorMessage: null
-      },
-      transferId
-    ).save();
-    completedTransfer = transformIFrameInstance(completedTransfer);
-
-    console.log('completedTransfer: ', completedTransfer);
+    const completedTransfer = this.transfersRepository.update({
+      id: transferId,
+      status: TransferStatus.COMPLETED
+    });
+    this.io.to(String(transferId)).emit('transfer', completedTransfer);
   }
 }
 

@@ -9,15 +9,18 @@ export class TransfersController {
     this.transfersService = importsService;
   }
 
-  findAll = async (req: Request, res: Response) => {
-    const unitId = req.params.unitId;
-    const responseHandler = await this.transfersService.findAll(unitId);
-    responseHandler.send(res);
-  };
+  // getAll = async (req: Request, res: Response) => {
+  //   const { unitId, synchronizationId } = req.query;
+  //   const responseHandler = await this.transfersService.getAll(
+  //     Number(unitId),
+  //     Number(synchronizationId)
+  //   );
+  //   responseHandler.send(res);
+  // };
 
   delete = async (req: Request, res: Response) => {
     const id = req.params.id;
-    const responseHandler = await this.transfersService.delete(id);
+    const responseHandler = await this.transfersService.delete(Number(id));
     responseHandler.send(res);
   };
 

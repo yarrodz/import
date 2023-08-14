@@ -1,8 +1,8 @@
-import SynchronizationContext from '../../synchronizations/interfaces/synchronization-context.interface';
+import Context from '../../imports/interfaces/context.interface';
 import OAuth2SessionCallbackParams from './oauth2-session-callback-params.interface';
 
 export default interface OAuth2CallbackProcess {
   state: string;
-  context: SynchronizationContext;
+  context: Context;
   params: OAuth2SessionCallbackParams;
 }

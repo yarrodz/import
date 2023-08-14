@@ -13,10 +13,10 @@ class OAuth2SessionHelper {
     this.session.oAuth2CallbackProcesses =
       this.session.oAuth2CallbackProcesses || [];
 
-    //remove OAuth2 process by synchronizationId if exists
+    //remove OAuth2 process by connectionId if exists
     this.session.oAuth2CallbackProcesses =
       this.session.oAuth2CallbackProcesses.filter(
-        (p) => p.context.synchronizationId !== process.context.synchronizationId
+        (p) => p.context.connectionId !== process.context.connectionId
       );
 
     this.session.oAuth2CallbackProcesses.push(process);

@@ -12,7 +12,7 @@ class TransfersRouter {
   }
 
   private initializeRoutes() {
-    this.router.get('/:unitId', this.transfersController.findAll);
+    // this.router.get('/', this.transfersController.getAll);
     this.router.delete('/:id', this.transfersController.delete);
     this.router.post('/pause', this.transfersController.pause);
     this.router.post('/reload', this.transfersController.reload);

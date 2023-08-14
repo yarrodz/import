@@ -7,7 +7,25 @@
     "outDir": "lib",
     "declaration": true,
     "declarationDir": "typings",
-    "pretty": true
+    "pretty": true,
+    "experimentalDecorators": true,
+    "skipLibCheck": true
   },
   "include": ["src/**/*"]
 }
+
+// {
+//   "compilerOptions": {
+//     "module": "CommonJS",
+//     "moduleResolution": "Node",
+//     "target": "ES6",
+//     "outDir": "lib",
+//     "declaration": true,
+//     "declarationDir": "typings",
+//     "pretty": true,
+//     "experimentalDecorators": true,
+//     "sourceMap": true,
+//     // "skipLibCheck": true,
+//   },
+//   "include": ["src/**/*"],
+// }

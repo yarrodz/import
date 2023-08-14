@@ -1,57 +1,65 @@
 import { Request } from 'express';
-import { iFrameTransfer } from 'iframe-ai';
 
+import SqlTransferService from '../sql/sql-transfer.service';
+import ApiTransferService from '../api/api-transfer.service';
 import ResponseHandler from '../../utils/response-handler/response-handler';
-import SqlSynchronizationService from '../sql/sql-synchronization.service';
-import ApiSynchronizationService from '../api/api-synchronization.service';
-import dbClient from '../../utils/db-client/db-client';
 import { TransferStatus } from './enums/transfer-status.enum';
-import transformIFrameInstance from '../../utils/transform-iFrame-instance/transform-iFrame-instance';
-import { SynchronizationSource } from '../synchronizations/enums/synchronization-source.enum';
+import TransfersRepository from './transfers.repository';
+import ProcessesRepository from '../processes/process.repository';
+import { Source } from '../imports/enums/source.enum';
 
 class TransfersService {
-  private sqlSynchronizationService: SqlSynchronizationService;
-  private apiSynchronizationService: ApiSynchronizationService;
+  private transfersRepository: TransfersRepository;
+  private processesRepository: ProcessesRepository;
+  private sqlTransferService: SqlTransferService;
+  private apiTransferService: ApiTransferService;
 
   constructor(
-    sqlSynchronizationService: SqlSynchronizationService,
-    apiSynchronizationService: ApiSynchronizationService
+    sqlTransferService: SqlTransferService,
+    apiTransferService: ApiTransferService
   ) {
-    this.sqlSynchronizationService = sqlSynchronizationService;
-    this.apiSynchronizationService = apiSynchronizationService;
+    this.transfersRepository = new TransfersRepository();
+    this.processesRepository = new ProcessesRepository();
+    this.sqlTransferService = sqlTransferService;
+    this.apiTransferService = apiTransferService;
   }
 
-  async findAll(unit: string): Promise<ResponseHandler> {
+  // async getAll(
+  //   unitId: number,
+  //   synchronizationId: number
+  // ): Promise<ResponseHandler> {
+  //   const responseHandler = new ResponseHandler();
+  //   try {
+  //     const transfers = await this.transfersRepository.getAll({
+  //       unitId,
+  //       synchronizationId
+  //     });
+  //     responseHandler.setSuccess(200, transfers);
+  //     return responseHandler;
+  //   } catch (error) {
+  //     responseHandler.setError(500, error.message);
+  //     return responseHandler;
+  //   }
+  // }
+
+  async delete(id: number) {
     const responseHandler = new ResponseHandler();
     try {
-      // const processes = await this.importProcessesRepository.findAll(unit);
-      responseHandler.setSuccess(200, 'processes');
-      return responseHandler;
-    } catch (error) {
-      responseHandler.setError(500, error.message);
-      return responseHandler;
-    }
-  }
+      const transfer = await this.transfersRepository.get(id);
+      if (!transfer) {
+        responseHandler.setError(404, 'Transfer not found');
+        return responseHandler;
+      }
 
-  async delete(id: string) {
-    const responseHandler = new ResponseHandler();
-    try {
-      // let transfer =
-      //   const process = await this.importProcessesRepository.findById(id);
-      //   if (!process) {
-      //     responseHandler.setError(404, 'Import process not found');
-      //     return responseHandler;
-      //   }
+      if (transfer.status === TransferStatus.PENDING) {
+        responseHandler.setError(
+          409,
+          'Pending import process cannot be deleted'
+        );
+        return responseHandler;
+      }
 
-      //   if (process.status === ImportStatus.PENDING) {
-      //     responseHandler.setError(
-      //       409,
-      //       'Pending import process cannot be deleted'
-      //     );
-      //     return responseHandler;
-      //   }
-
-      //   await this.importProcessesRepository.delete(id);
+      await this.transfersRepository.delete(id);
       responseHandler.setSuccess(200, true);
       return responseHandler;
     } catch (error) {
@@ -63,26 +71,24 @@ class TransfersService {
   async pause(id: number) {
     const responseHandler = new ResponseHandler();
     try {
-      await new iFrameTransfer(
-        dbClient,
-        { status: TransferStatus.PAUSED },
-        id
-      ).save();
+      const transfer = await this.transfersRepository.get(id);
+      if (!transfer) {
+        responseHandler.setError(404, 'Transfer not found');
+        return responseHandler;
+      }
 
-      //   const process = await this.importProcessesRepository.findById(id);
-      //   if (!process) {
-      //     responseHandler.setError(404, 'Import process not found');
-      //     return responseHandler;
-      //   }
+      if (transfer.status !== TransferStatus.PENDING) {
+        responseHandler.setError(
+          409,
+          'Only pending transfer process can be paused'
+        );
+        return responseHandler;
+      }
 
-      //   if (process.status !== ImportStatus.PENDING) {
-      //     responseHandler.setError(
-      //       409,
-      //       'Only pending import process can be paused'
-      //     );
-      //     return responseHandler;
-      //   }
-
+      await this.transfersRepository.update({
+        id,
+        status: TransferStatus.PAUSED
+      });
       responseHandler.setSuccess(200, true);
       return responseHandler;
     } catch (error) {
@@ -91,73 +97,62 @@ class TransfersService {
     }
   }
 
-  async reload(req: Request, id: string) {
+  async reload(req: Request, id: number) {
     const responseHandler = new ResponseHandler();
     try {
-      //   const process = await this.importProcessesRepository.findById(id);
-      //   if (!process) {
-      // responseHandler.setError(404, 'Import process not found');
-      // return responseHandler;
-      //   }
+      const transfer = await this.transfersRepository.get(id);
+      if (!transfer) {
+        responseHandler.setError(404, 'Transfer not found');
+        return responseHandler;
+      }
 
-      //   if (process.status !== ImportStatus.PAUSED) {
-      // responseHandler.setError(
-      //   409,
-      //   'Only paused import process can be reloaded'
-      // );
-      // return responseHandler;
-      //   }
+      const importId = transfer.__.inImport.id;
 
-      //   const impt = await this.importsRepository.findById(
-      //     process.import.toString()
+      if (transfer.status !== TransferStatus.PAUSED) {
+        responseHandler.setError(409, 'Only paused transfer can be reloaded');
+        return responseHandler;
+      }
+
+      const impt = await this.processesRepository.get(importId);
+      if (!impt) {
+        responseHandler.setError(404, 'Import not found');
+        return responseHandler;
+      }
+
+      // const pendingImport =
+      //   await this.importProcessesRepository.findPendingByUnit(
+      //     impt.unit as string
       //   );
-      //   if (!impt) {
-      //     responseHandler.setError(404, 'Import not found');
-      //     return responseHandler;
-      //   }
+      // if (pendingImport) {
+      //   responseHandler.setError(
+      //     409,
+      //     'This unit is currently processing another import'
+      //   );
+      //   return responseHandler;
+      // }
 
-      //   const pendingImport =
-      //     await this.importProcessesRepository.findPendingByUnit(
-      //       impt.unit as string
-      //     );
-      //   if (pendingImport) {
-      //     responseHandler.setError(
-      //       409,
-      //       'This unit is currently processing another import'
-      //     );
-      //     return responseHandler;
-      //   }
+      const updatedTransfer = await this.transfersRepository.update({
+        id,
+        status: TransferStatus.PENDING
+      });
 
-      let transfer = await new iFrameTransfer(
-        dbClient,
-        { status: TransferStatus.PENDING },
-        id
-      ).save();
-      let synchronization = await transfer.getSynchronization();
-
-      transfer = transformIFrameInstance(transfer);
-      synchronization = transformIFrameInstance(synchronization);
-
-      const { source } = synchronization;
+      const { source } = impt;
 
       switch (source) {
-        case SynchronizationSource.SQL: {
-          return await this.sqlSynchronizationService.reload(
-            synchronization,
-            transfer
-          );
+        case Source.SQL: {
+          return await this.sqlTransferService.reload(impt, updatedTransfer);
         }
-        case SynchronizationSource.API: {
-          return await this.apiSynchronizationService.reload(
+        case Source.API: {
+          return await this.apiTransferService.reload(
             req,
-            synchronization,
-            transfer
+            impt,
+            updatedTransfer
           );
         }
         default: {
           responseHandler.setError(
             400,
-            `Error while reloading import. Unknown import source '${source}'.`
+            `Error while reloading import. Unknown synchronization source '${source}'.`
           );
           return responseHandler;
         }
@@ -168,60 +163,52 @@ class TransfersService {
     }
   }
 
-  async retry(req: Request, id: string) {
+  async retry(req: Request, id: number) {
     const responseHandler = new ResponseHandler();
     try {
-      //   const process = await this.importProcessesRepository.findById(id);
-      //   if (!process) {
-      //     responseHandler.setError(404, 'Import process not found');
-      //     return responseHandler;
-      //   }
+      const transfer = await this.transfersRepository.get(id);
+      if (!transfer) {
+        responseHandler.setError(404, 'Transfer not found');
+        return responseHandler;
+      }
 
-      //   if (process.status !== ImportStatus.FAILED) {
-      //     responseHandler.setError(
-      //       409,
-      //       'Only failed import process can be retried'
-      //     );
-      //     return responseHandler;
-      //   }
+      const importId = transfer.__.inImport.id;
 
-      //   const impt = await this.importsRepository.findById(
-      //     process.import.toString()
-      //   );
-      //   if (!impt) {
-      //     responseHandler.setError(404, 'Import not found');
-      //     return responseHandler;
-      //   }
-      let transfer = await new iFrameTransfer(
-        dbClient,
-        { status: TransferStatus.PENDING },
-        id
-      ).save();
-      let synchronization = await transfer.getSynchronization();
+      if (transfer.status !== TransferStatus.FAILED) {
+        responseHandler.setError(409, 'Only failed transfer can be retried');
+        return responseHandler;
+      }
 
-      transfer = transformIFrameInstance(transfer);
-      synchronization = transformIFrameInstance(synchronization);
+      const impt = await this.processesRepository.get(importId);
+      if (!impt) {
+        responseHandler.setError(404, 'Import not found');
+        return responseHandler;
+      }
 
-      const { source } = synchronization;
+      const updatedTransfer = await this.transfersRepository.update({
+        transfer: {
+          id,
+          status: TransferStatus.PENDING
+        }
+      });
+
+      const { source } = impt;
 
       switch (source) {
-        case SynchronizationSource.SQL: {
-          return await this.sqlSynchronizationService.retry(
-            synchronization,
-            transfer
-          );
+        case Source.SQL: {
+          return await this.sqlTransferService.retry(impt, updatedTransfer);
         }
-        case SynchronizationSource.API: {
-          return await this.apiSynchronizationService.retry(
+        case Source.API: {
+          return await this.apiTransferService.retry(
             req,
-            synchronization,
-            transfer
+            impt,
+            updatedTransfer
           );
         }
         default: {
           responseHandler.setError(
             400,
-            `Error while reloading import. Unknown import source '${source}'.`
+            `Error while retrieng transfer. Unknown synchronization source '${source}'.`
           );
           return responseHandler;
         }

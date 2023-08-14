@@ -3,11 +3,11 @@ import { RequestPaginationPlacement } from '../enums/request-pagination-placemen
 export default interface RequestPaginationOptions {
   placement: RequestPaginationPlacement;
 
-  cursorParameterName?: string;
-  cursorParameterPath?: string;
+  cursorKey?: string;
+  cursorPath?: string;
 
-  offsetParameterName?: string;
+  offsetKey?: string;
 
-  limitParameterName: string;
+  limitKey: string;
   limitValue: number;
 }

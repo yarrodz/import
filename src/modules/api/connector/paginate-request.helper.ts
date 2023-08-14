@@ -51,23 +51,23 @@ class PaginateRequestHelper {
   ) {
     switch (paginationType) {
       case TransferMethod.OFFSET_PAGINATION: {
-        const { offsetParameterName, limitParameterName } = paginationOptions;
+        const { offsetKey, limitKey } = paginationOptions;
         const { offset, limit } = pagination as OffsetPagination;
 
         request.params = request.params || {};
 
-        request.params[offsetParameterName] = offset;
-        request.params[limitParameterName] = limit;
+        request.params[offsetKey] = offset;
+        request.params[limitKey] = limit;
         break;
       }
       case TransferMethod.CURSOR_PAGINATION: {
-        const { cursorParameterName, limitParameterName } = paginationOptions;
+        const { cursorKey, limitKey } = paginationOptions;
         const { cursor, limit } = pagination as CursorPagination;
 
         request.params = request.params || {};
 
-        request.params[cursorParameterName] = cursor;
-        request.params[limitParameterName] = limit;
+        request.params[cursorKey] = cursor;
+        request.params[limitKey] = limit;
         break;
       }
       default: {
@@ -86,23 +86,23 @@ class PaginateRequestHelper {
   ) {
     switch (paginationType) {
       case TransferMethod.OFFSET_PAGINATION: {
-        const { offsetParameterName, limitParameterName } = paginationOptions;
+        const { offsetKey, limitKey } = paginationOptions;
         const { offset, limit } = pagination as OffsetPagination;
 
         request.data = request.data || {};
 
-        request.data[offsetParameterName] = offset;
-        request.data[limitParameterName] = limit;
+        request.data[offsetKey] = offset;
+        request.data[limitKey] = limit;
         break;
       }
       case TransferMethod.CURSOR_PAGINATION: {
-        const { cursorParameterName, limitParameterName } = paginationOptions;
+        const { cursorKey, limitKey } = paginationOptions;
         const { cursor, limit } = pagination as CursorPagination;
 
         request.data = request.data || {};
 
-        request.data[cursorParameterName] = cursor;
-        request.data[limitParameterName] = limit;
+        request.data[cursorKey] = cursor;
+        request.data[limitKey] = limit;
         break;
       }
       default: {

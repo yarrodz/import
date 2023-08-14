@@ -1,6 +1,5 @@
 import ApiConnector from '../connector/api-connector';
 import resolvePath from '../../../utils/resolve-path/resolve-path';
-import Synchronization from '../../synchronizations/interfaces/synchronization.interface';
 import Column from '../../columns/column.interface';
 import ApiImport from '../interfaces/api-import.interface';
 import { TransferMethod } from '../../transfers/enums/transfer-method.enum';
@@ -9,11 +8,9 @@ import CursorPagination from '../../transfers/interfaces/cursor-pagination.inter
 import ApiConnection from '../interfaces/api-connection.interface';
 
 class ApiColumnsHelper {
-  public async find(synchronization: Synchronization): Promise<Column[]> {
+  public async find(impt: ApiImport): Promise<Column[]> {
     try {
-      const impt = synchronization.import as ApiImport;
-      const connection = synchronization.connection as ApiConnection;
-      const { transferMethod, datasetsPath } = impt;
+      const { connection, transferMethod, datasetsPath } = impt;
 
       const apiConnector = new ApiConnector(impt, connection);
       await apiConnector.authRequest();
@@ -60,12 +57,9 @@ class ApiColumnsHelper {
     }
   }
 
-  public async checkIdColumnUniqueness(synchronization: Synchronization) {
+  public async checkIdColumnUniqueness(impt: ApiImport) {
     try {
-      const { idParameterName } = synchronization;
-      const impt = synchronization.import as ApiImport;
-      const connection = synchronization.connection as ApiConnection;
-      const { transferMethod, datasetsPath } = impt;
+      const { connection, transferMethod, datasetsPath, idKey } = impt;
 
       const apiConnector = new ApiConnector(impt, connection);
       await apiConnector.authRequest();
@@ -74,7 +68,7 @@ class ApiColumnsHelper {
         case TransferMethod.CHUNK: {
           const response = await apiConnector.sendRequest();
           const datasets = resolvePath(response, datasetsPath) as object[];
-          return this.checkKeyValuesUniqueness(datasets, idParameterName);
+          return this.checkKeyValuesUniqueness(datasets, idKey);
         }
         case TransferMethod.OFFSET_PAGINATION: {
           return true;

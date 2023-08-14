@@ -1,38 +1,63 @@
-// import ImportProcessesRepository from '../transfers.repository';
-// import ImportsRepository from '../imports/imports.repository';
-// import SqlTransferHelper from '../../sql/helpers/sql-transfer.helper';
-// import ApiTransferHelper from '../../api/helpers/api-transfer.helper';
-// import { ImportSource } from '../imports/enums/import-source.enum';
+// import SqlTransferHelper from '../../sql/helpers/sql-import.helper';
+// import ApiTransferHelper from '../../api/helpers/api-import.helper';
+// import TransfersRepository from '../transfers.repository';
+// import SynchronizationsRepository from '../../synchronizations/synchronizations.repository';
+// import { TransferStatus } from '../enums/transfer-status.enum';
+// import { SynchronizationSource } from '../../synchronizations/enums/synchronization-source.enum';
 
-// export default function createPendingImportProcessesReloaderFunction(
-//   importProcessesRepository: ImportProcessesRepository,
-//   importsRepository: ImportsRepository,
-//   sqlTransferHelper: SqlTransferHelper,
-//   apiTransferHelper: ApiTransferHelper
-// ): Function {
-//   const reloadPendingImportProcesses = async function () {
-//     const pendingProcesses = await importProcessesRepository.findPending();
+// class PendingTransfersReloader {
+//   sqlTransferHelper: SqlTransferHelper;
+//   apiTransferHelper: ApiTransferHelper;
+//   transfersRepository: TransfersRepository;
+//   synchronizationsRepository: SynchronizationsRepository;
+
+//   constructor(
+//     sqlTransferHelper: SqlTransferHelper,
+//     apiTransferHelper: ApiTransferHelper
+//   ) {
+//     this.sqlTransferHelper = sqlTransferHelper;
+//     this.apiTransferHelper = apiTransferHelper;
+//     this.transfersRepository = new TransfersRepository();
+//     this.synchronizationsRepository = new SynchronizationsRepository();
+//   }
+
+//   async reload() {
+//     const pendingTransfers = await this.transfersRepository.getAll({
+//       status: TransferStatus.PENDING
+//     });
 
 //     await Promise.all(
-//       pendingProcesses.map(async (process) => {
-//         const { import: importId } = process;
+//       pendingTransfers.map(async (transfer) => {
+//         try {
+//           const synchronizationId = transfer._ref.inSynchronization;
 
-//         const impt = await importsRepository.findById(importId);
-//         const { source } = impt;
+//           const synchronization = await this.synchronizationsRepository.getOne(
+//             synchronizationId
+//           );
+//           const { source } = synchronization;
 
-//         switch (source) {
-//           case ImportSource.SQL: {
-//             await sqlTransferHelper.transfer(impt, process);
-//             break;
+//           //To do add checks if transfer import or export
+//           switch (source) {
+//             case SynchronizationSource.SQL: {
+//               await this.sqlTransferHelper.import(synchronization, transfer);
+//               break;
+//             }
+//             case SynchronizationSource.API: {
+//               await this.apiTransferHelper.import(synchronization, transfer);
+//               break;
+//             }
+//             default: {
+//               console.error(
+//                 `Error while reloading pending transfers: Unknown synchronization source: '${source}'.`
+//               );
+//             }
 //           }
-//           case ImportSource.API: {
-//             await apiTransferHelper.transfer(impt, process);
-//             break;
-//           }
+//         } catch (error) {
+//           console.error(`Error while reloading pending transfers: ${error}.`);
 //         }
 //       })
 //     );
-//   };
-
-//   return reloadPendingImportProcesses;
+//   }
 // }
+
+// export default PendingTransfersReloader;

@@ -6,7 +6,6 @@ import { TransferMethod } from '../../transfers/enums/transfer-method.enum';
 import RequestPaginationOptions from '../interfaces/request-pagination-options.interface';
 import ApiConnection from '../interfaces/api-connection.interface';
 import ApiImport from '../interfaces/api-import.interface';
-import ApiExport from '../interfaces/api-export.interface';
 import OffsetPagination from '../../transfers/interfaces/offset-pagination.interface';
 import CursorPagination from '../../transfers/interfaces/cursor-pagination.interface';
 
@@ -16,8 +15,8 @@ class ApiConnector {
   private paginationType?: TransferMethod;
   private paginationOptions?: RequestPaginationOptions;
 
-  constructor(importOrExport: ApiImport, connection: ApiConnection) {
-    const { request, transferMethod, paginationOptions } = importOrExport;
+  constructor(impt: ApiImport, connection: ApiConnection) {
+    const { request, transferMethod, paginationOptions } = impt;
 
     this.request = { ...request, data: request.body };
     this.auth = connection;
@@ -29,7 +28,6 @@ class ApiConnector {
     try {
       return await axios(this.request);
     } catch (error) {
-      // console.error('error sendRequest: ', error)
       throw new Error(`Error while sending request: ${error.message}`);
     }
   }
