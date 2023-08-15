@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 
 import ConnectionsService from './connections.service';
+import { Source } from '../imports/enums/source.enum';
 
 class ConnectionsController {
   private connectionsService: ConnectionsService;
@@ -9,15 +10,15 @@ class ConnectionsController {
     this.connectionsService = new ConnectionsService();
   }
 
-  // getAll = async (req: Request, res: Response) => {
-  //   let { unitId, connectionId } = req.query;
+  getAll = async (req: Request, res: Response) => {
+    let { source, unitId } = req.query;
 
-  //   const responseHandler = await this.connectionsService.findAll(
-  //     Number(unitId),
-  //     Number(connectionId)
-  //   );
-  //   responseHandler.send(res);
-  // };
+    const responseHandler = await this.connectionsService.getAll(
+      source as Source,
+      Number(unitId)
+    );
+    responseHandler.send(res);
+  };
 
   get = async (req: Request, res: Response) => {
     const id = req.params.id;

@@ -93,10 +93,9 @@ class ApiImportHelper {
   };
 
   private async chunkImport(impt: ApiImport, transfer: Transfer) {
-    const { connection } = impt;
     const { datasetsPath } = impt;
 
-    const apiConnector = new ApiConnector(impt, connection);
+    const apiConnector = new ApiConnector(impt);
     await apiConnector.authRequest();
 
     const response = await apiConnector.sendRequest();
@@ -113,10 +112,10 @@ class ApiImportHelper {
   }
 
   private async offsetPaginationImport(impt: ApiImport, transfer: Transfer) {
-    const { connection, paginationOptions, datasetsPath } = impt;
+    const { paginationOptions, datasetsPath } = impt;
     const { limitValue } = paginationOptions;
 
-    const apiConnector = new ApiConnector(impt, connection);
+    const apiConnector = new ApiConnector(impt);
     await apiConnector.authRequest();
 
     const offsetPaginationTransferParams: OffsetPaginationTransferParams = {
@@ -135,10 +134,10 @@ class ApiImportHelper {
   }
 
   private async cursorPaginationImport(impt: ApiImport, transfer: Transfer) {
-    const { connection, paginationOptions, datasetsPath } = impt;
-    const { limitValue, cursorKey } = paginationOptions;
+    const { paginationOptions, datasetsPath } = impt;
+    const { limitValue, cursorPath } = paginationOptions;
 
-    const apiConnector = new ApiConnector(impt, connection);
+    const apiConnector = new ApiConnector(impt);
     await apiConnector.authRequest();
 
     const cursorPaginationTransferParams: CursorPaginationTransferParams = {
@@ -147,7 +146,7 @@ class ApiImportHelper {
       limitPerStep: limitValue,
       paginationFunction: {
         fn: this.cursorPaginationFunction,
-        params: [apiConnector, cursorKey, datasetsPath]
+        params: [apiConnector, cursorPath, datasetsPath]
       }
     };
 
@@ -172,10 +171,16 @@ class ApiImportHelper {
     cursorPath: string,
     datasetsPath: string
   ) => {
+    console.log('cursorPath: ', cursorPath)
     apiConnector.paginateRequest(cursorPagination);
     const data = await apiConnector.sendRequest();
     const cursor = resolvePath(data, cursorPath) as unknown as string;
     const datasets = resolvePath(data, datasetsPath) as object[];
+
+    // console.log('data.data.records: ', data.data.records);
+    // console.log('data.data.offset: ', data.data.offset);
+    console.log('cursor: ', cursor);
+    console.log('records: ', datasets.length);
     return {
       cursor,
       datasets

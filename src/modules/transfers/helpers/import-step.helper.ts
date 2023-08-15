@@ -1,15 +1,16 @@
 import { Server as IO } from 'socket.io';
 
+import iFrameDataset from '../../datasets/iFrameDataset';
 import Transfer from '../interfaces/transfer.interface';
 import resolvePath from '../../../utils/resolve-path/resolve-path';
 import Feature from '../../features/feature.interafce';
 import { FeatureType } from '../../features/feature-type.enum';
 import Dataset from '../../datasets/dataset.interface';
 import ImportField from '../../imports/interfaces/import-field.interface';
-import sleep from '../../../utils/sleep/sleep';
 import TransfersRepository from '../transfers.repository';
 import SqlImport from '../../sql/interfaces/sql-import.interface';
 import ApiImport from '../../api/interfaces/api-import.interface';
+import dbClient from '../../..';
 
 class ImportStepHelper {
   private io: IO;
@@ -53,11 +54,11 @@ class ImportStepHelper {
     transfer: Transfer,
     datasets: object[]
   ) {
-    const { id: importId, unit, idKey } = impt;
+    const { id: importId, idKey } = impt;
     let { id: transferId, log } = transfer;
     const { fields } = impt;
-    // const { id: unitId } = unit;
-    const unitId = 1221;
+    const unit = impt.__.inUnit[0];
+    const { id: unitId } = unit;
 
     const transformedDatasets = [];
     datasets.forEach(async (dataset) => {
@@ -133,28 +134,7 @@ class ImportStepHelper {
 
   private async insertDatasets(datasets: Dataset[]) {
     try {
-      // await Promise.all(
-      //   datasets.map(async (dataset) => {
-      //     const existingDataset = await new iFrameDataset(dbClient).load(id)
-      //       await this.datasetsRepository.findByImportAndSourceDatasetIds(
-      //         dataset.import,
-      //         dataset.sourceDatasetId
-      //       );
-
-      //     if (!existingDataset) {
-      //       await this.datasetsRepository.create(dataset);
-      //     } else {
-      //       await this.datasetsRepository.update(existingDataset._id, dataset);
-      //     }
-      //   })
-      // );
-
-      // const createdDatasets = await new iFrameDataset(dbClient).bulkInsert(
-      //   datasets
-      // );
-      await sleep(2000);
-      let createdDatasets = 1000;
-      console.log('createdDatasets: ', createdDatasets);
+      await new iFrameDataset(dbClient).bulkSave(datasets);
     } catch (error) {
       throw new Error(`Error while insert datasets: ${error.message}.`);
     }

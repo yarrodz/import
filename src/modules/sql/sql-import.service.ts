@@ -26,6 +26,8 @@ class SqlImportService {
       responseHandler.setSuccess(200, columns);
       return responseHandler;
     } catch (error) {
+      console.error('sError: ', error);
+
       responseHandler.setError(500, error.message);
       return responseHandler;
     }

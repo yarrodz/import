@@ -24,23 +24,20 @@ class TransfersService {
     this.apiTransferService = apiTransferService;
   }
 
-  // async getAll(
-  //   unitId: number,
-  //   synchronizationId: number
-  // ): Promise<ResponseHandler> {
-  //   const responseHandler = new ResponseHandler();
-  //   try {
-  //     const transfers = await this.transfersRepository.getAll({
-  //       unitId,
-  //       synchronizationId
-  //     });
-  //     responseHandler.setSuccess(200, transfers);
-  //     return responseHandler;
-  //   } catch (error) {
-  //     responseHandler.setError(500, error.message);
-  //     return responseHandler;
-  //   }
-  // }
+  async getAll(
+    importId: number,
+    unitId: number,
+  ): Promise<ResponseHandler> {
+    const responseHandler = new ResponseHandler();
+    try {
+      const transfers = await this.transfersRepository.getAll(importId, unitId);
+      responseHandler.setSuccess(200, transfers);
+      return responseHandler;
+    } catch (error) {
+      responseHandler.setError(500, error.message);
+      return responseHandler;
+    }
+  }
 
   async delete(id: number) {
     const responseHandler = new ResponseHandler();

@@ -22,7 +22,7 @@ class CursorPaginationTransferHelper {
     const { import: impt, transfer, limitPerStep, paginationFunction } = params;
     const { fn: paginationFn, params: paginationFnParams } = paginationFunction;
     const { limitRequestsPerSecond } = impt;
-    let { id: transferId, offset, datasetsCount } = transfer;
+    let { id: transferId, datasetsCount } = transfer;
 
     let datasets = [];
     let requestCounter = 0;
@@ -35,7 +35,9 @@ class CursorPaginationTransferHelper {
         return;
       }
 
-      if (datasetsCount && refreshedTransfer.offset >= datasetsCount) {
+      let { offset, cursor } = refreshedTransfer;
+
+      if (datasetsCount && offset >= datasetsCount) {
         break;
       }
 
@@ -44,11 +46,12 @@ class CursorPaginationTransferHelper {
         limit: limitPerStep
       };
 
-      // TO DO NOT REDECLARE DATASETS!!!!!!!!!!!!!!!!!!!!
-      const { cursor, datasets } = await paginationFn(
+      const result = await paginationFn(
         cursorPagination,
         ...paginationFnParams
       );
+      cursor = result.cursor;
+      datasets = result.datasets;
 
       await this.importStepHelper.step(
         impt,

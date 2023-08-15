@@ -13,12 +13,12 @@ class ImportsRouter {
   }
 
   private initializeRoutes() {
-    // this.router.get('/', this.synchronizationsController.getAll);
+    this.router.get('/', this.synchronizationsController.getAll);
     this.router.get('/:id', this.synchronizationsController.get);
     this.router.post('/', this.synchronizationsController.create);
     this.router.patch('/', this.synchronizationsController.update);
     this.router.delete('/:id', this.synchronizationsController.delete);
-    this.router.get('/:id/columns', this.synchronizationsController.getColumns);
+    this.router.post('/columns', this.synchronizationsController.getColumns);
     this.router.get(
       '/:id/idColumnUniqueness',
       this.synchronizationsController.checkIdColumnUniqueness

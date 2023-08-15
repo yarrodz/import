@@ -13,7 +13,8 @@ class SqlColumnsHelper {
   public async find(impt: SqlImport): Promise<Column[]> {
     let sqlConnector: SqlConnector;
     try {
-      const { connection, idKey, target, table, select } = impt;
+      const { idKey, target, table, select } = impt;
+      const connection = impt.__.hasConnection[0];
       const { config } = connection;
       const { dialect } = config;
 
@@ -55,7 +56,7 @@ class SqlColumnsHelper {
       sqlConnector.disconnect();
       return columns;
     } catch (error) {
-      sqlConnector.disconnect();
+      sqlConnector && sqlConnector.disconnect();
       throw error;
     }
   }
@@ -63,7 +64,8 @@ class SqlColumnsHelper {
   public async checkIdColumnUniqueness(impt: SqlImport) {
     let sqlConnector: SqlConnector;
     try {
-      const { connection, idKey, target, table, select } = impt;
+      const { idKey, target, table, select } = impt;
+      const connection = impt.__.hasConnection[0];
       const { config } = connection;
       const { dialect } = config;
 
@@ -92,7 +94,7 @@ class SqlColumnsHelper {
       sqlConnector.disconnect();
       return isUnique;
     } catch (error) {
-      sqlConnector.disconnect();
+      sqlConnector && sqlConnector.disconnect();
       throw new Error(
         `Error while checking column uniqueness: ${error.message}`
       );

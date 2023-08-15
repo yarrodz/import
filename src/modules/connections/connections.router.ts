@@ -13,7 +13,7 @@ class ConnectionsRouter {
   }
 
   private initializeRoutes() {
-    // this.router.get('/', this.connectionsController.getAll);
+    this.router.get('/', this.connectionsController.getAll);
     this.router.get('/:id', this.connectionsController.get);
     this.router.post('/', this.connectionsController.create);
     this.router.patch('/', this.connectionsController.update);

@@ -19,7 +19,9 @@ class ApiConnectionHelper {
 
   public async connect(impt: ApiImport): Promise<ConnectionState> {
     try {
-      const { id: importId, connection } = impt;
+      const { id: importId } = impt;
+      const connection = impt.__.hasConnection[0];
+
 
       if (connection.type === ApiConnectionType.OAUTH2) {
         const { oauth2 } = connection;
@@ -50,9 +52,9 @@ class ApiConnectionHelper {
   }
 
   private async sendRequest(impt: ApiImport) {
-    const { transferMethod, connection } = impt;
+    const { transferMethod } = impt;
 
-    const apiConnector = new ApiConnector(impt, connection);
+    const apiConnector = new ApiConnector(impt);
     await apiConnector.authRequest();
     switch (transferMethod) {
       case TransferMethod.CHUNK: {

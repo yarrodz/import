@@ -15,8 +15,9 @@ class ApiConnector {
   private paginationType?: TransferMethod;
   private paginationOptions?: RequestPaginationOptions;
 
-  constructor(impt: ApiImport, connection: ApiConnection) {
+  constructor(impt: ApiImport) {
     const { request, transferMethod, paginationOptions } = impt;
+    const connection = impt.__.hasConnection[0];
 
     this.request = { ...request, data: request.body };
     this.auth = connection;

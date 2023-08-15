@@ -1,4 +1,6 @@
 const BaseVertexModel = require('iframe-ai/classes/BaseVertexModel');
+const connector = require('iframe-db-connector');
+const __ = connector.process.statics;
 
 class iFrameProcess extends BaseVertexModel {
   constructor(client, properties, id) {
@@ -25,26 +27,22 @@ class iFrameProcess extends BaseVertexModel {
   };
 
   async getAll(options) {
-    const { type, unitId, projectId, connectionId } = options;
+    const { type, unitId, connectionId } = options;
 
-    let traversal = await this.client.getTraversal();
+    await super.init();
 
-    traversal = traversal.g.V().hasLabel('iFrameProcess');
+    let traversal = this.traversal.V().hasLabel('iFrameProcess');
 
     if (type) {
-      traversal = traversal.has('type', type);
+      traversal = traversal.has("type", type);
     }
 
     if (unitId) {
       traversal = traversal.where(__.in_('inUnit').hasId(unitId));
     }
 
-    if (projectId) {
-      traversal = traversal.where(__.in_('inProject').hasId(projectId));
-    }
-
     if (connectionId) {
-      traversal = traversal.where(__.in_('inConnection').hasId(connectionId));
+      traversal = traversal.where(__.in_('hasConnection').hasId(connectionId));
     }
 
     return await traversal

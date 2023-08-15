@@ -4,30 +4,29 @@ import { iFrameDbClient } from 'iFrame-ai';
 import iFrameConnection from './iFrameConnection';
 import transformIFrameInstance from '../../utils/transform-iFrame-instance/transform-iFrame-instance';
 import dbClient from '../..';
+import { Source } from '../imports/enums/source.enum';
 
 dotenv.config();
 
 class ConnectionsRepository {
   private client: iFrameDbClient;
 
-  constructor() {
-    // this.client = iFrameDbClient.getInstance(process.env.IFRAME_SECRET_KEY);
-    // this.client = dbClient;
-    // console.log('repository constructor this.client: ', this.client);
-  }
+  constructor() {}
 
-  // async getAll(unitId: number, connectionId: number) {
-  //   try {
-  //     return await new iFrameConnection(this.client).getAll(
-  //       unitId,
-  //       connectionId
-  //     );
-  //   } catch (error) {
-  //     throw new error(
-  //       `Error while query for getting connections: ${error.message}`
-  //     );
-  //   }
-  // }
+  async getAll(source: Source, unitId: number) {
+    try {
+      this.client = dbClient;
+      return await new iFrameConnection(this.client).getAll({
+        source,
+        unitId,
+      }
+      );
+    } catch (error) {
+      throw new error(
+        `Error while query for getting connections: ${error.message}`
+      );
+    }
+  }
 
   async get(id: number) {
     try {

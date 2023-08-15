@@ -9,14 +9,14 @@ class ImportsController {
     this.importsService = importsService;
   }
 
-  // getAll = async (req: Request, res: Response) => {
-  //   const { unitId, connectionId } = req.query;
-  //   const responseHandler = await this.importsService.getAll(
-  //     Number(unitId),
-  //     Number(connectionId)
-  //   );
-  //   responseHandler.send(res);
-  // };
+  getAll = async (req: Request, res: Response) => {
+    const { unitId, connectionId } = req.query;
+    const responseHandler = await this.importsService.getAll(
+      Number(unitId),
+      Number(connectionId)
+    );
+    responseHandler.send(res);
+  };
 
   get = async (req: Request, res: Response) => {
     const id = req.params.id;
@@ -43,10 +43,10 @@ class ImportsController {
   };
 
   getColumns = async (req: Request, res: Response) => {
-    const id = req.params.id;
+    const id = req.body.id;
     const responseHandler = await this.importsService.getColumns(
       req,
-      Number(id)
+      id
     );
     responseHandler.send(res);
   };

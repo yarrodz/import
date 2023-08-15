@@ -11,16 +11,14 @@ dotenv.config();
 class ProcessesRepository {
   private client: iFrameDbClient;
 
-  constructor() {
-  }
+  constructor() {}
 
   async getAll(options: FindProcessesOptions) {
     try {
       this.client = dbClient;
-      return await new iFrameProcess(this.client)
-        .getAll(options)
-        .map((process) => transformIFrameInstance(process));
+      return await new iFrameProcess(this.client).getAll(options)
     } catch (error) {
+      console.error('process getAll: ', error);
       throw new error(
         `Error while query for getting processes: ${error.message}`
       );

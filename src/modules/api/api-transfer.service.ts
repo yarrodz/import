@@ -38,7 +38,8 @@ class ApiTransferService {
   ): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const { id: importId, connection } = impt;
+      const { id: importId } = impt;
+      const connection = impt.__.hasConnection[0];
       const { id: connectionId } = connection;
       const { id: transferId } = transfer;
 
@@ -85,7 +86,8 @@ class ApiTransferService {
   ): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const { id: importId, connection } = impt;
+      const { id: importId } = impt;
+      const connection = impt.__.hasConnection[0];
       const { id: connectionId } = connection;
       const { id: transferId } = transfer;
 

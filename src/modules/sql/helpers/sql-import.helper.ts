@@ -62,7 +62,7 @@ class SqlImportHelper {
       }
       sqlConnector.disconnect();
     } catch (error) {
-      sqlConnector.disconnect();
+      sqlConnector && sqlConnector.disconnect();
       this.transferFailureHandler.handle({
         error,
         outerTransferFunction: this.import,
@@ -144,10 +144,7 @@ class SqlImportHelper {
       limit,
       requestedFields
     );
-    let r = await sqlConnector.queryRows(rowsQuery);
-    console.log('r');
-    console.log('r.lentgth: ', r.length);
-    return r;
+    return await sqlConnector.queryRows(rowsQuery);
   };
 
   private selectPaginationFunction: OffsetPaginationFunction = async (

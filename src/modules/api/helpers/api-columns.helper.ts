@@ -5,14 +5,13 @@ import ApiImport from '../interfaces/api-import.interface';
 import { TransferMethod } from '../../transfers/enums/transfer-method.enum';
 import OffsetPagination from '../../transfers/interfaces/offset-pagination.interface';
 import CursorPagination from '../../transfers/interfaces/cursor-pagination.interface';
-import ApiConnection from '../interfaces/api-connection.interface';
 
 class ApiColumnsHelper {
   public async find(impt: ApiImport): Promise<Column[]> {
     try {
-      const { connection, transferMethod, datasetsPath } = impt;
+      const { transferMethod, datasetsPath } = impt;
 
-      const apiConnector = new ApiConnector(impt, connection);
+      const apiConnector = new ApiConnector(impt);
       await apiConnector.authRequest();
 
       let response: any;
@@ -50,7 +49,6 @@ class ApiColumnsHelper {
       const columns: Column[] = this.findNestedObjectTypes(dataset);
       return columns;
     } catch (error) {
-      console.error('Error: ', error);
       throw new Error(
         `Error while searching columns for API: ${error.message}`
       );
@@ -59,9 +57,9 @@ class ApiColumnsHelper {
 
   public async checkIdColumnUniqueness(impt: ApiImport) {
     try {
-      const { connection, transferMethod, datasetsPath, idKey } = impt;
+      const { transferMethod, datasetsPath, idKey } = impt;
 
-      const apiConnector = new ApiConnector(impt, connection);
+      const apiConnector = new ApiConnector(impt);
       await apiConnector.authRequest();
 
       switch (transferMethod) {

@@ -22,7 +22,7 @@ class OffsetPaginationTransferHelper {
     const { import: impt, transfer, limitPerStep, paginationFunction } = params;
     const { fn: paginationFn, params: paginationFnParams } = paginationFunction;
     const { limitRequestsPerSecond } = impt;
-    let { id: transferId, offset, datasetsCount } = transfer;
+    let { id: transferId, datasetsCount } = transfer;
 
     let datasets = [];
     let requestCounter = 0;
@@ -35,11 +35,12 @@ class OffsetPaginationTransferHelper {
         return;
       }
 
-      if (datasetsCount && refreshedTransfer.offset >= datasetsCount) {
+      const offset = refreshedTransfer.offset;
+      console.log('offset: ', offset);
+
+      if (datasetsCount && offset >= datasetsCount) {
         break;
       }
-
-
 
       const offsetPagination: OffsetPagination = {
         offset,
@@ -51,7 +52,6 @@ class OffsetPaginationTransferHelper {
         ...paginationFnParams
       );
 
-      // console.log('datasets: ', datasets)
       console.log('datasets.length: ', datasets.length);
 
       await this.importStepHelper.step(impt, refreshedTransfer, datasets);

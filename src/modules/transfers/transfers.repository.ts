@@ -10,21 +10,20 @@ dotenv.config();
 class TransfersRepository {
   private client: iFrameDbClient;
 
-  constructor() {
-  }
+  constructor() {}
 
-  // async getAll(unitId: number, connectionId: number) {
-  //   try {
-  //     return await new iFrameTransfer(this.client).getAll(
-  //       unitId,
-  //       connectionId
-  //     );
-  //   } catch (error) {
-  //     throw new error(
-  //       `Error while query for getting connections: ${error.message}`
-  //     );
-  //   }
-  // }
+  async getAll(importId: number, unitId: number) {
+    try {
+      return await new iFrameTransfer(this.client).getAll(
+        importId,
+        unitId,
+      );
+    } catch (error) {
+      throw new error(
+        `Error while query for getting transfers: ${error.message}`
+      );
+    }
+  }
 
   async get(id: number) {
     try {

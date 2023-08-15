@@ -37,7 +37,8 @@ class ApiImportService {
   async getColumns(req: Request, impt: ApiImport): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const { id: importId, connection } = impt;
+      const { id: importId } = impt;
+      const connection = impt.__.hasConnection[0];
       const { id: connectionId } = connection;
 
       const context: Context = {
@@ -63,6 +64,7 @@ class ApiImportService {
       responseHandler.setSuccess(200, columns);
       return responseHandler;
     } catch (error) {
+      console.error('sError: ', error)
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -74,7 +76,8 @@ class ApiImportService {
   ): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const { id: importId, connection } = impt;
+      const { id: importId } = impt;
+      const connection = impt.__.hasConnection[0];
       const { id: connectionId } = connection;
 
       const context: Context = {
@@ -109,10 +112,11 @@ class ApiImportService {
   async import(req: Request, impt: ApiImport): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const { id: importId, connection, unit } = impt;
+      const { id: importId, unit } = impt;
       const { transferMethod } = impt;
+      const connection = impt.__.hasConnection[0];
       const { id: connectionId } = connection;
-      const { id: unitId } = unit;
+      // const { id: unitId } = unit;
 
       const context: Context = {
         action: ContextAction.IMPORT,
@@ -139,10 +143,10 @@ class ApiImportService {
         transferedDatasetsCount: 0,
         log: [],
         retryAttempts: 0,
-        __: {
-          unitId,
-          importId
-        }
+        // __: {
+          // unitId,
+          // importId
+        // }
       });
 
       const { id: transferId } = transfer;
@@ -154,6 +158,7 @@ class ApiImportService {
       responseHandler.setSuccess(200, transferId);
       return responseHandler;
     } catch (error) {
+      console.error('aError: ', error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }

@@ -1,5 +1,6 @@
 import ConnectionsRepository from './connections.repository';
 import ResponseHandler from '../../utils/response-handler/response-handler';
+import { Source } from '../imports/enums/source.enum';
 
 class ConnectionsService {
   private connectionsRepository: ConnectionsRepository;
@@ -8,22 +9,17 @@ class ConnectionsService {
     this.connectionsRepository = new ConnectionsRepository();
   }
 
-  // async getAll(
-  // ): Promise<ResponseHandler> {
-  //   const responseHandler = new ResponseHandler();
-  //   try {
-  //     const connections = await this.connectionsRepository.getAll(
-  //       unitId,
-  //       connectionId
-  //     );
-  //     responseHandler.setSuccess(200, connections);
-  //     return responseHandler;
-  //   } catch (error) {
-  //     console.error('Error: ', error);
-  //     responseHandler.setError(500, error.message);
-  //     return responseHandler;
-  //   }
-  // }
+  async getAll(source: Source, unitId: number): Promise<ResponseHandler> {
+    const responseHandler = new ResponseHandler();
+    try {
+      const connections = await this.connectionsRepository.getAll(source, unitId);
+      responseHandler.setSuccess(200, connections);
+      return responseHandler;
+    } catch (error) {
+      responseHandler.setError(500, error.message);
+      return responseHandler;
+    }
+  }
 
   async get(id: number): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
