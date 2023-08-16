@@ -6,16 +6,16 @@ import { Source } from '../imports/enums/source.enum';
 class ConnectionsController {
   private connectionsService: ConnectionsService;
 
-  constructor() {
-    this.connectionsService = new ConnectionsService();
+  constructor(connectionsService: ConnectionsService) {
+    this.connectionsService = connectionsService;
   }
 
   getAll = async (req: Request, res: Response) => {
-    let { source, unitId } = req.query;
+    let { select, sortings } = req.body;
 
     const responseHandler = await this.connectionsService.getAll(
-      source as Source,
-      Number(unitId)
+      select,
+      sortings
     );
     responseHandler.send(res);
   };

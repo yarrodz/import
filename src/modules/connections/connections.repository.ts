@@ -1,24 +1,21 @@
-import dotenv from 'dotenv';
 import { iFrameDbClient } from 'iFrame-ai';
 
 import iFrameConnection from './iFrameConnection';
 import transformIFrameInstance from '../../utils/transform-iFrame-instance/transform-iFrame-instance';
-import dbClient from '../..';
 import { Source } from '../imports/enums/source.enum';
-
-dotenv.config();
 
 class ConnectionsRepository {
   private client: iFrameDbClient;
 
-  constructor() {}
+  constructor(client: iFrameDbClient) {
+    this.client = client;
+  }
 
-  async getAll(source: Source, unitId: number) {
+  async getAll(select: any, sortings: any) {
     try {
-      this.client = dbClient;
-      return await new iFrameConnection(this.client).getAll({
-        source,
-        unitId,
+      return await new iFrameConnection(this.client).query({
+        select,
+        sortings,
       }
       );
     } catch (error) {
@@ -30,7 +27,6 @@ class ConnectionsRepository {
 
   async get(id: number) {
     try {
-      this.client = dbClient;
       return await new iFrameConnection(this.client)
         .load(id)
         .then((result) => transformIFrameInstance(result));
@@ -43,15 +39,10 @@ class ConnectionsRepository {
 
   async create(input: any) {
     try {
-      this.client = dbClient;
-      // this.client = iFrameDbClient.getInstance(process.env.IFRAME_SECRET_KEY);
-      console.log('repository create this.client: ', this.client);
       return await new iFrameConnection(this.client)
         .insert(input, true, true)
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      // console.error('create connection Error: ', error);
-      console.error(error);
       throw new error(
         `Error while query for creating a connection: ${error.message}`
       );
@@ -60,12 +51,10 @@ class ConnectionsRepository {
 
   async update(input: any) {
     try {
-      this.client = dbClient;
       return await new iFrameConnection(this.client, input, input.id)
         .save(true, true, true)
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      console.error(error);
       throw new error(
         `Error while query for creating a connection: ${error.message}`
       );
@@ -74,7 +63,6 @@ class ConnectionsRepository {
 
   async delete(id: number) {
     try {
-      this.client = dbClient;
       return await new iFrameConnection(this.client).delete(id);
     } catch (error) {
       throw new error(

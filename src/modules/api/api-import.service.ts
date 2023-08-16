@@ -15,23 +15,27 @@ import Context from '../imports/interfaces/context.interface';
 import { ContextAction } from '../imports/enums/context-action-enum';
 
 class ApiImportService {
-  private processesRepository: ProcessesRepository;
-  private transfersRepository: TransfersRepository;
   private apiConnectionHelper: ApiConnectionHelper;
   private apiColumnsHelper: ApiColumnsHelper;
   private apiImportHelper: ApiImportHelper;
   private oAuth2AuthUriHelper: OAuth2AuthUriHelper;
+  private processesRepository: ProcessesRepository;
+  private transfersRepository: TransfersRepository;
 
   constructor(
+    apiConnectionHelper: ApiConnectionHelper,
+    apiColumnsHelper: ApiColumnsHelper,
     apiImportHelper: ApiImportHelper,
-    oAuth2AuthUriHelper: OAuth2AuthUriHelper
+    oAuth2AuthUriHelper: OAuth2AuthUriHelper,
+    processesRepository: ProcessesRepository,
+    transfersRepository: TransfersRepository
   ) {
-    this.processesRepository = new ProcessesRepository();
-    this.transfersRepository = new TransfersRepository();
-    this.apiConnectionHelper = new ApiConnectionHelper();
-    this.apiColumnsHelper = new ApiColumnsHelper();
+    this.apiConnectionHelper = apiConnectionHelper;
+    this.apiColumnsHelper = apiColumnsHelper;
     this.apiImportHelper = apiImportHelper;
     this.oAuth2AuthUriHelper = oAuth2AuthUriHelper;
+    this.processesRepository = processesRepository;
+    this.transfersRepository = transfersRepository;
   }
 
   async getColumns(req: Request, impt: ApiImport): Promise<ResponseHandler> {
@@ -64,7 +68,6 @@ class ApiImportService {
       responseHandler.setSuccess(200, columns);
       return responseHandler;
     } catch (error) {
-      console.error('sError: ', error)
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -112,11 +115,12 @@ class ApiImportService {
   async import(req: Request, impt: ApiImport): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const { id: importId, unit } = impt;
+      const { id: importId } = impt;
       const { transferMethod } = impt;
       const connection = impt.__.hasConnection[0];
       const { id: connectionId } = connection;
-      // const { id: unitId } = unit;
+      const unit = impt.__.inUnit[0];
+      const { id: unitId } = unit;
 
       const context: Context = {
         action: ContextAction.IMPORT,
@@ -140,13 +144,20 @@ class ApiImportService {
         type: TransferType.IMPORT,
         method: transferMethod,
         status: TransferStatus.PENDING,
+        offset: 0,
         transferedDatasetsCount: 0,
         log: [],
         retryAttempts: 0,
-        // __: {
-          // unitId,
-          // importId
-        // }
+        "__": {
+          "inImport": {
+            "id": importId,
+            "_d": "out"
+          },
+          "inUnit": {
+              "id": unitId,
+              "_d": "out"
+          }
+        },
       });
 
       const { id: transferId } = transfer;
@@ -158,7 +169,6 @@ class ApiImportService {
       responseHandler.setSuccess(200, transferId);
       return responseHandler;
     } catch (error) {
-      console.error('aError: ', error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }

@@ -30,6 +30,7 @@ class iFrameDataset extends BaseVertexModel {
   async bulkSave(datasets) {
     const traversal = await this.client.getTraversal();
     try {
+        console.log('bulkSave')
         await Promise.map(datasets, async (dataset) => {
             const { unitId, importId, sourceId, records } = dataset;
 
@@ -42,7 +43,7 @@ class iFrameDataset extends BaseVertexModel {
                 .next();
 
             if (existingDatasetVertex.value) {
-                console.log('Update');
+                // console.log('Update');
                 //Archive dataset existing records then create new
                 await traversal
                     .V()
@@ -53,7 +54,7 @@ class iFrameDataset extends BaseVertexModel {
 
                 await this.bulkInsertRecords(traversal, records, existingDatasetVertex.value.id);
             } else {
-                console.log('Insert');
+                // console.log('Insert');
                 const insertedDatasetVertex = await traversal
                     .addV('iFrameDataset')
                     .property('sourceId', sourceId)

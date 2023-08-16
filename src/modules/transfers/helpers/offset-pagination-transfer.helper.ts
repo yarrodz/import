@@ -12,10 +12,10 @@ class OffsetPaginationTransferHelper {
   private importStepHelper: ImportStepHelper;
   private transfersRepository: TransfersRepository;
 
-  constructor(io: IO, importStepHelper: ImportStepHelper) {
+  constructor(io: IO, importStepHelper: ImportStepHelper,  transfersRepository: TransfersRepository) {
     this.io = io;
     this.importStepHelper = importStepHelper;
-    this.transfersRepository = new TransfersRepository();
+    this.transfersRepository = transfersRepository;
   }
 
   public async transfer(params: OffsetPaginationTransferParams) {
@@ -36,7 +36,6 @@ class OffsetPaginationTransferHelper {
       }
 
       const offset = refreshedTransfer.offset;
-      console.log('offset: ', offset);
 
       if (datasetsCount && offset >= datasetsCount) {
         break;
@@ -51,8 +50,6 @@ class OffsetPaginationTransferHelper {
         offsetPagination,
         ...paginationFnParams
       );
-
-      console.log('datasets.length: ', datasets.length);
 
       await this.importStepHelper.step(impt, refreshedTransfer, datasets);
 
@@ -69,7 +66,6 @@ class OffsetPaginationTransferHelper {
       }
     } while (datasets.length);
 
-    console.log('finish');
     const completedTransfer = this.transfersRepository.update({
       id: transferId,
       status: TransferStatus.COMPLETED

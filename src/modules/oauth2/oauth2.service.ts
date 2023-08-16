@@ -16,10 +16,10 @@ class OAuth2Service {
   private clientUri: string;
   private connectionsRepository: ConnectionsRepository;
 
-  constructor(oAuth2RedirectUri: string, clientUri: string) {
+  constructor(oAuth2RedirectUri: string, clientUri: string, connectionsRepository: ConnectionsRepository) {
     this.oAuth2RedirectUri = oAuth2RedirectUri;
     this.clientUri = clientUri;
-    this.connectionsRepository = new ConnectionsRepository();
+    this.connectionsRepository = connectionsRepository;
   }
 
   oAuth2Callback = async (req: Request) => {
@@ -64,11 +64,15 @@ class OAuth2Service {
 
       const { access_token, refresh_token } = response.data;
 
+      const connectionBefore = await this.connectionsRepository.get(connectionId);
+      const { oauth2 } = connectionBefore;  
+
       await this.connectionsRepository.update({
         id: connectionId,
         oauth2: {
-          access_token,
-          refresh_token
+          ...oauth2,
+            access_token,
+            refresh_token
         }
       });
 
@@ -109,6 +113,7 @@ class OAuth2Service {
   private createSuccessRedirectUri(callbackProcess: OAuth2CallbackProcess) {
     const { context } = callbackProcess;
     const { action, importId, transferId } = context;
+
     switch (action) {
       case ContextAction.GET_COLUMNS: {
         return `${this.clientUri}imports/get_columns/${importId}`;
@@ -130,23 +135,26 @@ class OAuth2Service {
 
   private createErrorRedirectUri(callbackProcess?: OAuth2CallbackProcess) {
     if (callbackProcess === undefined) {
-      return `${this.clientUri}imports/error/message=Could not find callback context`;
+      const errorMessage = 'Could not find callback context';
+      return `${this.clientUri}imports/${errorMessage}`;
     } else {
       const { context } = callbackProcess;
       const { action } = context;
+    
       const errorMessage = 'Error while OAuth2 callback';
 
       switch (action) {
         case ContextAction.GET_COLUMNS:
         case ContextAction.IMPORT: {
-          return `${this.clientUri}imports/error/message=${errorMessage}`;
+          return `${this.clientUri}imports/${errorMessage}`;
         }
         case ContextAction.RELOAD:
         case ContextAction.RETRY: {
-          return `${this.clientUri}imports/error/message=${errorMessage}`;
+          return `${this.clientUri}imports/${errorMessage}`;
         }
         default: {
-          throw new Error('Unknown contex action inside OAuth2 callback');
+          const errorMessage = 'Unknown contex action inside OAuth2 callback';
+          return `${this.clientUri}imports/${errorMessage}`;
         }
       }
     }

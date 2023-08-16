@@ -1,22 +1,20 @@
-import dotenv from 'dotenv';
 import { iFrameDbClient } from 'iFrame-ai';
 
 import iFrameTransfer from './iFrameTransfer';
 import transformIFrameInstance from '../../utils/transform-iFrame-instance/transform-iFrame-instance';
-import dbClient from '../..';
-
-dotenv.config();
 
 class TransfersRepository {
   private client: iFrameDbClient;
 
-  constructor() {}
+  constructor(client: iFrameDbClient) {
+    this.client = client;
+  }
 
-  async getAll(importId: number, unitId: number) {
+  async getAll(select: any, sortings: any) {
     try {
-      return await new iFrameTransfer(this.client).getAll(
-        importId,
-        unitId,
+      return await new iFrameTransfer(this.client).query(
+        select,
+        sortings,
       );
     } catch (error) {
       throw new error(
@@ -27,7 +25,6 @@ class TransfersRepository {
 
   async get(id: number) {
     try {
-      this.client = dbClient;
       return await new iFrameTransfer(this.client)
         .load(id)
         .then((result) => transformIFrameInstance(result));
@@ -40,12 +37,10 @@ class TransfersRepository {
 
   async create(input: any) {
     try {
-      this.client = dbClient;
       return await new iFrameTransfer(this.client)
         .insert(input, true, true)
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      console.error(error);
       throw new error(
         `Error while query for creating a transfer: ${error.message}`
       );
@@ -54,12 +49,10 @@ class TransfersRepository {
 
   async update(input: any) {
     try {
-      this.client = dbClient;
       return await new iFrameTransfer(this.client, input, input.id)
         .save(true, true, true)
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      console.error(error);
       throw new error(
         `Error while query for creating a transfer: ${error.message}`
       );
@@ -68,7 +61,6 @@ class TransfersRepository {
 
   async delete(id: number) {
     try {
-      this.client = dbClient;
       return await new iFrameTransfer(this.client).delete(id);
     } catch (error) {
       throw new error(

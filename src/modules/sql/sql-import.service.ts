@@ -8,14 +8,14 @@ import { TransferMethod } from '../transfers/enums/transfer-method.enum';
 import { TransferStatus } from '../transfers/enums/transfer-status.enum';
 
 class SqlImportService {
-  private transfersRepository: TransfersRepository;
   private sqlColumnsHelper: SqlColumnsHelper;
   private sqlImportHelper: SqlImportHelper;
+  private transfersRepository: TransfersRepository;
 
-  constructor(sqlImportHelper: SqlImportHelper) {
-    this.transfersRepository = new TransfersRepository();
-    this.sqlColumnsHelper = new SqlColumnsHelper();
+  constructor(sqlColumnsHelper: SqlColumnsHelper, sqlImportHelper: SqlImportHelper, transefersRepository: TransfersRepository) {
+    this.sqlColumnsHelper = sqlColumnsHelper;
     this.sqlImportHelper = sqlImportHelper;
+    this.transfersRepository = transefersRepository;
   }
 
   async getColumns(impt: SqlImport): Promise<ResponseHandler> {
@@ -26,8 +26,6 @@ class SqlImportService {
       responseHandler.setSuccess(200, columns);
       return responseHandler;
     } catch (error) {
-      console.error('sError: ', error);
-
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -50,10 +48,11 @@ class SqlImportService {
   async import(impt: SqlImport): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const { id: importId, unit } = impt;
-      // const { id: unitId } = unit;
+      const { id: importId } = impt;
+      const unit = impt.__.inUnit[0];
+      const { id: unitId } = unit;
 
-      const transfer = await this.transfersRepository.update({
+      const transfer = await this.transfersRepository.create({
         type: TransferType.IMPORT,
         method: TransferMethod.OFFSET_PAGINATION,
         status: TransferStatus.PENDING,
@@ -61,10 +60,16 @@ class SqlImportService {
         transferedDatasetsCount: 0,
         log: [],
         retryAttempts: 0,
-        // __: {
-          // unitId,
-          // importId
-        // }
+        "__": {
+          "inImport": {
+            "id": importId,
+            "_d": "out"
+          },
+          "inUnit": {
+              "id": unitId,
+              "_d": "out"
+          }
+        },
       });
 
       const { id: transferId } = transfer;

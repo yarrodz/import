@@ -10,10 +10,10 @@ class ImportsController {
   }
 
   getAll = async (req: Request, res: Response) => {
-    const { unitId, connectionId } = req.query;
+    const { select, sortings } = req.body;
     const responseHandler = await this.importsService.getAll(
-      Number(unitId),
-      Number(connectionId)
+      select,
+      sortings
     );
     responseHandler.send(res);
   };
@@ -52,10 +52,10 @@ class ImportsController {
   };
 
   checkIdColumnUniqueness = async (req: Request, res: Response) => {
-    const id = req.params.id;
+    const id = req.body.id;
     const responseHandler = await this.importsService.getColumns(
       req,
-      Number(id)
+      id
     );
     responseHandler.send(res);
   };

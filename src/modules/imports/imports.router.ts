@@ -1,29 +1,26 @@
 import { Router } from 'express';
 
-import SynchronizationsController from './imports.controller';
+import ImportsController from './imports.controller';
 
 class ImportsRouter {
   public router: Router;
-  private synchronizationsController: SynchronizationsController;
+  private importsController: ImportsController;
 
-  constructor(SynchronizationsController: SynchronizationsController) {
+  constructor(ImportsController: ImportsController) {
     this.router = Router();
-    this.synchronizationsController = SynchronizationsController;
+    this.importsController = ImportsController;
     this.initializeRoutes();
   }
 
   private initializeRoutes() {
-    this.router.get('/', this.synchronizationsController.getAll);
-    this.router.get('/:id', this.synchronizationsController.get);
-    this.router.post('/', this.synchronizationsController.create);
-    this.router.patch('/', this.synchronizationsController.update);
-    this.router.delete('/:id', this.synchronizationsController.delete);
-    this.router.post('/columns', this.synchronizationsController.getColumns);
-    this.router.get(
-      '/:id/idColumnUniqueness',
-      this.synchronizationsController.checkIdColumnUniqueness
-    );
-    this.router.post('/import', this.synchronizationsController.import);
+    this.router.post('/getAll', this.importsController.getAll);
+    this.router.get('/:id', this.importsController.get);
+    this.router.post('/', this.importsController.create);
+    this.router.patch('/', this.importsController.update);
+    this.router.delete('/:id', this.importsController.delete);
+    this.router.post('/columns', this.importsController.getColumns);
+    this.router.post('/idColumnUniqueness',this.importsController.checkIdColumnUniqueness);
+    this.router.post('/import', this.importsController.import);
   }
 }
 

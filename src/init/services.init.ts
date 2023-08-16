@@ -1,5 +1,6 @@
 import { Server as IO } from 'socket.io';
 
+import { InitRepositoriesResult } from './repositories.init';
 import OAuth2Service from '../modules/oauth2/oauth2.service';
 import SqlColumnsHelper from '../modules/sql/helpers/sql-columns.helper';
 import OffsetPaginationTransferHelper from '../modules/transfers/helpers/offset-pagination-transfer.helper';
@@ -19,32 +20,66 @@ import SqlImportService from '../modules/sql/sql-import.service';
 import ApiImportService from '../modules/api/api-import.service';
 import SqlTransferService from '../modules/sql/sql-transfer.service';
 import ApiTransferService from '../modules/api/api-transfer.service';
+import OAuth2RefreshTokenHelper from '../modules/oauth2/helpers/oath2-refresh-token.helper';
 
-export default function setupServices(
+export interface InitServicesParams extends InitRepositoriesResult {
   io: IO,
   clientUri: string,
-  oAuth2RedirectUri: string
-): {
+  oAuth2RedirectUri: string,
+}
+
+export interface InitServicesResult  {
+  connectionsService: ConnectionsService;
   importsService: ImportsService;
   transfersService: TransfersService;
   oAuth2Service: OAuth2Service;
-} {
-  const oAuth2AuthUriHelper = new OAuth2AuthUriHelper(oAuth2RedirectUri);
-  const oAuth2Service = new OAuth2Service(oAuth2RedirectUri, clientUri);
+}
 
-  const transferFailureHandler = new TransferFailureHandler(io);
-  const importStepHelper = new ImportStepHelper(io);
-  const chunkTransferHelper = new ChunkTransferHelper(io, importStepHelper);
+export default function initServices(params: InitServicesParams): InitServicesResult {
+  const {
+    io,
+    clientUri,
+    oAuth2RedirectUri,
+    datasetsRepository,
+    connectionsRepository,
+    processesRepository,
+    transfersRepository
+  } = params;
+  
+  const oAuth2RefreshTokenHelper = new OAuth2RefreshTokenHelper(connectionsRepository);
+  const oAuth2AuthUriHelper = new OAuth2AuthUriHelper(oAuth2RedirectUri);
+  const oAuth2Service = new OAuth2Service(
+    oAuth2RedirectUri,
+    clientUri,
+    connectionsRepository
+  );
+
+  const transferFailureHandler = new TransferFailureHandler(io, transfersRepository);
+  const importStepHelper = new ImportStepHelper(
+    io,
+    transfersRepository,
+    datasetsRepository
+  );
+  const chunkTransferHelper = new ChunkTransferHelper(
+    io,
+    importStepHelper,
+    transfersRepository
+  );
   const offsetPaginationTransferHelper = new OffsetPaginationTransferHelper(
     io,
-    importStepHelper
+    importStepHelper,
+    transfersRepository
   );
   const cursorPaginationTransferHelper = new CursorPaginationTransferHelper(
     io,
-    importStepHelper
+    importStepHelper,
+    transfersRepository
   );
 
-  const apiConnectionHelper = new ApiConnectionHelper();
+  const apiConnectionHelper = new ApiConnectionHelper(
+    oAuth2RefreshTokenHelper,
+    processesRepository
+  );
 
   const sqlColumnsHelper = new SqlColumnsHelper();
   const apiColumnsHelper = new ApiColumnsHelper();
@@ -58,29 +93,47 @@ export default function setupServices(
     transferFailureHandler,
     chunkTransferHelper,
     offsetPaginationTransferHelper,
-    cursorPaginationTransferHelper
+    cursorPaginationTransferHelper,
+    transfersRepository
   );
 
-  const sqlImportService = new SqlImportService(sqlImportHelper);
+  const sqlImportService = new SqlImportService(
+    sqlColumnsHelper,
+    sqlImportHelper,
+    transfersRepository
+  );
   const apiImportService = new ApiImportService(
+    apiConnectionHelper,
+    apiColumnsHelper,
     apiImportHelper,
-    oAuth2AuthUriHelper
+    oAuth2AuthUriHelper,
+    processesRepository,
+    transfersRepository
   );
 
-  const sqlTransferService = new SqlTransferService(sqlImportHelper);
+  const sqlTransferService = new SqlTransferService(
+    sqlImportHelper,
+    transfersRepository
+  );
   const apiTransferService = new ApiTransferService(
+    apiConnectionHelper,
     apiImportHelper,
-    oAuth2AuthUriHelper
+    oAuth2AuthUriHelper,
+    processesRepository,
+    transfersRepository
   );
 
-  const connectionsService = new ConnectionsService();
-  const importsService = new ImportsService(sqlImportService, apiImportService);
+  const connectionsService = new ConnectionsService(connectionsRepository);
+  const importsService = new ImportsService(sqlImportService, apiImportService, processesRepository);
   const transfersService = new TransfersService(
     sqlTransferService,
-    apiTransferService
+    apiTransferService,
+    transfersRepository,
+    processesRepository
   );
 
   return {
+    connectionsService,
     importsService,
     transfersService,
     oAuth2Service

@@ -5,14 +5,14 @@ import { Source } from '../imports/enums/source.enum';
 class ConnectionsService {
   private connectionsRepository: ConnectionsRepository;
 
-  constructor() {
-    this.connectionsRepository = new ConnectionsRepository();
+  constructor(connectionsRepository: ConnectionsRepository) {
+    this.connectionsRepository = connectionsRepository;
   }
 
-  async getAll(source: Source, unitId: number): Promise<ResponseHandler> {
+  async getAll(select: any, sortings: any): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const connections = await this.connectionsRepository.getAll(source, unitId);
+      const connections = await this.connectionsRepository.getAll(select, sortings);
       responseHandler.setSuccess(200, connections);
       return responseHandler;
     } catch (error) {
@@ -47,7 +47,6 @@ class ConnectionsService {
       responseHandler.setSuccess(200, connection);
       return responseHandler;
     } catch (error) {
-      console.error(error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -75,7 +74,6 @@ class ConnectionsService {
       responseHandler.setSuccess(200, updatedConnection);
       return responseHandler;
     } catch (error) {
-      console.error(error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }

@@ -6,7 +6,7 @@ import cors from 'cors';
 import { iFrameDbClient } from 'iframe-ai';
 
 import Websocket from './utils/websocket/websocket';
-import setupImport, { ISetupParams } from './setup';
+import initTransfers, { InitParams } from './init';
 
 dotenv.config();
 const PORT = process.env.PORT;
@@ -31,31 +31,29 @@ app.use(
 const httpServer = createServer(app);
 const io = Websocket.getInstance(httpServer);
 
-const setupParams: ISetupParams = {
-  io,
-  clientUri: 'http://localhost:4200/',
-  oAuth2RedirectUri: 'http://localhost:3000/oauth-callback/'
-};
-const { connectionsRouter, importsRouter, transfersRouter, oAuth2Router } =
-  setupImport(setupParams);
-
-app.use('/connections', connectionsRouter.router);
-app.use('/imports', importsRouter.router);
-app.use('/transfers', transfersRouter.router);
-app.use('', oAuth2Router.router);
-app.get('/', (req,res) => res.send('ok'))
-
-process.on('uncaughtException', function (err) {
-  console.log(err);
-});
-
-let dbClient;
 async function start() {
   try {
-    dbClient = iFrameDbClient.getInstance(IFRAME_SECRET_KEY);
+    const dbClient = iFrameDbClient.getInstance(IFRAME_SECRET_KEY);
     await dbClient.connect();
 
-    console.log('index dbClient: ', dbClient);
+    const initParams: InitParams = {
+      io,
+      dbClient,      
+      clientUri: 'http://localhost:4200/',
+      oAuth2RedirectUri: 'http://localhost:3000/oauth-callback/'
+    };
+
+    const {
+      connectionsRouter,
+      importsRouter,
+      transfersRouter,
+      oAuth2Router
+    } = initTransfers(initParams);
+    
+    app.use('/connections', connectionsRouter.router);
+    app.use('/imports', importsRouter.router);
+    app.use('/transfers', transfersRouter.router);
+    app.use('', oAuth2Router.router);
 
     httpServer.listen(PORT, () =>
       console.log(`Server listening on port: ${PORT}`)
@@ -66,5 +64,3 @@ async function start() {
 }
 
 start();
-
-export default dbClient;

@@ -9,28 +9,30 @@ import ProcessesRepository from '../processes/process.repository';
 import { Source } from '../imports/enums/source.enum';
 
 class TransfersService {
-  private transfersRepository: TransfersRepository;
-  private processesRepository: ProcessesRepository;
   private sqlTransferService: SqlTransferService;
   private apiTransferService: ApiTransferService;
-
+  private transfersRepository: TransfersRepository;
+  private processesRepository: ProcessesRepository;
+  
   constructor(
     sqlTransferService: SqlTransferService,
-    apiTransferService: ApiTransferService
+    apiTransferService: ApiTransferService,
+    transfersRepository: TransfersRepository,
+    processesRepository: ProcessesRepository
   ) {
-    this.transfersRepository = new TransfersRepository();
-    this.processesRepository = new ProcessesRepository();
     this.sqlTransferService = sqlTransferService;
     this.apiTransferService = apiTransferService;
+    this.transfersRepository = transfersRepository;
+    this.processesRepository = processesRepository;
   }
 
   async getAll(
-    importId: number,
-    unitId: number,
+    select: any,
+    sortings: any,
   ): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const transfers = await this.transfersRepository.getAll(importId, unitId);
+      const transfers = await this.transfersRepository.getAll(select, sortings);
       responseHandler.setSuccess(200, transfers);
       return responseHandler;
     } catch (error) {

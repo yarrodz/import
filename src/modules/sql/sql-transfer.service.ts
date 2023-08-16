@@ -6,12 +6,12 @@ import { TransferStatus } from '../transfers/enums/transfer-status.enum';
 import SqlImport from './interfaces/sql-import.interface';
 
 class SqlTransferService {
-  private transfersRepository: TransfersRepository;
   private sqlImportHelper: SqlImportHelper;
+  private transfersRepository: TransfersRepository;
 
-  constructor(sqlImportHelper: SqlImportHelper) {
-    this.transfersRepository = new TransfersRepository();
+  constructor(sqlImportHelper: SqlImportHelper, transfersRepository: TransfersRepository) {
     this.sqlImportHelper = sqlImportHelper;
+    this.transfersRepository = transfersRepository;
   }
 
   async reload(impt: SqlImport, transfer: Transfer): Promise<ResponseHandler> {

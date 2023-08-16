@@ -1,6 +1,5 @@
 import { Server as IO } from 'socket.io';
 
-import iFrameDataset from '../../datasets/iFrameDataset';
 import Transfer from '../interfaces/transfer.interface';
 import resolvePath from '../../../utils/resolve-path/resolve-path';
 import Feature from '../../features/feature.interafce';
@@ -10,15 +9,17 @@ import ImportField from '../../imports/interfaces/import-field.interface';
 import TransfersRepository from '../transfers.repository';
 import SqlImport from '../../sql/interfaces/sql-import.interface';
 import ApiImport from '../../api/interfaces/api-import.interface';
-import dbClient from '../../..';
+import DatasetsRepository from '../../datasets/datasets.repository';
 
 class ImportStepHelper {
   private io: IO;
   private transfersRepository: TransfersRepository;
+  private datasetsRepository: DatasetsRepository;
 
-  constructor(io: IO) {
+  constructor(io: IO, transfersRepository: TransfersRepository, datasetsRepository: DatasetsRepository) {
     this.io = io;
-    this.transfersRepository = new TransfersRepository();
+    this.transfersRepository = transfersRepository;
+    this.datasetsRepository = datasetsRepository;
   }
 
   public async step(
@@ -134,7 +135,7 @@ class ImportStepHelper {
 
   private async insertDatasets(datasets: Dataset[]) {
     try {
-      await new iFrameDataset(dbClient).bulkSave(datasets);
+      await this.datasetsRepository.bulkSave(datasets);
     } catch (error) {
       throw new Error(`Error while insert datasets: ${error.message}.`);
     }

@@ -35,14 +35,15 @@ class ApiImportHelper {
     transferFailureHandler: TransferFailureHandler,
     chunkTransferHelper: ChunkTransferHelper,
     offsetPaginationTransferHelper: OffsetPaginationTransferHelper,
-    cursorPaginationTransferHelper: CursorPaginationTransferHelper
+    cursorPaginationTransferHelper: CursorPaginationTransferHelper,
+    transfersRepository: TransfersRepository
   ) {
     this.apiConnectionHelper = apiConnectionHelper;
     this.transferFailureHandler = transferFailureHandler;
     this.chunkTransferHelper = chunkTransferHelper;
     this.offsetPaginationTransferHelper = offsetPaginationTransferHelper;
     this.cursorPaginationTransferHelper = cursorPaginationTransferHelper;
-    this.transfersRepository = new TransfersRepository();
+    this.transfersRepository = transfersRepository;
   }
 
   public import: OuterTransferFunction = async (
@@ -171,16 +172,10 @@ class ApiImportHelper {
     cursorPath: string,
     datasetsPath: string
   ) => {
-    console.log('cursorPath: ', cursorPath)
     apiConnector.paginateRequest(cursorPagination);
     const data = await apiConnector.sendRequest();
     const cursor = resolvePath(data, cursorPath) as unknown as string;
     const datasets = resolvePath(data, datasetsPath) as object[];
-
-    // console.log('data.data.records: ', data.data.records);
-    // console.log('data.data.offset: ', data.data.offset);
-    console.log('cursor: ', cursor);
-    console.log('records: ', datasets.length);
     return {
       cursor,
       datasets

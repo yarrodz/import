@@ -14,21 +14,24 @@ import Context from '../imports/interfaces/context.interface';
 import { ContextAction } from '../imports/enums/context-action-enum';
 
 class ApiTransferService {
-  private processesRepository: ProcessesRepository;
-  private transfersRepository: TransfersRepository;
   private apiConnectionHelper: ApiConnectionHelper;
   private apiImportHelper: ApiImportHelper;
   private oAuth2AuthUriHelper: OAuth2AuthUriHelper;
+  private processesRepository: ProcessesRepository;
+  private transfersRepository: TransfersRepository;
 
   constructor(
+    apiConnectionHelper: ApiConnectionHelper,
     apiImportHelper: ApiImportHelper,
-    oAuth2AuthUriHelper: OAuth2AuthUriHelper
+    oAuth2AuthUriHelper: OAuth2AuthUriHelper,
+    processesRepository: ProcessesRepository,
+    transfersRepository: TransfersRepository
   ) {
-    this.processesRepository = new ProcessesRepository();
-    this.transfersRepository = new TransfersRepository();
-    this.apiConnectionHelper = new ApiConnectionHelper();
+    this.apiConnectionHelper = apiConnectionHelper;
     this.apiImportHelper = apiImportHelper;
     this.oAuth2AuthUriHelper = oAuth2AuthUriHelper;
+    this.processesRepository = processesRepository;
+    this.transfersRepository = transfersRepository;
   }
 
   async reload(

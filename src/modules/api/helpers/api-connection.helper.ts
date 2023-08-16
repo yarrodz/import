@@ -9,12 +9,12 @@ import OffsetPagination from '../../transfers/interfaces/offset-pagination.inter
 import CursorPagination from '../../transfers/interfaces/cursor-pagination.interface';
 
 class ApiConnectionHelper {
-  private processesRepository: ProcessesRepository;
   private oAuth2RefreshTokenHelper: OAuth2RefreshTokenHelper;
+  private processesRepository: ProcessesRepository;
 
-  constructor() {
-    this.processesRepository = new ProcessesRepository();
-    this.oAuth2RefreshTokenHelper = new OAuth2RefreshTokenHelper();
+  constructor(oAuth2RefreshTokenHelper: OAuth2RefreshTokenHelper, processesRepository: ProcessesRepository) {
+    this.oAuth2RefreshTokenHelper = oAuth2RefreshTokenHelper;
+    this.processesRepository = processesRepository;
   }
 
   public async connect(impt: ApiImport): Promise<ConnectionState> {
@@ -22,24 +22,36 @@ class ApiConnectionHelper {
       const { id: importId } = impt;
       const connection = impt.__.hasConnection[0];
 
-
       if (connection.type === ApiConnectionType.OAUTH2) {
         const { oauth2 } = connection;
         if (oauth2.access_token === undefined) {
+          // If access token not exists - we have to receive it 
           return ConnectionState.OAUTH2_REQUIRED;
         } else {
           try {
+            // If exists - send request 
             await this.sendRequest(impt);
             return ConnectionState.CONNECTED;
           } catch (error) {
-            try {
-              await this.oAuth2RefreshTokenHelper.refresh(connection);
-            } catch (error) {
-              return ConnectionState.OAUTH2_REQUIRED;
+            if (oauth2.refresh_token === undefined) {
+              // If api oauth2 does not have refresh tokens - access token never expire(Notion api);
+              // Api import settings that request is generated from not valid
+              throw error;
+            } else {
+              // Try to refresh access token
+              try {
+                await this.oAuth2RefreshTokenHelper.refresh(connection);
+              } catch (error) {
+                // The error while refreshing access token.
+                // That means that refresh token was expired.
+                return ConnectionState.OAUTH2_REQUIRED;
+              }
+              // Send request with refreshed access token.
+              // If request fails - Api import settings not valid
+              const updatedImport = await this.processesRepository.get(importId);
+              await this.sendRequest(updatedImport);
+              return ConnectionState.CONNECTED;
             }
-            const updatedImport = await this.processesRepository.get(importId);
-            await this.sendRequest(updatedImport);
-            return ConnectionState.CONNECTED;
           }
         }
       } else {
@@ -79,7 +91,7 @@ class ApiConnectionHelper {
         break;
       }
       default: {
-        throw new Error(`Unknown API transfer type: '${transferMethod}'.`);
+        throw new Error(`Unknown API transfer method: '${transferMethod}'.`);
       }
     }
   }

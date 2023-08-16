@@ -8,34 +8,27 @@ import { Source } from './enums/source.enum';
 import { ProcessType } from '../processes/process.type.enum';
 
 class ImportsService {
-  private processesRepository: ProcessesRepository;
   private sqlImportService: SqlImportService;
   private apiImportService: ApiImportService;
+  private processesRepository: ProcessesRepository;
 
   constructor(
     sqlImportService: SqlImportService,
-    apiImportService: ApiImportService
+    apiImportService: ApiImportService,
+    processesRepository: ProcessesRepository
   ) {
-    this.processesRepository = new ProcessesRepository();
     this.sqlImportService = sqlImportService;
     this.apiImportService = apiImportService;
+    this.processesRepository = processesRepository;
   }
 
-  async getAll(
-    unitId: number,
-    connectionId: number
-  ): Promise<ResponseHandler> {
+  async getAll(select: any, sortings: any): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const imports = await this.processesRepository.getAll({
-        type: ProcessType.IMPORT,
-        unitId,
-        connectionId
-      });
+      const imports = await this.processesRepository.getAll(select, sortings);
       responseHandler.setSuccess(200, imports);
       return responseHandler;
     } catch (error) {
-      console.error('Error: ', error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -67,7 +60,6 @@ class ImportsService {
       responseHandler.setSuccess(200, impt);
       return responseHandler;
     } catch (error) {
-      console.error(error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -87,7 +79,6 @@ class ImportsService {
       responseHandler.setSuccess(200, impt);
       return responseHandler;
     } catch (error) {
-      console.error(error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -122,14 +113,12 @@ class ImportsService {
 
       const unit = impt.__.inUnit.length && impt.__.inUnit[0];
       if (unit === undefined) {
-        console.log('unit')
         responseHandler.setError(400, 'Unit for import not set.');
         return responseHandler;
       }
 
       const connection = impt.__.hasConnection.length && impt.__.hasConnection[0];
       if (connection === undefined) {
-        console.log('connection')
         responseHandler.setError(400, 'Connection for import not set.');
         return responseHandler;
       }
@@ -199,7 +188,6 @@ class ImportsService {
         }
       }
     } catch (error) {
-      console.error('Error: ', error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }

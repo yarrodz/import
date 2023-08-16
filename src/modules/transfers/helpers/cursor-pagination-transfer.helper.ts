@@ -12,10 +12,10 @@ class CursorPaginationTransferHelper {
   private importStepHelper: ImportStepHelper;
   private transfersRepository: TransfersRepository;
 
-  constructor(io: IO, importStepHelper: ImportStepHelper) {
+  constructor(io: IO, importStepHelper: ImportStepHelper, transfersRepository: TransfersRepository) {
     this.io = io;
     this.importStepHelper = importStepHelper;
-    this.transfersRepository = new TransfersRepository();
+    this.transfersRepository = transfersRepository;
   }
 
   public async transfer(params: CursorPaginationTransferParams) {

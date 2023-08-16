@@ -6,14 +6,14 @@ class ConnectionsRouter {
   public router: Router;
   private connectionsController: ConnectionsController;
 
-  constructor() {
+  constructor(connectionsController: ConnectionsController) {
     this.router = Router();
-    this.connectionsController = new ConnectionsController();
+    this.connectionsController = connectionsController;
     this.initializeRoutes();
   }
 
   private initializeRoutes() {
-    this.router.get('/', this.connectionsController.getAll);
+    this.router.post('/getAll', this.connectionsController.getAll);
     this.router.get('/:id', this.connectionsController.get);
     this.router.post('/', this.connectionsController.create);
     this.router.patch('/', this.connectionsController.update);

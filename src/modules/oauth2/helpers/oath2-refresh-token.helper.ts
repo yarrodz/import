@@ -9,8 +9,8 @@ const GRANT_TYPE = 'refresh_token';
 class OAuth2RefreshTokenHelper {
   private connectionsRepository: ConnectionsRepository;
 
-  constructor() {
-    this.connectionsRepository = new ConnectionsRepository();
+  constructor(connectionsRepository: ConnectionsRepository) {
+    this.connectionsRepository = connectionsRepository;
   }
 
   public refresh = async (connection: ApiConnection) => {
@@ -49,6 +49,7 @@ class OAuth2RefreshTokenHelper {
       await this.connectionsRepository.update({
         id: connectionId,
         oauth2: {
+          ...oauth2,
           access_token
         }
       });
@@ -56,6 +57,7 @@ class OAuth2RefreshTokenHelper {
       await this.connectionsRepository.update({
         id: connectionId,
         oauth2: {
+          ...oauth2,
           access_token: null,
           refresh_token: null
         }

@@ -13,9 +13,9 @@ class TransferFailureHandler {
   private io: IO;
   private transfersRepository: TransfersRepository;
 
-  constructor(io: IO) {
+  constructor(io: IO, transfersRepository: TransfersRepository) {
     this.io = io;
-    this.transfersRepository = new TransfersRepository();
+    this.transfersRepository = transfersRepository;
   }
 
   public async handle(params: TransferFailureHandleParams): Promise<void> {
@@ -23,8 +23,6 @@ class TransferFailureHandler {
     const { id: transferId } = transfer;
     const { retryOptions } = impt;
     const { maxAttempts, attemptTimeDelay } = retryOptions;
-
-    console.log('handle error: ', error);
 
     const refreshedTransfer = await this.transfersRepository.get(transferId);
     const { retryAttempts } = refreshedTransfer;

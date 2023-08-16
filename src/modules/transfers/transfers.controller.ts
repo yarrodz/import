@@ -5,15 +5,15 @@ import TransfersService from './transfers.service';
 export class TransfersController {
   private transfersService: TransfersService;
 
-  constructor(importsService: TransfersService) {
-    this.transfersService = importsService;
+  constructor(transfersService: TransfersService) {
+    this.transfersService = transfersService;
   }
 
   getAll = async (req: Request, res: Response) => {
-    const { unitId, importId } = req.query;
+    const { select, sortings } = req.body;
     const responseHandler = await this.transfersService.getAll(
-      Number(importId),
-      Number(unitId),
+      select,
+      sortings,
     );
     responseHandler.send(res);
   };
