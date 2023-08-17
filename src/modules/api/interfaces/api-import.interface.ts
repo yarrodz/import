@@ -3,7 +3,6 @@ import { TransferMethod } from '../../transfers/enums/transfer-method.enum';
 import RequestPaginationOptions from './request-pagination-options.interface';
 import ImportField from '../../imports/interfaces/import-field.interface';
 import RetryOptions from '../../imports/interfaces/retry-options.interace';
-import ApiConnection from './api-connection.interface';
 import { ProcessType } from '../../processes/process.type.enum';
 import { Source } from '../../imports/enums/source.enum';
 import ImportReference from '../../imports/interfaces/import-reference.interface';
@@ -29,9 +28,5 @@ export default interface ApiImport {
 
   fields?: ImportField[];
 
-  __?: ImportReference;
-
-  unit?: any;
-  project?: any;
-  connection?: ApiConnection;
+  __: ImportReference;
 }

@@ -16,7 +16,11 @@ class ImportStepHelper {
   private transfersRepository: TransfersRepository;
   private datasetsRepository: DatasetsRepository;
 
-  constructor(io: IO, transfersRepository: TransfersRepository, datasetsRepository: DatasetsRepository) {
+  constructor(
+    io: IO,
+    transfersRepository: TransfersRepository,
+    datasetsRepository: DatasetsRepository
+  ) {
     this.io = io;
     this.transfersRepository = transfersRepository;
     this.datasetsRepository = datasetsRepository;
@@ -47,7 +51,10 @@ class ImportStepHelper {
       retryAttempts: 0
     });
 
-    this.io.to(String(transferId)).emit('transfer', updatedTransfer);
+    this.io.to(String(transferId)).emit('transfer', {
+      ...updatedTransfer,
+      log: updatedTransfer.log[0]
+    });
   }
 
   private async transformDatasets(
@@ -58,7 +65,7 @@ class ImportStepHelper {
     const { id: importId, idKey } = impt;
     let { id: transferId, log } = transfer;
     const { fields } = impt;
-    const unit = impt.__.inUnit[0];
+    const unit = impt.__.inUnit;
     const { id: unitId } = unit;
 
     const transformedDatasets = [];
@@ -79,7 +86,7 @@ class ImportStepHelper {
 
         transformedDatasets.push(transformedDataset);
       } catch (error) {
-        log.push(
+        log.unshift(
           `Cannot parse dataset: '${JSON.stringify(dataset)}', Error: '${
             error.message
           }'`

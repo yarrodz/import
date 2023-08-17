@@ -12,7 +12,11 @@ class CursorPaginationTransferHelper {
   private importStepHelper: ImportStepHelper;
   private transfersRepository: TransfersRepository;
 
-  constructor(io: IO, importStepHelper: ImportStepHelper, transfersRepository: TransfersRepository) {
+  constructor(
+    io: IO,
+    importStepHelper: ImportStepHelper,
+    transfersRepository: TransfersRepository
+  ) {
     this.io = io;
     this.importStepHelper = importStepHelper;
     this.transfersRepository = transfersRepository;
@@ -31,7 +35,10 @@ class CursorPaginationTransferHelper {
       const stepStartDate = new Date();
       const refreshedTransfer = await this.transfersRepository.get(transferId);
       if (refreshedTransfer.status === TransferStatus.PAUSED) {
-        this.io.to(String(transferId)).emit('transfer', refreshedTransfer);
+        this.io.to(String(transferId)).emit('transfer', {
+          ...refreshedTransfer,
+          log: refreshedTransfer.log[0]
+        });
         return;
       }
 
@@ -52,6 +59,10 @@ class CursorPaginationTransferHelper {
       );
       cursor = result.cursor;
       datasets = result.datasets;
+
+      if (datasets.length === 0) {
+        break;
+      }
 
       await this.importStepHelper.step(
         impt,
@@ -78,11 +89,14 @@ class CursorPaginationTransferHelper {
       }
     } while (datasets.length);
 
-    const completedTransfer = this.transfersRepository.update({
+    const completedTransfer = await this.transfersRepository.update({
       id: transferId,
       status: TransferStatus.COMPLETED
     });
-    this.io.to(String(transferId)).emit('transfer', completedTransfer);
+    this.io.to(String(transferId)).emit('transfer', {
+      ...completedTransfer,
+      log: completedTransfer.log[0]
+    });
   }
 }
 

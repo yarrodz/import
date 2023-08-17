@@ -13,6 +13,7 @@ import { TransferStatus } from '../transfers/enums/transfer-status.enum';
 import { ConnectionState } from './enums/connection-state.enum';
 import Context from '../imports/interfaces/context.interface';
 import { ContextAction } from '../imports/enums/context-action-enum';
+import ApiConnection from './interfaces/api-connection.interface';
 
 class ApiImportService {
   private apiConnectionHelper: ApiConnectionHelper;
@@ -42,7 +43,7 @@ class ApiImportService {
     const responseHandler = new ResponseHandler();
     try {
       const { id: importId } = impt;
-      const connection = impt.__.hasConnection[0];
+      const connection = impt.__.hasConnection as ApiConnection;
       const { id: connectionId } = connection;
 
       const context: Context = {
@@ -68,6 +69,7 @@ class ApiImportService {
       responseHandler.setSuccess(200, columns);
       return responseHandler;
     } catch (error) {
+      console.error(error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -80,7 +82,7 @@ class ApiImportService {
     const responseHandler = new ResponseHandler();
     try {
       const { id: importId } = impt;
-      const connection = impt.__.hasConnection[0];
+      const connection = impt.__.hasConnection as ApiConnection;
       const { id: connectionId } = connection;
 
       const context: Context = {
@@ -117,9 +119,9 @@ class ApiImportService {
     try {
       const { id: importId } = impt;
       const { transferMethod } = impt;
-      const connection = impt.__.hasConnection[0];
+      const connection = impt.__.hasConnection as ApiConnection;
       const { id: connectionId } = connection;
-      const unit = impt.__.inUnit[0];
+      const unit = impt.__.inUnit;
       const { id: unitId } = unit;
 
       const context: Context = {
@@ -148,16 +150,16 @@ class ApiImportService {
         transferedDatasetsCount: 0,
         log: [],
         retryAttempts: 0,
-        "__": {
-          "inImport": {
-            "id": importId,
-            "_d": "out"
+        __: {
+          inImport: {
+            id: importId,
+            _d: 'out'
           },
-          "inUnit": {
-              "id": unitId,
-              "_d": "out"
+          inUnit: {
+            id: unitId,
+            _d: 'out'
           }
-        },
+        }
       });
 
       const { id: transferId } = transfer;
@@ -169,6 +171,7 @@ class ApiImportService {
       responseHandler.setSuccess(200, transferId);
       return responseHandler;
     } catch (error) {
+      console.error(error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }

@@ -1,5 +1,5 @@
-import Joi from "joi";
-import { RequestMethod } from "../enums/request-method.enum";
+import Joi from 'joi';
+import { RequestMethod } from '../enums/request-method.enum';
 
 export const RequestValidator = Joi.object({
   method: Joi.string()
@@ -8,5 +8,5 @@ export const RequestValidator = Joi.object({
   url: Joi.string().required(),
   headers: Joi.object().optional().allow(null),
   params: Joi.object().optional().allow(null),
-  body: Joi.object().optional().allow(null),
-})
+  body: Joi.object().optional().allow(null)
+});

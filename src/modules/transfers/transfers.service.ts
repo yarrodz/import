@@ -13,7 +13,7 @@ class TransfersService {
   private apiTransferService: ApiTransferService;
   private transfersRepository: TransfersRepository;
   private processesRepository: ProcessesRepository;
-  
+
   constructor(
     sqlTransferService: SqlTransferService,
     apiTransferService: ApiTransferService,
@@ -26,10 +26,7 @@ class TransfersService {
     this.processesRepository = processesRepository;
   }
 
-  async getAll(
-    select: any,
-    sortings: any,
-  ): Promise<ResponseHandler> {
+  async getAll(select: any, sortings: any): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
       const transfers = await this.transfersRepository.getAll(select, sortings);
@@ -151,7 +148,7 @@ class TransfersService {
         default: {
           responseHandler.setError(
             400,
-            `Error while reloading import. Unknown synchronization source '${source}'.`
+            `Error while reloading import. Unknown source '${source}'.`
           );
           return responseHandler;
         }
@@ -185,10 +182,8 @@ class TransfersService {
       }
 
       const updatedTransfer = await this.transfersRepository.update({
-        transfer: {
-          id,
-          status: TransferStatus.PENDING
-        }
+        id,
+        status: TransferStatus.PENDING
       });
 
       const { source } = impt;
@@ -207,12 +202,13 @@ class TransfersService {
         default: {
           responseHandler.setError(
             400,
-            `Error while retrieng transfer. Unknown synchronization source '${source}'.`
+            `Error while retrieng transfer. Unknown source '${source}'.`
           );
           return responseHandler;
         }
       }
     } catch (error) {
+      console.error(error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }

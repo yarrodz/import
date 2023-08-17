@@ -9,34 +9,48 @@ class iFrameProcess extends BaseVertexModel {
   relations = {
     load: [
       { label: 'inUnit', _d: 'out' },
-      { label: 'inProject', _d: 'out' },
-      { label: 'hasConnection', _d: 'out' },
+      { label: 'hasConnection', _d: 'out' }
     ],
     save: [
       { label: 'inUnit', _d: 'out' },
-      { label: 'inProject', _d: 'out' },
       { label: 'hasConnection', _d: 'out' }
     ],
     delete: [
       { label: 'inUnit', _d: 'out' },
-      { label: 'inProject', _d: 'out' },
       { label: 'hasConnection', _d: 'out' }
     ]
   };
 
-
   async insert(properties) {
     await super.insert(properties, true, this.relations.save);
+    this.properties.__.inUnit = this.properties.__.inUnit
+      ? this.properties.__.inUnit[0]
+      : undefined;
+    this.properties.__.hasConnection = this.properties.__.hasConnection
+      ? this.properties.__.hasConnection[0]
+      : undefined;
     return this;
   }
 
   async save() {
     await super.save(true, this.relations.save);
+    this.properties.__.inUnit = this.properties.__.inUnit
+      ? this.properties.__.inUnit[0]
+      : undefined;
+    this.properties.__.hasConnection = this.properties.__.hasConnection
+      ? this.properties.__.hasConnection[0]
+      : undefined;
     return this;
   }
 
   async load(id) {
     await super.load(id, this.relations.load);
+    this.properties.__.inUnit = this.properties.__.inUnit
+      ? this.properties.__.inUnit[0]
+      : undefined;
+    this.properties.__.hasConnection = this.properties.__.hasConnection
+      ? this.properties.__.hasConnection[0]
+      : undefined;
     return this;
   }
 }

@@ -18,6 +18,7 @@ import OuterTransferFunction, {
 } from '../../transfers/interfaces/outer-transfer-function.interface';
 import TransfersRepository from '../../transfers/transfers.repository';
 import OffsetPaginationTransferParams from '../../transfers/interfaces/offset-pagination-transfer-params.interface';
+import SqlConnection from '../interfaces/sql.connection.interface';
 
 class SqlImportHelper {
   private transferFailureHandler: TransferFailureHandler;
@@ -26,11 +27,12 @@ class SqlImportHelper {
 
   constructor(
     transferFailureHandler: TransferFailureHandler,
-    offsetPaginationTransferHelper: OffsetPaginationTransferHelper
+    offsetPaginationTransferHelper: OffsetPaginationTransferHelper,
+    transfersReporisotory: TransfersRepository
   ) {
     this.transferFailureHandler = transferFailureHandler;
     this.offsetPaginationTransferHelper = offsetPaginationTransferHelper;
-    this.transfersReporisotory =  new TransfersRepository();
+    this.transfersReporisotory = transfersReporisotory;
   }
 
   public import: OuterTransferFunction = async (
@@ -40,7 +42,7 @@ class SqlImportHelper {
     const impt = params.import as SqlImport;
     const { transfer } = params;
     const { target } = impt;
-    const connection = impt.__.hasConnection[0];
+    const connection = impt.__.hasConnection as SqlConnection;
     const { config } = connection;
     const { dialect } = config;
     try {

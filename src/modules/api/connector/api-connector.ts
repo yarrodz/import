@@ -17,7 +17,7 @@ class ApiConnector {
 
   constructor(impt: ApiImport) {
     const { request, transferMethod, paginationOptions } = impt;
-    const connection = impt.__.hasConnection[0];
+    const connection = impt.__.hasConnection as ApiConnection;
 
     this.request = { ...request, data: request.body };
     this.auth = connection;

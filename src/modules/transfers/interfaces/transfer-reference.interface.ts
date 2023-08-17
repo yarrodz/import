@@ -1,7 +1,7 @@
-export default interface TransferReference {
-  inImport?: number;
-  inExport?: number;
+import SqlImport from '../../sql/interfaces/sql-import.interface';
+import ApiImport from '../../api/interfaces/api-import.interface';
 
-  inUnit?: number;
-  inProject?: number;
+export default interface TransferReference {
+  inImport?: SqlImport | ApiImport;
+  inUnit?: any;
 }

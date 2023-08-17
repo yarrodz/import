@@ -32,7 +32,7 @@ class PendingTransfersReloader {
     await Promise.all(
       pendingTransfers.map(async (transfer) => {
         try {
-          const impt = transfer.__.inImport[0];
+          const impt = transfer.__.inImport;
 
           const { source } = impt;
 

@@ -14,16 +14,25 @@ class iFrameConnection extends BaseVertexModel {
 
   async insert(properties) {
     await super.insert(properties, true, this.relations.save);
+    this.properties.__.inUnit = this.properties.__.inUnit
+      ? this.properties.__.inUnit[0]
+      : undefined;
     return this;
   }
 
   async save() {
     await super.save(true, this.relations.save);
+    this.properties.__.inUnit = this.properties.__.inUnit
+      ? this.properties.__.inUnit[0]
+      : undefined;
     return this;
   }
 
   async load(id) {
     await super.load(id, this.relations.load);
+    this.properties.__.inUnit = this.properties.__.inUnit
+      ? this.properties.__.inUnit[0]
+      : undefined;
     return this;
   }
 }

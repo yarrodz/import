@@ -19,7 +19,10 @@ class ImportsRouter {
     this.router.patch('/', this.importsController.update);
     this.router.delete('/:id', this.importsController.delete);
     this.router.post('/columns', this.importsController.getColumns);
-    this.router.post('/idColumnUniqueness',this.importsController.checkIdColumnUniqueness);
+    this.router.post(
+      '/idColumnUniqueness',
+      this.importsController.checkIdColumnUniqueness
+    );
     this.router.post('/import', this.importsController.import);
   }
 }

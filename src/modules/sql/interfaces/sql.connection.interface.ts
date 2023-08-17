@@ -1,7 +1,6 @@
+import ConnectionReference from '../../connections/interfafces/connection.reference.interface';
 import { Source } from '../../imports/enums/source.enum';
 import { SqlDialect } from '../enums/sql-dialect.enum';
-import SqlExport from './sql-export.interface';
-import SqlImport from './sql-import.interface';
 
 export interface SqlConnectionConfig {
   dialect: SqlDialect;
@@ -13,13 +12,12 @@ export interface SqlConnectionConfig {
 }
 
 export default interface SqlConnection {
-  id: string;
+  id: number;
 
   name: string;
   source: Source.SQL;
 
   config: SqlConnectionConfig;
 
-  imports?: SqlImport[];
-  exports?: SqlExport[];
+  __: ConnectionReference;
 }

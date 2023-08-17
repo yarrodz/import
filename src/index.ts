@@ -38,18 +38,14 @@ async function start() {
 
     const initParams: InitParams = {
       io,
-      dbClient,      
+      dbClient,
       clientUri: 'http://localhost:4200/',
       oAuth2RedirectUri: 'http://localhost:3000/oauth-callback/'
     };
 
-    const {
-      connectionsRouter,
-      importsRouter,
-      transfersRouter,
-      oAuth2Router
-    } = initTransfers(initParams);
-    
+    const { connectionsRouter, importsRouter, transfersRouter, oAuth2Router } =
+      initTransfers(initParams);
+
     app.use('/connections', connectionsRouter.router);
     app.use('/imports', importsRouter.router);
     app.use('/transfers', transfersRouter.router);

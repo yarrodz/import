@@ -7,12 +7,16 @@ import { ApiConnectionType } from '../enums/api-connection-type.enum';
 import { TransferMethod } from '../../transfers/enums/transfer-method.enum';
 import OffsetPagination from '../../transfers/interfaces/offset-pagination.interface';
 import CursorPagination from '../../transfers/interfaces/cursor-pagination.interface';
+import ApiConnection from '../interfaces/api-connection.interface';
 
 class ApiConnectionHelper {
   private oAuth2RefreshTokenHelper: OAuth2RefreshTokenHelper;
   private processesRepository: ProcessesRepository;
 
-  constructor(oAuth2RefreshTokenHelper: OAuth2RefreshTokenHelper, processesRepository: ProcessesRepository) {
+  constructor(
+    oAuth2RefreshTokenHelper: OAuth2RefreshTokenHelper,
+    processesRepository: ProcessesRepository
+  ) {
     this.oAuth2RefreshTokenHelper = oAuth2RefreshTokenHelper;
     this.processesRepository = processesRepository;
   }
@@ -20,16 +24,16 @@ class ApiConnectionHelper {
   public async connect(impt: ApiImport): Promise<ConnectionState> {
     try {
       const { id: importId } = impt;
-      const connection = impt.__.hasConnection[0];
+      const connection = impt.__.hasConnection as ApiConnection;
 
       if (connection.type === ApiConnectionType.OAUTH2) {
         const { oauth2 } = connection;
         if (oauth2.access_token === undefined) {
-          // If access token not exists - we have to receive it 
+          // If access token not exists - we have to receive it
           return ConnectionState.OAUTH2_REQUIRED;
         } else {
           try {
-            // If exists - send request 
+            // If exists - send request
             await this.sendRequest(impt);
             return ConnectionState.CONNECTED;
           } catch (error) {
@@ -48,7 +52,9 @@ class ApiConnectionHelper {
               }
               // Send request with refreshed access token.
               // If request fails - Api import settings not valid
-              const updatedImport = await this.processesRepository.get(importId);
+              const updatedImport = await this.processesRepository.get(
+                importId
+              );
               await this.sendRequest(updatedImport);
               return ConnectionState.CONNECTED;
             }

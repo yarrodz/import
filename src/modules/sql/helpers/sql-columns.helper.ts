@@ -8,13 +8,14 @@ import {
 import { paginateSqlSelect } from '../connector/sql-select.query-builder';
 import Column from '../../columns/column.interface';
 import SqlImport from '../interfaces/sql-import.interface';
+import SqlConnection from '../interfaces/sql.connection.interface';
 
 class SqlColumnsHelper {
   public async find(impt: SqlImport): Promise<Column[]> {
     let sqlConnector: SqlConnector;
     try {
       const { idKey, target, table, select } = impt;
-      const connection = impt.__.hasConnection[0];
+      const connection = impt.__.hasConnection as SqlConnection;
       const { config } = connection;
       const { dialect } = config;
 
@@ -64,8 +65,8 @@ class SqlColumnsHelper {
   public async checkIdColumnUniqueness(impt: SqlImport) {
     let sqlConnector: SqlConnector;
     try {
-      const { idKey, target, table, select } = impt;
-      const connection = impt.__.hasConnection[0];
+      const { idKey, target, table } = impt;
+      const connection = impt.__.hasConnection as SqlConnection;
       const { config } = connection;
       const { dialect } = config;
 

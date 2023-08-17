@@ -13,7 +13,7 @@ export class TransfersController {
     const { select, sortings } = req.body;
     const responseHandler = await this.transfersService.getAll(
       select,
-      sortings,
+      sortings
     );
     responseHandler.send(res);
   };

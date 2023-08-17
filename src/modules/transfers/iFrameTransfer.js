@@ -5,7 +5,7 @@ class iFrameTransfer extends BaseVertexModel {
     super(client, 'iFrameTransfer', properties, id);
     this.client = client;
   }
-  
+
   relations = {
     load: [
       { label: 'inUnit', _d: 'out' },
@@ -23,16 +23,34 @@ class iFrameTransfer extends BaseVertexModel {
 
   async insert(properties) {
     await super.insert(properties, true, this.relations.save);
+    this.properties.__.inUnit = this.properties.__.inUnit
+      ? this.properties.__.inUnit[0]
+      : undefined;
+    this.properties.__.inImport = this.properties.__.inImport
+      ? this.properties.__.inImport[0]
+      : undefined;
     return this;
   }
 
   async save() {
     await super.save(true, this.relations.save);
+    this.properties.__.inUnit = this.properties.__.inUnit
+      ? this.properties.__.inUnit[0]
+      : undefined;
+    this.properties.__.inImport = this.properties.__.inImport
+      ? this.properties.__.inImport[0]
+      : undefined;
     return this;
   }
 
   async load(id) {
     await super.load(id, this.relations.load);
+    this.properties.__.inUnit = this.properties.__.inUnit
+      ? this.properties.__.inUnit[0]
+      : undefined;
+    this.properties.__.inImport = this.properties.__.inImport
+      ? this.properties.__.inImport[0]
+      : undefined;
     return this;
   }
 }

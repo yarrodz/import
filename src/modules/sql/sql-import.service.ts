@@ -12,7 +12,11 @@ class SqlImportService {
   private sqlImportHelper: SqlImportHelper;
   private transfersRepository: TransfersRepository;
 
-  constructor(sqlColumnsHelper: SqlColumnsHelper, sqlImportHelper: SqlImportHelper, transefersRepository: TransfersRepository) {
+  constructor(
+    sqlColumnsHelper: SqlColumnsHelper,
+    sqlImportHelper: SqlImportHelper,
+    transefersRepository: TransfersRepository
+  ) {
     this.sqlColumnsHelper = sqlColumnsHelper;
     this.sqlImportHelper = sqlImportHelper;
     this.transfersRepository = transefersRepository;
@@ -49,7 +53,7 @@ class SqlImportService {
     const responseHandler = new ResponseHandler();
     try {
       const { id: importId } = impt;
-      const unit = impt.__.inUnit[0];
+      const unit = impt.__.inUnit;
       const { id: unitId } = unit;
 
       const transfer = await this.transfersRepository.create({
@@ -60,16 +64,16 @@ class SqlImportService {
         transferedDatasetsCount: 0,
         log: [],
         retryAttempts: 0,
-        "__": {
-          "inImport": {
-            "id": importId,
-            "_d": "out"
+        __: {
+          inImport: {
+            id: importId,
+            _d: 'out'
           },
-          "inUnit": {
-              "id": unitId,
-              "_d": "out"
+          inUnit: {
+            id: unitId,
+            _d: 'out'
           }
-        },
+        }
       });
 
       const { id: transferId } = transfer;

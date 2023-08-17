@@ -3,6 +3,8 @@ import Joi from 'joi';
 import { ProcessType } from '../../processes/process.type.enum';
 import { Source } from '../../imports/enums/source.enum';
 import { SqlImportTarget } from '../enums/sql-import-target.enum';
+import { ImportFieldValidator } from '../../imports/validators/import-field.validator';
+import { OutReferenceValidator } from '../../imports/validators/out-reference.validator';
 
 export const CreateSqlImportValidator = Joi.object({
   name: Joi.string().min(1).max(128).required(),
@@ -15,15 +17,20 @@ export const CreateSqlImportValidator = Joi.object({
 
   retryOptions: Joi.object({
     maxAttempts: Joi.number().integer().min(1).max(16).required(),
-    attemptTimeDelay: Joi.number().integer().min(1000).max(28800000).required(),
+    attemptTimeDelay: Joi.number().integer().min(1000).max(28800000).required()
   }).required(),
 
-  target: Joi.string().valid(...Object.values(SqlImportTarget)).required(),
+  target: Joi.string()
+    .valid(...Object.values(SqlImportTarget))
+    .required(),
   table: Joi.string().optional(),
   select: Joi.string().optional(),
   limit: Joi.number().required(),
 
-  fields: Joi.object().optional(),
+  fields: Joi.array().items(ImportFieldValidator).optional(),
+
+  __: Joi.object({
+    inUnit: OutReferenceValidator.required(),
+    hasConnection: OutReferenceValidator.required()
+  }).required()
 });
-
-

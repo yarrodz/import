@@ -10,7 +10,11 @@ class ChunkTransferHelper {
   private importStepHelper: ImportStepHelper;
   private transfersRepository: TransfersRepository;
 
-  constructor(io: IO, importStepHelper: ImportStepHelper, transfersRepository: TransfersRepository) {
+  constructor(
+    io: IO,
+    importStepHelper: ImportStepHelper,
+    transfersRepository: TransfersRepository
+  ) {
     this.io = io;
     this.importStepHelper = importStepHelper;
     this.transfersRepository = transfersRepository;
@@ -28,7 +32,10 @@ class ChunkTransferHelper {
     while (chunkedDatasets.length) {
       const refreshedTransfer = await this.transfersRepository.get(transferId);
       if (refreshedTransfer.status === TransferStatus.PAUSED) {
-        this.io.to(String(transferId)).emit('transfer', refreshedTransfer);
+        this.io.to(String(transferId)).emit('transfer', {
+          ...refreshedTransfer,
+          log: refreshedTransfer.log[0]
+        });
         return;
       }
 
@@ -36,11 +43,14 @@ class ChunkTransferHelper {
       await this.importStepHelper.step(impt, refreshedTransfer, datasetsChunk);
     }
 
-    const completedTransfer = this.transfersRepository.update({
+    const completedTransfer = await this.transfersRepository.update({
       id: transferId,
       status: TransferStatus.COMPLETED
     });
-    this.io.to(String(transferId)).emit('transfer', completedTransfer);
+    this.io.to(String(transferId)).emit('transfer', {
+      ...completedTransfer,
+      log: completedTransfer.log[0]
+    });
   }
 
   // chunkObjectArray([1,2,3,4,5,6,7,8,9], 3) => [[1,2,3],[4,5,6],[7,8,9]]

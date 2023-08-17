@@ -1,6 +1,7 @@
-import { iFrameDbClient } from 'iframe-ai';
+import { iFrameDbClient, iFrameDataset } from 'iframe-ai';
+// import { iFrameDbClient } from 'iframe-ai';
 
-import iFrameDataset from './iFrameDataset';
+// import iFrameDataset from './iFrameDataset';
 import Dataset from './dataset.interface';
 
 class DatasetsRepository {
@@ -14,10 +15,9 @@ class DatasetsRepository {
     try {
       await new iFrameDataset(this.client).bulkSave(datasets);
     } catch (error) {
-      throw new Error(`Error while bulkSave datasets: ${error.message}`);
+      throw new Error(`Error while bulkSave datasets: ${error}`);
     }
   }
 }
 
 export default DatasetsRepository;
-

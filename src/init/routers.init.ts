@@ -11,7 +11,9 @@ export interface InitRoutersResult {
   oAuth2Router: OAuth2Router;
 }
 
-export default function initRouters(params: InitControllersResult): InitRoutersResult {
+export default function initRouters(
+  params: InitControllersResult
+): InitRoutersResult {
   const {
     connectionsController,
     importsController,

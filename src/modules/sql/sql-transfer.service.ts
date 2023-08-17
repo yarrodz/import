@@ -9,7 +9,10 @@ class SqlTransferService {
   private sqlImportHelper: SqlImportHelper;
   private transfersRepository: TransfersRepository;
 
-  constructor(sqlImportHelper: SqlImportHelper, transfersRepository: TransfersRepository) {
+  constructor(
+    sqlImportHelper: SqlImportHelper,
+    transfersRepository: TransfersRepository
+  ) {
     this.sqlImportHelper = sqlImportHelper;
     this.transfersRepository = transfersRepository;
   }

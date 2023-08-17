@@ -12,6 +12,7 @@ import { ConnectionState } from './enums/connection-state.enum';
 import { TransferStatus } from '../transfers/enums/transfer-status.enum';
 import Context from '../imports/interfaces/context.interface';
 import { ContextAction } from '../imports/enums/context-action-enum';
+import ApiConnection from './interfaces/api-connection.interface';
 
 class ApiTransferService {
   private apiConnectionHelper: ApiConnectionHelper;
@@ -42,7 +43,7 @@ class ApiTransferService {
     const responseHandler = new ResponseHandler();
     try {
       const { id: importId } = impt;
-      const connection = impt.__.hasConnection[0];
+      const connection = impt.__.hasConnection as ApiConnection;
       const { id: connectionId } = connection;
       const { id: transferId } = transfer;
 
@@ -90,7 +91,7 @@ class ApiTransferService {
     const responseHandler = new ResponseHandler();
     try {
       const { id: importId } = impt;
-      const connection = impt.__.hasConnection[0];
+      const connection = impt.__.hasConnection as ApiConnection;
       const { id: connectionId } = connection;
       const { id: transferId } = transfer;
 

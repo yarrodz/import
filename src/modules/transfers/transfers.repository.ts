@@ -12,14 +12,9 @@ class TransfersRepository {
 
   async getAll(select: any, sortings: any) {
     try {
-      return await new iFrameTransfer(this.client).query(
-        select,
-        sortings,
-      );
+      return await new iFrameTransfer(this.client).query(select, sortings);
     } catch (error) {
-      throw new error(
-        `Error while query for getting transfers: ${error.message}`
-      );
+      throw new error(`Error while query for getting transfers: ${error}`);
     }
   }
 
@@ -29,33 +24,28 @@ class TransfersRepository {
         .load(id)
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      throw new error(
-        `Error while query for getting a transfer: ${error.message}`
-      );
+      throw new error(`Error while query for getting a transfer: ${error}`);
     }
   }
 
   async create(input: any) {
     try {
       return await new iFrameTransfer(this.client)
-        .insert(input, true, true)
+        .insert(input)
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      throw new error(
-        `Error while query for creating a transfer: ${error.message}`
-      );
+      throw new error(`Error while query for creating a transfer: ${error}`);
     }
   }
 
   async update(input: any) {
     try {
       return await new iFrameTransfer(this.client, input, input.id)
-        .save(true, true, true)
+        .save()
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      throw new error(
-        `Error while query for creating a transfer: ${error.message}`
-      );
+      console.error(error);
+      throw new error(`Error while query for creating a transfer: ${error}`);
     }
   }
 
@@ -63,9 +53,7 @@ class TransfersRepository {
     try {
       return await new iFrameTransfer(this.client).delete(id);
     } catch (error) {
-      throw new error(
-        `Error while query for deleting a transfer: ${error.message}`
-      );
+      throw new error(`Error while query for deleting a transfer: ${error}`);
     }
   }
 }

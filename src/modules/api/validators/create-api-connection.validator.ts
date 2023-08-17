@@ -6,16 +6,23 @@ import { BasicDigestValidator } from './connection-validators/basic-digest.valid
 import { BearerValidator } from './connection-validators/bearer.validator';
 import { OAuth2Validator } from '../../oauth2/validators/oauth2.validator';
 import { Source } from '../../imports/enums/source.enum';
+import { OutReferenceValidator } from '../../imports/validators/out-reference.validator';
 
 export const CreateApiConnectionValidator = Joi.object({
-    name: Joi.string().min(1).max(128).required(),
+  name: Joi.string().min(1).max(128).required(),
 
-    source: Joi.string().valid(Source.API).required(),
+  source: Joi.string().valid(Source.API).required(),
 
-    type: Joi.string().valid(...Object.values(ApiConnectionType)).required(),
+  type: Joi.string()
+    .valid(...Object.values(ApiConnectionType))
+    .required(),
 
-    apiKey: ApiKeyValidator.optional(),
-    basicDigest: BasicDigestValidator.optional(),
-    bearer: BearerValidator.optional(),
-    oauth2: OAuth2Validator.optional()
+  apiKey: ApiKeyValidator.optional(),
+  basicDigest: BasicDigestValidator.optional(),
+  bearer: BearerValidator.optional(),
+  oauth2: OAuth2Validator.optional(),
+
+  __: Joi.object({
+    inUnit: OutReferenceValidator.required()
+  }).required()
 });

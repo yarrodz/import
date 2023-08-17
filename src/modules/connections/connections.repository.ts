@@ -2,7 +2,6 @@ import { iFrameDbClient } from 'iFrame-ai';
 
 import iFrameConnection from './iFrameConnection';
 import transformIFrameInstance from '../../utils/transform-iFrame-instance/transform-iFrame-instance';
-import { Source } from '../imports/enums/source.enum';
 
 class ConnectionsRepository {
   private client: iFrameDbClient;
@@ -15,13 +14,10 @@ class ConnectionsRepository {
     try {
       return await new iFrameConnection(this.client).query({
         select,
-        sortings,
-      }
-      );
+        sortings
+      });
     } catch (error) {
-      throw new error(
-        `Error while query for getting connections: ${error.message}`
-      );
+      throw new error(`Error while query for getting connections: ${error}`);
     }
   }
 
@@ -31,33 +27,27 @@ class ConnectionsRepository {
         .load(id)
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      throw new error(
-        `Error while query for getting a connection: ${error.message}`
-      );
+      throw new error(`Error while query for getting a connection: ${error}`);
     }
   }
 
   async create(input: any) {
     try {
       return await new iFrameConnection(this.client)
-        .insert(input, true, true)
+        .insert(input)
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      throw new error(
-        `Error while query for creating a connection: ${error.message}`
-      );
+      throw new error(`Error while query for creating a connection: ${error}`);
     }
   }
 
   async update(input: any) {
     try {
       return await new iFrameConnection(this.client, input, input.id)
-        .save(true, true, true)
+        .save()
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      throw new error(
-        `Error while query for creating a connection: ${error.message}`
-      );
+      throw new error(`Error while query for creating a connection: ${error}`);
     }
   }
 
@@ -65,9 +55,7 @@ class ConnectionsRepository {
     try {
       return await new iFrameConnection(this.client).delete(id);
     } catch (error) {
-      throw new error(
-        `Error while query for deleting a connection: ${error.message}`
-      );
+      throw new error(`Error while query for deleting a connection: ${error}`);
     }
   }
 }

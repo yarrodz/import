@@ -23,19 +23,21 @@ import ApiTransferService from '../modules/api/api-transfer.service';
 import OAuth2RefreshTokenHelper from '../modules/oauth2/helpers/oath2-refresh-token.helper';
 
 export interface InitServicesParams extends InitRepositoriesResult {
-  io: IO,
-  clientUri: string,
-  oAuth2RedirectUri: string,
+  io: IO;
+  clientUri: string;
+  oAuth2RedirectUri: string;
 }
 
-export interface InitServicesResult  {
+export interface InitServicesResult {
   connectionsService: ConnectionsService;
   importsService: ImportsService;
   transfersService: TransfersService;
   oAuth2Service: OAuth2Service;
 }
 
-export default function initServices(params: InitServicesParams): InitServicesResult {
+export default function initServices(
+  params: InitServicesParams
+): InitServicesResult {
   const {
     io,
     clientUri,
@@ -45,8 +47,10 @@ export default function initServices(params: InitServicesParams): InitServicesRe
     processesRepository,
     transfersRepository
   } = params;
-  
-  const oAuth2RefreshTokenHelper = new OAuth2RefreshTokenHelper(connectionsRepository);
+
+  const oAuth2RefreshTokenHelper = new OAuth2RefreshTokenHelper(
+    connectionsRepository
+  );
   const oAuth2AuthUriHelper = new OAuth2AuthUriHelper(oAuth2RedirectUri);
   const oAuth2Service = new OAuth2Service(
     oAuth2RedirectUri,
@@ -54,7 +58,10 @@ export default function initServices(params: InitServicesParams): InitServicesRe
     connectionsRepository
   );
 
-  const transferFailureHandler = new TransferFailureHandler(io, transfersRepository);
+  const transferFailureHandler = new TransferFailureHandler(
+    io,
+    transfersRepository
+  );
   const importStepHelper = new ImportStepHelper(
     io,
     transfersRepository,
@@ -86,7 +93,8 @@ export default function initServices(params: InitServicesParams): InitServicesRe
 
   const sqlImportHelper = new SqlImportHelper(
     transferFailureHandler,
-    offsetPaginationTransferHelper
+    offsetPaginationTransferHelper,
+    transfersRepository
   );
   const apiImportHelper = new ApiImportHelper(
     apiConnectionHelper,
@@ -124,7 +132,11 @@ export default function initServices(params: InitServicesParams): InitServicesRe
   );
 
   const connectionsService = new ConnectionsService(connectionsRepository);
-  const importsService = new ImportsService(sqlImportService, apiImportService, processesRepository);
+  const importsService = new ImportsService(
+    sqlImportService,
+    apiImportService,
+    processesRepository
+  );
   const transfersService = new TransfersService(
     sqlTransferService,
     apiTransferService,

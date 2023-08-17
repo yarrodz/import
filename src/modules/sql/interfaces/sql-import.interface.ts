@@ -3,7 +3,6 @@ import { Source } from '../../imports/enums/source.enum';
 import ImportField from '../../imports/interfaces/import-field.interface';
 import RetryOptions from '../../imports/interfaces/retry-options.interace';
 import { SqlImportTarget } from '../enums/sql-import-target.enum';
-import SqlConnection from './sql.connection.interface';
 import ImportReference from '../../imports/interfaces/import-reference.interface';
 
 export default interface SqlImport {
@@ -25,9 +24,5 @@ export default interface SqlImport {
 
   fields?: ImportField[];
 
-  __?: ImportReference;
-
-  unit?: any;
-  project?: any;
-  connection?: SqlConnection;
+  __: ImportReference;
 }

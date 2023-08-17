@@ -11,10 +11,7 @@ class ImportsController {
 
   getAll = async (req: Request, res: Response) => {
     const { select, sortings } = req.body;
-    const responseHandler = await this.importsService.getAll(
-      select,
-      sortings
-    );
+    const responseHandler = await this.importsService.getAll(select, sortings);
     responseHandler.send(res);
   };
 
@@ -44,19 +41,13 @@ class ImportsController {
 
   getColumns = async (req: Request, res: Response) => {
     const id = req.body.id;
-    const responseHandler = await this.importsService.getColumns(
-      req,
-      id
-    );
+    const responseHandler = await this.importsService.getColumns(req, id);
     responseHandler.send(res);
   };
 
   checkIdColumnUniqueness = async (req: Request, res: Response) => {
     const id = req.body.id;
-    const responseHandler = await this.importsService.getColumns(
-      req,
-      id
-    );
+    const responseHandler = await this.importsService.getColumns(req, id);
     responseHandler.send(res);
   };
 

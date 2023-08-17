@@ -5,7 +5,10 @@ import SqlImportService from '../sql/sql-import.service';
 import ApiImportService from '../api/api-import.service';
 import ResponseHandler from '../../utils/response-handler/response-handler';
 import { Source } from './enums/source.enum';
-import { ProcessType } from '../processes/process.type.enum';
+import { CreateSqlImportValidator } from '../sql/validators/create-sql-import.validator';
+import { CreateApiImportValidator } from '../api/validators/create-api-import.validator';
+import { UpdateSqlImportValidator } from '../sql/validators/update-sql-import.validator';
+import { UpdateApiImportValidator } from '../api/validators/update-api-import.validator';
 
 class ImportsService {
   private sqlImportService: SqlImportService;
@@ -49,13 +52,34 @@ class ImportsService {
   async create(input: any): Promise<ResponseHandler> {
     let responseHandler = new ResponseHandler();
     try {
-      // const { error } = ImportValidator.validate(
-      //   createImportInput
-      // );
-      // if (error) {
-      //   responseHandler.setError(400, error);
-      //   return responseHandler;
-      // }
+      const { source } = input;
+
+      switch (source) {
+        case Source.SQL: {
+          const { error } = CreateSqlImportValidator.validate(input);
+          if (error) {
+            responseHandler.setError(400, error);
+            return responseHandler;
+          }
+          break;
+        }
+        case Source.API: {
+          const { error } = CreateApiImportValidator.validate(input);
+          if (error) {
+            responseHandler.setError(400, error);
+            return responseHandler;
+          }
+          break;
+        }
+        default: {
+          responseHandler.setError(
+            400,
+            `Error while creating import. Unknown source '${source}'.`
+          );
+          return responseHandler;
+        }
+      }
+
       const impt = await this.processesRepository.create(input);
       responseHandler.setSuccess(200, impt);
       return responseHandler;
@@ -68,17 +92,47 @@ class ImportsService {
   async update(input: any): Promise<ResponseHandler> {
     let responseHandler = new ResponseHandler();
     try {
-      // const { error } = ImportValidator.validate(
-      //   createImportInput
-      // );
-      // if (error) {
-      //   responseHandler.setError(400, error);
-      //   return responseHandler;
-      // }
-      const impt = await this.processesRepository.update(input);
-      responseHandler.setSuccess(200, impt);
+      const { source } = input;
+
+      switch (source) {
+        case Source.SQL: {
+          const { error } = UpdateSqlImportValidator.validate(input);
+          if (error) {
+            responseHandler.setError(400, error);
+            return responseHandler;
+          }
+          break;
+        }
+        case Source.API: {
+          const { error } = UpdateApiImportValidator.validate(input);
+          if (error) {
+            responseHandler.setError(400, error);
+            return responseHandler;
+          }
+          break;
+        }
+        default: {
+          responseHandler.setError(
+            400,
+            `Error while updating import. Unknown source '${source}'.`
+          );
+          return responseHandler;
+        }
+      }
+
+      const { id } = input;
+
+      const impt = await this.processesRepository.get(id);
+      if (!impt) {
+        responseHandler.setError(404, 'Import not found');
+        return responseHandler;
+      }
+
+      const updatedImport = await this.processesRepository.update(input);
+      responseHandler.setSuccess(200, updatedImport);
       return responseHandler;
     } catch (error) {
+      console.error(error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -88,6 +142,7 @@ class ImportsService {
     const responseHandler = new ResponseHandler();
     try {
       const impt = await this.processesRepository.get(id);
+
       if (!impt) {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
@@ -106,23 +161,11 @@ class ImportsService {
     const responseHandler = new ResponseHandler();
     try {
       const impt = await this.processesRepository.get(id);
+
       if (impt === undefined) {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
       }
-
-      const unit = impt.__.inUnit.length && impt.__.inUnit[0];
-      if (unit === undefined) {
-        responseHandler.setError(400, 'Unit for import not set.');
-        return responseHandler;
-      }
-
-      const connection = impt.__.hasConnection.length && impt.__.hasConnection[0];
-      if (connection === undefined) {
-        responseHandler.setError(400, 'Connection for import not set.');
-        return responseHandler;
-      }
-
       const { source } = impt;
 
       switch (source) {
@@ -153,20 +196,9 @@ class ImportsService {
     const responseHandler = new ResponseHandler();
     try {
       const impt = await this.processesRepository.get(id);
+
       if (impt === undefined) {
         responseHandler.setError(404, 'Import not found');
-        return responseHandler;
-      }
-
-      const unit = impt.__.inUnit.length && impt.__.inUnit[0];
-      if (unit === undefined) {
-        responseHandler.setError(400, 'Unit for import not set.');
-        return responseHandler;
-      }
-
-      const connection = impt.__.hasConnection.length && impt.__.hasConnection[0];
-      if (connection === undefined) {
-        responseHandler.setError(400, 'Connection for import not set.');
         return responseHandler;
       }
 
@@ -188,6 +220,7 @@ class ImportsService {
         }
       }
     } catch (error) {
+      console.error(error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -197,24 +230,14 @@ class ImportsService {
     const responseHandler = new ResponseHandler();
     try {
       const impt = await this.processesRepository.get(id);
+
       if (impt === undefined) {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
       }
 
-      const unit = impt.__.inUnit.length && impt.__.inUnit[0];
-      if (unit === undefined) {
-        responseHandler.setError(400, 'Unit for import not set.');
-        return responseHandler;
-      }
-
-      const connection = impt.__.hasConnection.length && impt.__.hasConnection[0];
-      if (connection === undefined) {
-        responseHandler.setError(400, 'Connection for import not set.');
-        return responseHandler;
-      }
-
       const { fields } = impt;
+
       if (fields === undefined) {
         responseHandler.setError(400, 'Fields for import not set.');
         return responseHandler;
@@ -238,7 +261,7 @@ class ImportsService {
         }
       }
 
-      // TO DO ADD CHECK 
+      // TO DO ADD CHECK
 
       // const pendingImport =
       //   await this.importProcessesRepository.findPendingByUnit(

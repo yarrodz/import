@@ -16,7 +16,11 @@ class OAuth2Service {
   private clientUri: string;
   private connectionsRepository: ConnectionsRepository;
 
-  constructor(oAuth2RedirectUri: string, clientUri: string, connectionsRepository: ConnectionsRepository) {
+  constructor(
+    oAuth2RedirectUri: string,
+    clientUri: string,
+    connectionsRepository: ConnectionsRepository
+  ) {
     this.oAuth2RedirectUri = oAuth2RedirectUri;
     this.clientUri = clientUri;
     this.connectionsRepository = connectionsRepository;
@@ -64,15 +68,17 @@ class OAuth2Service {
 
       const { access_token, refresh_token } = response.data;
 
-      const connectionBefore = await this.connectionsRepository.get(connectionId);
-      const { oauth2 } = connectionBefore;  
+      const connectionBefore = await this.connectionsRepository.get(
+        connectionId
+      );
+      const { oauth2 } = connectionBefore;
 
       await this.connectionsRepository.update({
         id: connectionId,
         oauth2: {
           ...oauth2,
-            access_token,
-            refresh_token
+          access_token,
+          refresh_token
         }
       });
 
@@ -140,7 +146,7 @@ class OAuth2Service {
     } else {
       const { context } = callbackProcess;
       const { action } = context;
-    
+
       const errorMessage = 'Error while OAuth2 callback';
 
       switch (action) {
