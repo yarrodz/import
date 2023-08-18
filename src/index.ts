@@ -6,7 +6,7 @@ import cors from 'cors';
 import { iFrameDbClient } from 'iframe-ai';
 
 import Websocket from './utils/websocket/websocket';
-import initTransfers, { InitParams } from './init';
+import initImports, { InitParams } from './init';
 
 dotenv.config();
 const PORT = process.env.PORT;
@@ -43,8 +43,13 @@ async function start() {
       oAuth2RedirectUri: 'http://localhost:3000/oauth-callback/'
     };
 
-    const { connectionsRouter, importsRouter, transfersRouter, oAuth2Router } =
-      initTransfers(initParams);
+    const {
+      connectionsRouter,
+      importsRouter,
+      transfersRouter,
+      oAuth2Router,
+      pendingTransfersReloader
+    } = initImports(initParams);
 
     app.use('/connections', connectionsRouter.router);
     app.use('/imports', importsRouter.router);
@@ -54,6 +59,8 @@ async function start() {
     httpServer.listen(PORT, () =>
       console.log(`Server listening on port: ${PORT}`)
     );
+
+    // pendingTransfersReloader.reload();
   } catch (error) {
     console.error(error);
   }

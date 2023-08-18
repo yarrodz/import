@@ -6,6 +6,7 @@ import initRepositories from './init/repositories.init';
 import initServices from './init/services.init';
 import initControllers from './init/controllers.init';
 import initRouters from './init/routers.init';
+import PendingTransfersReloader from './modules/transfers/helpers/pending-transfers.reloader';
 
 export interface InitParams {
   io: IO;
@@ -14,7 +15,11 @@ export interface InitParams {
   oAuth2RedirectUri: string;
 }
 
-export default function initTransfers(params: InitParams): InitRoutersResult {
+export interface InitResult extends InitRoutersResult {
+  pendingTransfersReloader: PendingTransfersReloader;
+}
+
+export default function initImports(params: InitParams): InitResult {
   const { io, dbClient, clientUri, oAuth2RedirectUri } = params;
 
   const initRepositoriesResult = initRepositories(dbClient);
@@ -26,9 +31,14 @@ export default function initTransfers(params: InitParams): InitRoutersResult {
     ...initRepositoriesResult
   });
 
+  const { pendingTransfersReloader } = initServicesResult;
+
   const initControllersResult = initControllers(initServicesResult);
 
   const InitRoutersResult = initRouters(initControllersResult);
 
-  return InitRoutersResult;
+  return {
+    ...InitRoutersResult,
+    pendingTransfersReloader
+  };
 }

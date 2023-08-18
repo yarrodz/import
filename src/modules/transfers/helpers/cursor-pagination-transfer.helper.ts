@@ -33,7 +33,7 @@ class CursorPaginationTransferHelper {
     let requestsExectionTime = 0;
     do {
       const stepStartDate = new Date();
-      const refreshedTransfer = await this.transfersRepository.get(transferId);
+      const refreshedTransfer = await this.transfersRepository.load(transferId);
       if (refreshedTransfer.status === TransferStatus.PAUSED) {
         this.io.to(String(transferId)).emit('transfer', {
           ...refreshedTransfer,

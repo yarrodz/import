@@ -9,26 +9,35 @@ import { CreateSqlImportValidator } from '../sql/validators/create-sql-import.va
 import { CreateApiImportValidator } from '../api/validators/create-api-import.validator';
 import { UpdateSqlImportValidator } from '../sql/validators/update-sql-import.validator';
 import { UpdateApiImportValidator } from '../api/validators/update-api-import.validator';
+import TransfersRepository from '../transfers/transfers.repository';
+import { TransferStatus } from '../transfers/enums/transfer-status.enum';
 
 class ImportsService {
   private sqlImportService: SqlImportService;
   private apiImportService: ApiImportService;
   private processesRepository: ProcessesRepository;
+  private transfersRepository: TransfersRepository;
 
   constructor(
     sqlImportService: SqlImportService,
     apiImportService: ApiImportService,
-    processesRepository: ProcessesRepository
+    processesRepository: ProcessesRepository,
+    transfersRepository: TransfersRepository
   ) {
     this.sqlImportService = sqlImportService;
     this.apiImportService = apiImportService;
     this.processesRepository = processesRepository;
+    this.transfersRepository = transfersRepository;
   }
 
   async getAll(select: any, sortings: any): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const imports = await this.processesRepository.getAll(select, sortings);
+      const imports = await this.processesRepository.query(
+        select,
+        sortings,
+        false
+      );
       responseHandler.setSuccess(200, imports);
       return responseHandler;
     } catch (error) {
@@ -40,7 +49,7 @@ class ImportsService {
   async get(id: number): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const impt = await this.processesRepository.get(id);
+      const impt = await this.processesRepository.load(id);
       responseHandler.setSuccess(200, impt);
       return responseHandler;
     } catch (error) {
@@ -122,8 +131,8 @@ class ImportsService {
 
       const { id } = input;
 
-      const impt = await this.processesRepository.get(id);
-      if (!impt) {
+      const impt = await this.processesRepository.load(id);
+      if (impt === undefined) {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
       }
@@ -132,7 +141,6 @@ class ImportsService {
       responseHandler.setSuccess(200, updatedImport);
       return responseHandler;
     } catch (error) {
-      console.error(error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -141,9 +149,9 @@ class ImportsService {
   async delete(id: number): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const impt = await this.processesRepository.get(id);
+      const impt = await this.processesRepository.load(id);
 
-      if (!impt) {
+      if (impt === undefined) {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
       }
@@ -160,7 +168,7 @@ class ImportsService {
   async getColumns(req: Request, id: number): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const impt = await this.processesRepository.get(id);
+      const impt = await this.processesRepository.load(id);
 
       if (impt === undefined) {
         responseHandler.setError(404, 'Import not found');
@@ -195,7 +203,7 @@ class ImportsService {
   ): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const impt = await this.processesRepository.get(id);
+      const impt = await this.processesRepository.load(id);
 
       if (impt === undefined) {
         responseHandler.setError(404, 'Import not found');
@@ -220,7 +228,6 @@ class ImportsService {
         }
       }
     } catch (error) {
-      console.error(error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -229,7 +236,7 @@ class ImportsService {
   async import(req: Request, id: number): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const impt = await this.processesRepository.get(id);
+      const impt = await this.processesRepository.load(id);
 
       if (impt === undefined) {
         responseHandler.setError(404, 'Import not found');
@@ -240,6 +247,35 @@ class ImportsService {
 
       if (fields === undefined) {
         responseHandler.setError(400, 'Fields for import not set.');
+        return responseHandler;
+      }
+
+      const { id: unitId } = impt.__.inUnit;
+
+      const pendingUnitTransfer = await this.transfersRepository.query(
+        {
+          operator: 'and',
+          conditions: [
+            {
+              type: 'equals',
+              property: 'status',
+              value: TransferStatus.PENDING
+            },
+            {
+              type: 'inEdge',
+              label: 'inUnit',
+              value: unitId
+            }
+          ]
+        },
+        {},
+        true
+      );
+      if (pendingUnitTransfer) {
+        responseHandler.setError(
+          409,
+          'This unit is already processing another transfer.'
+        );
         return responseHandler;
       }
 
@@ -260,20 +296,6 @@ class ImportsService {
           return responseHandler;
         }
       }
-
-      // TO DO ADD CHECK
-
-      // const pendingImport =
-      //   await this.importProcessesRepository.findPendingByUnit(
-      //     impt.unit.toString()
-      //   );
-      // if (pendingImport) {
-      //   responseHandler.setError(
-      //     409,
-      //     'This unit is currently processing another import'
-      //   );
-      //   return responseHandler;
-      // }
     } catch (error) {
       responseHandler.setError(500, error.message);
       return responseHandler;

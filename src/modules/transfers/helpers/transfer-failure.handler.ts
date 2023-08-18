@@ -24,7 +24,7 @@ class TransferFailureHandler {
     const { retryOptions } = impt;
     const { maxAttempts, attemptTimeDelay } = retryOptions;
 
-    const refreshedTransfer = await this.transfersRepository.get(transferId);
+    const refreshedTransfer = await this.transfersRepository.load(transferId);
     const { retryAttempts } = refreshedTransfer;
 
     switch (retryAttempts) {

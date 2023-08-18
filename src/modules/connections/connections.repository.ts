@@ -10,24 +10,25 @@ class ConnectionsRepository {
     this.client = client;
   }
 
-  async getAll(select: any, sortings: any) {
+  async query(select: any, sortings: any, firstOnly: boolean) {
     try {
-      return await new iFrameConnection(this.client).query({
+      return await new iFrameConnection(this.client).query(
         select,
-        sortings
-      });
+        sortings,
+        firstOnly
+      );
     } catch (error) {
-      throw new error(`Error while query for getting connections: ${error}`);
+      throw new error(`Error while querying connections: ${error}`);
     }
   }
 
-  async get(id: number) {
+  async load(id: number) {
     try {
       return await new iFrameConnection(this.client)
         .load(id)
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      throw new error(`Error while query for getting a connection: ${error}`);
+      throw new error(`Error while loading a connection: ${error}`);
     }
   }
 
@@ -37,7 +38,7 @@ class ConnectionsRepository {
         .insert(input)
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      throw new error(`Error while query for creating a connection: ${error}`);
+      throw new error(`Error while creating a connection: ${error}`);
     }
   }
 
@@ -47,7 +48,7 @@ class ConnectionsRepository {
         .save()
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      throw new error(`Error while query for creating a connection: ${error}`);
+      throw new error(`Error while updating a connection: ${error}`);
     }
   }
 
@@ -55,7 +56,7 @@ class ConnectionsRepository {
     try {
       return await new iFrameConnection(this.client).delete(id);
     } catch (error) {
-      throw new error(`Error while query for deleting a connection: ${error}`);
+      throw new error(`Error while deleting a connection: ${error}`);
     }
   }
 }

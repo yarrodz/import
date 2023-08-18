@@ -29,7 +29,11 @@ class TransfersService {
   async getAll(select: any, sortings: any): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const transfers = await this.transfersRepository.getAll(select, sortings);
+      const transfers = await this.transfersRepository.query(
+        select,
+        sortings,
+        false
+      );
       responseHandler.setSuccess(200, transfers);
       return responseHandler;
     } catch (error) {
@@ -41,8 +45,8 @@ class TransfersService {
   async delete(id: number) {
     const responseHandler = new ResponseHandler();
     try {
-      const transfer = await this.transfersRepository.get(id);
-      if (!transfer) {
+      const transfer = await this.transfersRepository.load(id);
+      if (transfer === undefined) {
         responseHandler.setError(404, 'Transfer not found');
         return responseHandler;
       }
@@ -67,8 +71,8 @@ class TransfersService {
   async pause(id: number) {
     const responseHandler = new ResponseHandler();
     try {
-      const transfer = await this.transfersRepository.get(id);
-      if (!transfer) {
+      const transfer = await this.transfersRepository.load(id);
+      if (transfer === undefined) {
         responseHandler.setError(404, 'Transfer not found');
         return responseHandler;
       }
@@ -96,36 +100,52 @@ class TransfersService {
   async reload(req: Request, id: number) {
     const responseHandler = new ResponseHandler();
     try {
-      const transfer = await this.transfersRepository.get(id);
-      if (!transfer) {
+      const transfer = await this.transfersRepository.load(id);
+      if (transfer === undefined) {
         responseHandler.setError(404, 'Transfer not found');
         return responseHandler;
       }
-
-      const importId = transfer.__.inImport.id;
 
       if (transfer.status !== TransferStatus.PAUSED) {
         responseHandler.setError(409, 'Only paused transfer can be reloaded');
         return responseHandler;
       }
 
-      const impt = await this.processesRepository.get(importId);
-      if (!impt) {
+      const { id: importId } = transfer.__.inImport;
+      const impt = await this.processesRepository.load(importId);
+      if (impt === undefined) {
         responseHandler.setError(404, 'Import not found');
         return responseHandler;
       }
 
-      // const pendingImport =
-      //   await this.importProcessesRepository.findPendingByUnit(
-      //     impt.unit as string
-      //   );
-      // if (pendingImport) {
-      //   responseHandler.setError(
-      //     409,
-      //     'This unit is currently processing another import'
-      //   );
-      //   return responseHandler;
-      // }
+      const { id: unitId } = transfer.__.inUnit;
+
+      const pendingUnitTransfer = await this.transfersRepository.query(
+        {
+          operator: 'and',
+          conditions: [
+            {
+              type: 'equals',
+              property: 'status',
+              value: TransferStatus.PENDING
+            },
+            {
+              type: 'inEdge',
+              label: 'inUnit',
+              value: unitId
+            }
+          ]
+        },
+        {},
+        true
+      );
+      if (pendingUnitTransfer) {
+        responseHandler.setError(
+          409,
+          'This unit is already processing another transfer.'
+        );
+        return responseHandler;
+      }
 
       const updatedTransfer = await this.transfersRepository.update({
         id,
@@ -162,22 +182,50 @@ class TransfersService {
   async retry(req: Request, id: number) {
     const responseHandler = new ResponseHandler();
     try {
-      const transfer = await this.transfersRepository.get(id);
-      if (!transfer) {
+      const transfer = await this.transfersRepository.load(id);
+      if (transfer === undefined) {
         responseHandler.setError(404, 'Transfer not found');
         return responseHandler;
       }
-
-      const importId = transfer.__.inImport.id;
 
       if (transfer.status !== TransferStatus.FAILED) {
         responseHandler.setError(409, 'Only failed transfer can be retried');
         return responseHandler;
       }
 
-      const impt = await this.processesRepository.get(importId);
-      if (!impt) {
+      const { id: importId } = transfer.__.inImport;
+      const impt = await this.processesRepository.load(importId);
+      if (impt === undefined) {
         responseHandler.setError(404, 'Import not found');
+        return responseHandler;
+      }
+
+      const { id: unitId } = transfer.__.inUnit;
+
+      const pendingUnitTransfer = await this.transfersRepository.query(
+        {
+          operator: 'and',
+          conditions: [
+            {
+              type: 'equals',
+              property: 'status',
+              value: TransferStatus.PENDING
+            },
+            {
+              type: 'inEdge',
+              label: 'inUnit',
+              value: unitId
+            }
+          ]
+        },
+        {},
+        true
+      );
+      if (pendingUnitTransfer) {
+        responseHandler.setError(
+          409,
+          'This unit is already processing another transfer.'
+        );
         return responseHandler;
       }
 
@@ -208,7 +256,6 @@ class TransfersService {
         }
       }
     } catch (error) {
-      console.error(error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }

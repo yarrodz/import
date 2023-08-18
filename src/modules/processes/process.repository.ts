@@ -10,22 +10,25 @@ class ProcessesRepository {
     this.client = client;
   }
 
-  async getAll(select: any, sortings: any) {
+  async query(select: any, sortings: any, firstOnly: boolean) {
     try {
-      return await new iFrameProcess(this.client).query(select, sortings);
+      return await new iFrameProcess(this.client).query(
+        select,
+        sortings,
+        firstOnly
+      );
     } catch (error) {
-      throw new error(`Error while query for getting processes: ${error}`);
+      throw new error(`Error while querying processes: ${error}`);
     }
   }
 
-  async get(id: number) {
+  async load(id: number) {
     try {
       return await new iFrameProcess(this.client)
         .load(id)
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      console.error(error);
-      throw new error(`Error while query for getting a process: ${error}`);
+      throw new error(`Error while loading a process: ${error}`);
     }
   }
 
@@ -36,7 +39,7 @@ class ProcessesRepository {
         .then((result) => transformIFrameInstance(result));
       return result;
     } catch (error) {
-      throw new error(`Error while query for creating a process: ${error}`);
+      throw new error(`Error while creating a process: ${error}`);
     }
   }
 
@@ -46,8 +49,7 @@ class ProcessesRepository {
         .save()
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      console.error(error);
-      throw new error(`Error while query for creating a process: ${error}`);
+      throw new error(`Error while updating a process: ${error}`);
     }
   }
 
@@ -55,7 +57,7 @@ class ProcessesRepository {
     try {
       return await new iFrameProcess(this.client).delete(id);
     } catch (error) {
-      throw new error(`Error while query for deleting a process: ${error}`);
+      throw new error(`Error while deleting a process: ${error}`);
     }
   }
 }

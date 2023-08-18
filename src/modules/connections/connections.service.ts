@@ -16,9 +16,10 @@ class ConnectionsService {
   async getAll(select: any, sortings: any): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const connections = await this.connectionsRepository.getAll(
+      const connections = await this.connectionsRepository.query(
         select,
-        sortings
+        sortings,
+        false
       );
       responseHandler.setSuccess(200, connections);
       return responseHandler;
@@ -31,7 +32,7 @@ class ConnectionsService {
   async get(id: number): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const connection = await this.connectionsRepository.get(id);
+      const connection = await this.connectionsRepository.load(id);
       responseHandler.setSuccess(200, connection);
       return responseHandler;
     } catch (error) {
@@ -84,7 +85,6 @@ class ConnectionsService {
     let responseHandler = new ResponseHandler();
     try {
       const { source } = input;
-      let validationError;
 
       switch (source) {
         case Source.SQL: {
@@ -112,13 +112,8 @@ class ConnectionsService {
         }
       }
 
-      if (validationError) {
-        responseHandler.setError(400, validationError);
-        return responseHandler;
-      }
-
       const { id } = input;
-      const connection = await this.connectionsRepository.get(id);
+      const connection = await this.connectionsRepository.load(id);
       if (!connection) {
         responseHandler.setError(404, 'Connection not found');
         return responseHandler;
@@ -136,7 +131,7 @@ class ConnectionsService {
   async delete(id: number): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const connection = await this.connectionsRepository.get(id);
+      const connection = await this.connectionsRepository.load(id);
       if (!connection) {
         responseHandler.setError(404, 'Connection not found');
         return responseHandler;

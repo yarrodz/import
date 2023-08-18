@@ -68,7 +68,7 @@ class OAuth2Service {
 
       const { access_token, refresh_token } = response.data;
 
-      const connectionBefore = await this.connectionsRepository.get(
+      const connectionBefore = await this.connectionsRepository.load(
         connectionId
       );
       const { oauth2 } = connectionBefore;

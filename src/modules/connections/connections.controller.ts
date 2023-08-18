@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 
 import ConnectionsService from './connections.service';
-import { Source } from '../imports/enums/source.enum';
 
 class ConnectionsController {
   private connectionsService: ConnectionsService;
@@ -11,7 +10,7 @@ class ConnectionsController {
   }
 
   getAll = async (req: Request, res: Response) => {
-    let { select, sortings } = req.body;
+    const { select, sortings } = req.body;
 
     const responseHandler = await this.connectionsService.getAll(
       select,

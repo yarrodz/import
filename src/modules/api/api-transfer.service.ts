@@ -64,7 +64,7 @@ class ApiTransferService {
         return responseHandler;
       }
 
-      const updatedImport = await this.processesRepository.get(importId);
+      const updatedImport = await this.processesRepository.load(importId);
 
       const reloadedTransfer = await this.transfersRepository.update({
         id: transferId,
@@ -112,7 +112,7 @@ class ApiTransferService {
         return responseHandler;
       }
 
-      const updatedImport = await this.processesRepository.get(importId);
+      const updatedImport = await this.processesRepository.load(importId);
 
       const retriedTransfer = await this.transfersRepository.update({
         id: transferId,

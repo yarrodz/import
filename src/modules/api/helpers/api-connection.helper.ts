@@ -52,7 +52,7 @@ class ApiConnectionHelper {
               }
               // Send request with refreshed access token.
               // If request fails - Api import settings not valid
-              const updatedImport = await this.processesRepository.get(
+              const updatedImport = await this.processesRepository.load(
                 importId
               );
               await this.sendRequest(updatedImport);

@@ -62,14 +62,13 @@ class ApiImportService {
         return responseHandler;
       }
 
-      const updatedImport = await this.processesRepository.get(importId);
+      const updatedImport = await this.processesRepository.load(importId);
 
       const columns = await this.apiColumnsHelper.find(updatedImport);
 
       responseHandler.setSuccess(200, columns);
       return responseHandler;
     } catch (error) {
-      console.error(error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -101,7 +100,7 @@ class ApiImportService {
         return responseHandler;
       }
 
-      const updatedImport = await this.processesRepository.get(importId);
+      const updatedImport = await this.processesRepository.load(importId);
 
       const idColumnUnique =
         await this.apiColumnsHelper.checkIdColumnUniqueness(updatedImport);
@@ -140,7 +139,7 @@ class ApiImportService {
         return responseHandler;
       }
 
-      const updatedImport = await this.processesRepository.get(importId);
+      const updatedImport = await this.processesRepository.load(importId);
 
       const transfer = await this.transfersRepository.create({
         type: TransferType.IMPORT,
@@ -162,16 +161,15 @@ class ApiImportService {
         }
       });
 
-      const { id: transferId } = transfer;
-
       this.apiImportHelper.import({
         import: updatedImport,
         transfer
       });
+
+      const { id: transferId } = transfer;
       responseHandler.setSuccess(200, transferId);
       return responseHandler;
     } catch (error) {
-      console.error(error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }

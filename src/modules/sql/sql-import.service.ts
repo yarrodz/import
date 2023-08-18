@@ -76,12 +76,12 @@ class SqlImportService {
         }
       });
 
-      const { id: transferId } = transfer;
-
       this.sqlImportHelper.import({
         import: impt,
         transfer
       });
+
+      const { id: transferId } = transfer;
       responseHandler.setSuccess(200, transferId);
       return responseHandler;
     } catch (error) {

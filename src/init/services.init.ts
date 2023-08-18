@@ -21,6 +21,7 @@ import ApiImportService from '../modules/api/api-import.service';
 import SqlTransferService from '../modules/sql/sql-transfer.service';
 import ApiTransferService from '../modules/api/api-transfer.service';
 import OAuth2RefreshTokenHelper from '../modules/oauth2/helpers/oath2-refresh-token.helper';
+import PendingTransfersReloader from '../modules/transfers/helpers/pending-transfers.reloader';
 
 export interface InitServicesParams extends InitRepositoriesResult {
   io: IO;
@@ -33,6 +34,7 @@ export interface InitServicesResult {
   importsService: ImportsService;
   transfersService: TransfersService;
   oAuth2Service: OAuth2Service;
+  pendingTransfersReloader: PendingTransfersReloader;
 }
 
 export default function initServices(
@@ -135,7 +137,8 @@ export default function initServices(
   const importsService = new ImportsService(
     sqlImportService,
     apiImportService,
-    processesRepository
+    processesRepository,
+    transfersRepository
   );
   const transfersService = new TransfersService(
     sqlTransferService,
@@ -144,10 +147,17 @@ export default function initServices(
     processesRepository
   );
 
+  const pendingTransfersReloader = new PendingTransfersReloader(
+    sqlImportHelper,
+    apiImportHelper,
+    transfersRepository
+  );
+
   return {
     connectionsService,
     importsService,
     transfersService,
-    oAuth2Service
+    oAuth2Service,
+    pendingTransfersReloader
   };
 }

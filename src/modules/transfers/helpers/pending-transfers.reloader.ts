@@ -1,33 +1,34 @@
-import SqlTransferHelper from '../../sql/helpers/sql-import.helper';
-import ApiTransferHelper from '../../api/helpers/api-import.helper';
+import SqlImportHelper from '../../sql/helpers/sql-import.helper';
+import ApoImportHelper from '../../api/helpers/api-import.helper';
 import TransfersRepository from '../transfers.repository';
-import ProcessesRepository from '../../processes/process.repository';
 import { Source } from '../../imports/enums/source.enum';
 import { TransferStatus } from '../enums/transfer-status.enum';
 
 class PendingTransfersReloader {
-  sqlTransferHelper: SqlTransferHelper;
-  apiTransferHelper: ApiTransferHelper;
+  sqlImportHelper: SqlImportHelper;
+  apiImportHelper: ApoImportHelper;
   transfersRepository: TransfersRepository;
-  processesRepository: ProcessesRepository;
 
   constructor(
-    sqlTransferHelper: SqlTransferHelper,
-    apiTransferHelper: ApiTransferHelper,
-    transfersRepository: TransfersRepository,
-    processesRepository: ProcessesRepository
+    sqlImportHelper: SqlImportHelper,
+    apiImportHelper: ApoImportHelper,
+    transfersRepository: TransfersRepository
   ) {
-    this.sqlTransferHelper = sqlTransferHelper;
-    this.apiTransferHelper = apiTransferHelper;
+    this.sqlImportHelper = sqlImportHelper;
+    this.apiImportHelper = apiImportHelper;
     this.transfersRepository = transfersRepository;
-    this.processesRepository = processesRepository;
   }
 
   async reload() {
-    // const pendingTransfers = await this.transfersRepository.getAll({
-    //   status: TransferStatus.PENDING
-    // });
-    const pendingTransfers = [];
+    const pendingTransfers = await this.transfersRepository.query(
+      {
+        type: 'equals',
+        property: 'status',
+        value: TransferStatus.PENDING
+      },
+      {},
+      false
+    );
 
     await Promise.all(
       pendingTransfers.map(async (transfer) => {
@@ -38,14 +39,14 @@ class PendingTransfersReloader {
 
           switch (source) {
             case Source.SQL: {
-              await this.sqlTransferHelper.import({
+              await this.sqlImportHelper.import({
                 import: impt,
                 transfer
               });
               break;
             }
             case Source.API: {
-              await this.apiTransferHelper.import({
+              await this.apiImportHelper.import({
                 import: impt,
                 transfer
               });

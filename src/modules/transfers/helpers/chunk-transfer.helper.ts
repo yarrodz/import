@@ -30,7 +30,7 @@ class ChunkTransferHelper {
     slicedDatasets = null;
 
     while (chunkedDatasets.length) {
-      const refreshedTransfer = await this.transfersRepository.get(transferId);
+      const refreshedTransfer = await this.transfersRepository.load(transferId);
       if (refreshedTransfer.status === TransferStatus.PAUSED) {
         this.io.to(String(transferId)).emit('transfer', {
           ...refreshedTransfer,

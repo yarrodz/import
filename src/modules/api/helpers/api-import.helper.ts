@@ -56,7 +56,9 @@ class ApiImportHelper {
     try {
       const connectionState = await this.apiConnectionHelper.connect(impt);
       if (connectionState === ConnectionState.OAUTH2_REQUIRED) {
-        log.unshift('Transfer was paused due OAuth2 authentication requirement.');
+        log.unshift(
+          'Transfer was paused due OAuth2 authentication requirement.'
+        );
 
         await this.transfersRepository.update({
           id: transferId,
