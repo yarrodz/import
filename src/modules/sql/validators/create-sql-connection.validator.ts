@@ -11,7 +11,7 @@ export const CreateSqlConnectionValidator = Joi.object({
 
   config: SqlConnectionConfigValidator.required(),
 
-  __: Joi.object({
+  __: Joi.object({  
     inUnit: OutReferenceValidator.required()
   }).required()
 });

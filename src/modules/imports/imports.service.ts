@@ -11,21 +11,25 @@ import { UpdateSqlImportValidator } from '../sql/validators/update-sql-import.va
 import { UpdateApiImportValidator } from '../api/validators/update-api-import.validator';
 import TransfersRepository from '../transfers/transfers.repository';
 import { TransferStatus } from '../transfers/enums/transfer-status.enum';
+import EmailImportService from '../email/email-import.service';
 
 class ImportsService {
   private sqlImportService: SqlImportService;
   private apiImportService: ApiImportService;
+  private emailImportService: EmailImportService;
   private processesRepository: ProcessesRepository;
   private transfersRepository: TransfersRepository;
 
   constructor(
     sqlImportService: SqlImportService,
     apiImportService: ApiImportService,
+    emailImportService: EmailImportService,
     processesRepository: ProcessesRepository,
     transfersRepository: TransfersRepository
   ) {
     this.sqlImportService = sqlImportService;
     this.apiImportService = apiImportService;
+    this.emailImportService = emailImportService;
     this.processesRepository = processesRepository;
     this.transfersRepository = transfersRepository;
   }
@@ -58,27 +62,20 @@ class ImportsService {
     }
   }
 
-  async create(input: any): Promise<ResponseHandler> {
+  async create(input: any, getColumns: boolean): Promise<ResponseHandler> {
     let responseHandler = new ResponseHandler();
     try {
       const { source } = input;
 
       switch (source) {
         case Source.SQL: {
-          const { error } = CreateSqlImportValidator.validate(input);
-          if (error) {
-            responseHandler.setError(400, error);
-            return responseHandler;
-          }
-          break;
+          return this.sqlImportService.create(input, getColumns);
         }
         case Source.API: {
-          const { error } = CreateApiImportValidator.validate(input);
-          if (error) {
-            responseHandler.setError(400, error);
-            return responseHandler;
-          }
-          break;
+          return this.apiImportService.create(input, getColumns);
+        }
+        case Source.EMAIL: {
+          return this.emailImportService.create(input, getColumns);
         }
         default: {
           responseHandler.setError(
@@ -88,58 +85,36 @@ class ImportsService {
           return responseHandler;
         }
       }
-
-      const impt = await this.processesRepository.create(input);
-      responseHandler.setSuccess(200, impt);
-      return responseHandler;
     } catch (error) {
+      console.error(error)
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
   }
 
-  async update(input: any): Promise<ResponseHandler> {
+  async update(req: Request, input: any, getColumns: boolean, start: boolean): Promise<ResponseHandler> {
     let responseHandler = new ResponseHandler();
     try {
       const { source } = input;
 
       switch (source) {
         case Source.SQL: {
-          const { error } = UpdateSqlImportValidator.validate(input);
-          if (error) {
-            responseHandler.setError(400, error);
-            return responseHandler;
-          }
-          break;
+          return this.sqlImportService.update(input, getColumns, start);
         }
         case Source.API: {
-          const { error } = UpdateApiImportValidator.validate(input);
-          if (error) {
-            responseHandler.setError(400, error);
-            return responseHandler;
-          }
-          break;
+          return this.apiImportService.update(req, input, getColumns, start);
+        }
+        case Source.EMAIL: {
+          return this.emailImportService.update(input, getColumns, start);
         }
         default: {
           responseHandler.setError(
             400,
-            `Error while updating import. Unknown source '${source}'.`
+            `Error while creating import. Unknown source '${source}'.`
           );
           return responseHandler;
         }
       }
-
-      const { id } = input;
-
-      const impt = await this.processesRepository.load(id);
-      if (impt === undefined) {
-        responseHandler.setError(404, 'Import not found');
-        return responseHandler;
-      }
-
-      const updatedImport = await this.processesRepository.update(input);
-      responseHandler.setSuccess(200, updatedImport);
-      return responseHandler;
     } catch (error) {
       responseHandler.setError(500, error.message);
       return responseHandler;
@@ -183,6 +158,9 @@ class ImportsService {
         case Source.API: {
           return await this.apiImportService.getColumns(req, impt);
         }
+        case Source.EMAIL: {
+          return await this.emailImportService.getColumns(impt);
+        }
         default: {
           responseHandler.setError(
             400,
@@ -219,6 +197,9 @@ class ImportsService {
         case Source.API: {
           return await this.apiImportService.checkIdColumnUniqueness(req, impt);
         }
+        case Source.EMAIL: {
+          return await this.emailImportService.checkIdColumnUniqueness(impt);
+        }
         default: {
           responseHandler.setError(
             400,
@@ -252,32 +233,32 @@ class ImportsService {
 
       const { id: unitId } = impt.__.inUnit;
 
-      const pendingUnitTransfer = await this.transfersRepository.query(
-        {
-          operator: 'and',
-          conditions: [
-            {
-              type: 'equals',
-              property: 'status',
-              value: TransferStatus.PENDING
-            },
-            {
-              type: 'inEdge',
-              label: 'inUnit',
-              value: unitId
-            }
-          ]
-        },
-        {},
-        true
-      );
-      if (pendingUnitTransfer) {
-        responseHandler.setError(
-          409,
-          'This unit is already processing another transfer.'
-        );
-        return responseHandler;
-      }
+      // const pendingUnitTransfer = await this.transfersRepository.query(
+      //   {
+      //     operator: 'and',
+      //     conditions: [
+      //       {
+      //         type: 'equals',
+      //         property: 'status',
+      //         value: TransferStatus.PENDING
+      //       },
+      //       {
+      //         type: 'inEdge',
+      //         label: 'inUnit',
+      //         value: unitId
+      //       }
+      //     ]
+      //   },
+      //   {},
+      //   true
+      // );
+      // if (pendingUnitTransfer) {
+      //   responseHandler.setError(
+      //     409,
+      //     'This unit is already processing another transfer.'
+      //   );
+      //   return responseHandler;
+      // }
 
       const { source } = impt;
 
@@ -287,6 +268,9 @@ class ImportsService {
         }
         case Source.API: {
           return await this.apiImportService.import(req, impt);
+        }
+        case Source.EMAIL: {
+          return await this.emailImportService.import(impt);
         }
         default: {
           responseHandler.setError(

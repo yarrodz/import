@@ -63,6 +63,9 @@ class ConnectionsService {
           }
           break;
         }
+        case Source.EMAIL: {
+          break;
+        }
         default: {
           responseHandler.setError(
             400,
@@ -101,6 +104,9 @@ class ConnectionsService {
             responseHandler.setError(400, error);
             return responseHandler;
           }
+          break;
+        }
+        case Source.EMAIL: {
           break;
         }
         default: {

@@ -7,21 +7,25 @@ import { TransferStatus } from './enums/transfer-status.enum';
 import TransfersRepository from './transfers.repository';
 import ProcessesRepository from '../processes/process.repository';
 import { Source } from '../imports/enums/source.enum';
+import EmailTransferService from '../email/email-transfer.service';
 
 class TransfersService {
   private sqlTransferService: SqlTransferService;
   private apiTransferService: ApiTransferService;
+  private emailTransferService: EmailTransferService;
   private transfersRepository: TransfersRepository;
   private processesRepository: ProcessesRepository;
 
   constructor(
     sqlTransferService: SqlTransferService,
     apiTransferService: ApiTransferService,
+    emailTransferService: EmailTransferService,
     transfersRepository: TransfersRepository,
     processesRepository: ProcessesRepository
   ) {
     this.sqlTransferService = sqlTransferService;
     this.apiTransferService = apiTransferService;
+    this.emailTransferService = emailTransferService;
     this.transfersRepository = transfersRepository;
     this.processesRepository = processesRepository;
   }
@@ -45,19 +49,19 @@ class TransfersService {
   async delete(id: number) {
     const responseHandler = new ResponseHandler();
     try {
-      const transfer = await this.transfersRepository.load(id);
-      if (transfer === undefined) {
-        responseHandler.setError(404, 'Transfer not found');
-        return responseHandler;
-      }
+      // const transfer = await this.transfersRepository.load(id);
+      // if (transfer === undefined) {
+      //   responseHandler.setError(404, 'Transfer not found');
+      //   return responseHandler;
+      // }
 
-      if (transfer.status === TransferStatus.PENDING) {
-        responseHandler.setError(
-          409,
-          'Pending import process cannot be deleted'
-        );
-        return responseHandler;
-      }
+      // if (transfer.status === TransferStatus.PENDING) {
+      //   responseHandler.setError(
+      //     409,
+      //     'Pending import process cannot be deleted'
+      //   );
+      //   return responseHandler;
+      // }
 
       await this.transfersRepository.delete(id);
       responseHandler.setSuccess(200, true);
@@ -120,32 +124,32 @@ class TransfersService {
 
       const { id: unitId } = transfer.__.inUnit;
 
-      const pendingUnitTransfer = await this.transfersRepository.query(
-        {
-          operator: 'and',
-          conditions: [
-            {
-              type: 'equals',
-              property: 'status',
-              value: TransferStatus.PENDING
-            },
-            {
-              type: 'inEdge',
-              label: 'inUnit',
-              value: unitId
-            }
-          ]
-        },
-        {},
-        true
-      );
-      if (pendingUnitTransfer) {
-        responseHandler.setError(
-          409,
-          'This unit is already processing another transfer.'
-        );
-        return responseHandler;
-      }
+      // const pendingUnitTransfer = await this.transfersRepository.query(
+      //   {
+      //     operator: 'and',
+      //     conditions: [
+      //       {
+      //         type: 'equals',
+      //         property: 'status',
+      //         value: TransferStatus.PENDING
+      //       },
+      //       {
+      //         type: 'inEdge',
+      //         label: 'inUnit',
+      //         value: unitId
+      //       }
+      //     ]
+      //   },
+      //   {},
+      //   true
+      // );
+      // if (pendingUnitTransfer) {
+      //   responseHandler.setError(
+      //     409,
+      //     'This unit is already processing another transfer.'
+      //   );
+      //   return responseHandler;
+      // }
 
       const updatedTransfer = await this.transfersRepository.update({
         id,
@@ -164,6 +168,9 @@ class TransfersService {
             impt,
             updatedTransfer
           );
+        }
+        case Source.EMAIL: {
+          return await this.emailTransferService.reload(impt, updatedTransfer);
         }
         default: {
           responseHandler.setError(
@@ -246,6 +253,9 @@ class TransfersService {
             impt,
             updatedTransfer
           );
+        }
+        case Source.EMAIL: {
+          return await this.emailTransferService.retry(impt, updatedTransfer);
         }
         default: {
           responseHandler.setError(

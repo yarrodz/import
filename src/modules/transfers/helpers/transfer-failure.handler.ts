@@ -8,6 +8,7 @@ import sleep from '../../../utils/sleep/sleep';
 import TransferFailureHandleParams from '../interfaces/transfer-failure-handle-params.interface';
 import SqlImport from '../../sql/interfaces/sql-import.interface';
 import ApiImport from '../../api/interfaces/api-import.interface';
+import EmailImport from '../../email/interfaces/email-import.interace';
 
 class TransferFailureHandler {
   private io: IO;
@@ -62,7 +63,7 @@ class TransferFailureHandler {
   private async retryTransfer(
     error: Error,
     outerTransferFunction: OuterTransferFunction,
-    impt: SqlImport | ApiImport,
+    impt: SqlImport | ApiImport | EmailImport,
     transfer: Transfer,
     attemptTimeDelay: number
   ): Promise<void> {

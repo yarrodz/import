@@ -22,14 +22,17 @@ class ImportsController {
   };
 
   create = async (req: Request, res: Response) => {
-    const input = req.body;
-    const responseHandler = await this.importsService.create(input);
+    const data = req.body.data;
+    const getColumns = req.body.getColumns || false;
+    const responseHandler = await this.importsService.create(data, getColumns);
     responseHandler.send(res);
   };
 
   update = async (req: Request, res: Response) => {
-    const input = req.body;
-    const responseHandler = await this.importsService.update(input);
+    const data = req.body.data;
+    const getColumns = req.body.getColumns || false;
+    const start = req.body.start || false;
+    const responseHandler = await this.importsService.update(req, data, getColumns, start);
     responseHandler.send(res);
   };
 

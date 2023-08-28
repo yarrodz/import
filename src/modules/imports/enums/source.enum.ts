@@ -1,4 +1,5 @@
 export enum Source {
   SQL = 'SQL',
-  API = 'API'
+  API = 'API',
+  EMAIL = 'Email'
 }

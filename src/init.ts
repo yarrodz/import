@@ -20,6 +20,7 @@ export interface InitResult extends InitRoutersResult {
 }
 
 export default function initImports(params: InitParams): InitResult {
+
   const { io, dbClient, clientUri, oAuth2RedirectUri } = params;
 
   const initRepositoriesResult = initRepositories(dbClient);

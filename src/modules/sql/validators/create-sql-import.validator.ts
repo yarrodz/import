@@ -23,8 +23,8 @@ export const CreateSqlImportValidator = Joi.object({
   target: Joi.string()
     .valid(...Object.values(SqlImportTarget))
     .required(),
-  table: Joi.string().optional(),
-  select: Joi.string().optional(),
+  table: Joi.string().optional().allow(null),
+  select: Joi.string().optional().allow(null),
   limit: Joi.number().required(),
 
   fields: Joi.array().items(ImportFieldValidator).optional(),

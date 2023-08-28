@@ -43,6 +43,7 @@ class OffsetPaginationTransferHelper {
       }
 
       const offset = refreshedTransfer.offset;
+      // console.log('Offset: ', offset);
 
       if (datasetsCount && offset >= datasetsCount) {
         break;
@@ -78,6 +79,7 @@ class OffsetPaginationTransferHelper {
       id: transferId,
       status: TransferStatus.COMPLETED
     });
+    console.log('Transfer Complete')
     this.io.to(String(transferId)).emit('transfer', {
       ...completedTransfer,
       log: completedTransfer.log[0]

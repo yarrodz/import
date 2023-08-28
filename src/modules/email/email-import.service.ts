@@ -1,29 +1,28 @@
 import TransfersRepository from '../transfers/transfers.repository';
-import SqlColumnsHelper from './helpers/sql-columns.helper';
-import SqlImportHelper from './helpers/sql-import.helper';
-import SqlImport from './interfaces/sql-import.interface';
 import ResponseHandler from '../../utils/response-handler/response-handler';
 import { TransferType } from '../transfers/enums/transfer-type.enum';
 import { TransferMethod } from '../transfers/enums/transfer-method.enum';
 import { TransferStatus } from '../transfers/enums/transfer-status.enum';
+import EmailColumnsHelper from './helpers/email-columns.helper';
+import EmailImportHelper from './helpers/email-import.helper';
+import EmailImport from './interfaces/email-import.interace';
+import { EmailOptions } from 'joi';
 import ProcessesRepository from '../processes/process.repository';
-import { CreateSqlImportValidator } from './validators/create-sql-import.validator';
-import { UpdateSqlImportValidator } from './validators/update-sql-import.validator';
 
-class SqlImportService {
-  private sqlColumnsHelper: SqlColumnsHelper;
-  private sqlImportHelper: SqlImportHelper;
+class EmailImportService {
+  private emailColumnsHelper: EmailColumnsHelper;
+  private emailImportHelper: EmailImportHelper;
   private processesRepository: ProcessesRepository;
   private transfersRepository: TransfersRepository;
 
   constructor(
-    sqlColumnsHelper: SqlColumnsHelper,
-    sqlImportHelper: SqlImportHelper,
+    emailColumnsHelper: EmailColumnsHelper,
+    emailImportHelper: EmailImportHelper,
     processesRepository: ProcessesRepository,
     transefersRepository: TransfersRepository
   ) {
-    this.sqlColumnsHelper = sqlColumnsHelper;
-    this.sqlImportHelper = sqlImportHelper;
+    this.emailColumnsHelper = emailColumnsHelper;
+    this.emailImportHelper = emailImportHelper;
     this.processesRepository = processesRepository;
     this.transfersRepository = transefersRepository;
   }
@@ -31,24 +30,16 @@ class SqlImportService {
   async create(input: any, getColumns: boolean) {
     const responseHandler = new ResponseHandler();
     try {
-      const { error } = CreateSqlImportValidator.validate(input);
-      if (error) {
-        responseHandler.setError(400, error);
-        return responseHandler;
-      }
-
-
-      ////TO DO FIX
-      let impt = await this.processesRepository.create(input);
-      impt = await this.processesRepository.load(impt.id);
+      const impt = await this.processesRepository.create(input);
 
       if (getColumns === false) {
         responseHandler.setSuccess(200, {
           import: impt
         });
         return responseHandler;
-      } else {
-        const columns = await this.sqlColumnsHelper.find(impt);
+      }
+      else {
+        const columns = this.emailColumnsHelper.find();
         responseHandler.setSuccess(200, {
           import: impt,
           columns
@@ -56,7 +47,6 @@ class SqlImportService {
         return responseHandler;
       }
     } catch (error) {
-      console.error(error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -65,12 +55,6 @@ class SqlImportService {
   async update(input: any, getColumns: boolean, start: boolean) {
     const responseHandler = new ResponseHandler();
     try {
-      const { error } = UpdateSqlImportValidator.validate(input);
-      if (error) {
-        responseHandler.setError(400, error);
-        return responseHandler;
-      }
-
       const { id } = input;
 
       const impt = await this.processesRepository.load(id);
@@ -82,7 +66,7 @@ class SqlImportService {
       const updatedImport = await this.processesRepository.update(input);
 
       if (getColumns === true) {
-        const columns = await this.sqlColumnsHelper.find(impt);
+        const columns = this.emailColumnsHelper.find();
         responseHandler.setSuccess(200, {
           import: updatedImport,
           columns
@@ -106,11 +90,10 @@ class SqlImportService {
     }
   }
 
-  async getColumns(impt: SqlImport): Promise<ResponseHandler> {
+  async getColumns(impt: EmailImport): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const columns = await this.sqlColumnsHelper.find(impt);
-
+      const columns = this.emailColumnsHelper.find();
       responseHandler.setSuccess(200, columns);
       return responseHandler;
     } catch (error) {
@@ -119,12 +102,11 @@ class SqlImportService {
     }
   }
 
-  async checkIdColumnUniqueness(impt: SqlImport): Promise<ResponseHandler> {
+  async checkIdColumnUniqueness(impt: EmailOptions): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
       const idColumnUnique =
-        await this.sqlColumnsHelper.checkIdColumnUniqueness(impt);
-
+        this.emailColumnsHelper.checkIdColumnUniqueness();
       responseHandler.setSuccess(200, idColumnUnique);
       return responseHandler;
     } catch (error) {
@@ -133,7 +115,7 @@ class SqlImportService {
     }
   }
 
-  async import(impt: SqlImport): Promise<ResponseHandler> {
+  async import(impt: EmailImport): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
       const { id: importId } = impt;
@@ -144,7 +126,7 @@ class SqlImportService {
         type: TransferType.IMPORT,
         method: TransferMethod.OFFSET_PAGINATION,
         status: TransferStatus.PENDING,
-        offset: 0,
+        offset: 1,
         transferedDatasetsCount: 0,
         log: [],
         retryAttempts: 0,
@@ -160,9 +142,9 @@ class SqlImportService {
         }
       });
 
-      this.sqlImportHelper.import({
-        import: impt,
-        transfer
+      await this.emailImportHelper.import({
+        import:  impt,
+        transfer  
       });
 
       const { id: transferId } = transfer;
@@ -175,4 +157,4 @@ class SqlImportService {
   }
 }
 
-export default SqlImportService;
+export default EmailImportService;

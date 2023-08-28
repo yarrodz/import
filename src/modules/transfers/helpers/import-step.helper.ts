@@ -10,6 +10,7 @@ import TransfersRepository from '../transfers.repository';
 import SqlImport from '../../sql/interfaces/sql-import.interface';
 import ApiImport from '../../api/interfaces/api-import.interface';
 import DatasetsRepository from '../../datasets/datasets.repository';
+import EmailImport from '../../email/interfaces/email-import.interace';
 
 class ImportStepHelper {
   private io: IO;
@@ -27,7 +28,7 @@ class ImportStepHelper {
   }
 
   public async step(
-    impt: SqlImport | ApiImport,
+    impt: SqlImport | ApiImport | EmailImport,
     transfer: Transfer,
     datasets: object[],
     cursor?: string
@@ -39,6 +40,8 @@ class ImportStepHelper {
       transfer,
       datasets
     );
+
+    // console.log('transormedDatasets: ', transormedDatasets);
 
     await this.insertDatasets(transormedDatasets);
 
@@ -58,7 +61,7 @@ class ImportStepHelper {
   }
 
   private async transformDatasets(
-    impt: SqlImport | ApiImport,
+    impt: SqlImport | ApiImport | EmailImport,
     transfer: Transfer,
     datasets: object[]
   ) {
@@ -71,7 +74,9 @@ class ImportStepHelper {
     const transformedDatasets = [];
     datasets.forEach(async (dataset) => {
       try {
-        const sourceId = resolvePath(dataset, idKey);
+        // const sourceId = resolvePath(dataset, idKey);
+        // console.log('idKey: ', idKey);
+        const sourceId = dataset[idKey];
         if (sourceId === null) {
           throw new Error('The id field contains a null value');
         }
@@ -86,16 +91,19 @@ class ImportStepHelper {
 
         transformedDatasets.push(transformedDataset);
       } catch (error) {
-        log.unshift(
-          `Cannot parse dataset: '${JSON.stringify(dataset)}', Error: '${
-            error.message
-          }'`
-        );
+        // console.log('error: ', error);
+        // console.log(`Cannot parse: ${error}`)
+        // log.unshift(
+        //   `Cannot parse dataset: '${JSON.stringify(dataset)}', Error: '${
+        //     error.message
+        //   }'`
+        // );
 
-        await this.transfersRepository.update({
-          id: transferId,
-          log
-        });
+
+        // await this.transfersRepository.update({
+        //   id: transferId,
+        //   logc
+        // });
       }
     });
 
@@ -136,6 +144,7 @@ class ImportStepHelper {
           break;
       }
     } catch (error) {
+      // console.log(error)
       throw new Error(`Error while parsing record value: ${error.message}`);
     }
   }

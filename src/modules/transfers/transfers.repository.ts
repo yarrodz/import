@@ -18,6 +18,7 @@ class TransfersRepository {
         firstOnly
       );
     } catch (error) {
+      console.error(error)
       throw new error(`Error while querying transfers: ${error}`);
     }
   }

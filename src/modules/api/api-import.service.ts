@@ -14,6 +14,8 @@ import { ConnectionState } from './enums/connection-state.enum';
 import Context from '../imports/interfaces/context.interface';
 import { ContextAction } from '../imports/enums/context-action-enum';
 import ApiConnection from './interfaces/api-connection.interface';
+import { CreateApiImportValidator } from './validators/create-api-import.validator';
+import { UpdateApiImportValidator } from './validators/update-api-import.validator';
 
 class ApiImportService {
   private apiConnectionHelper: ApiConnectionHelper;
@@ -38,6 +40,81 @@ class ApiImportService {
     this.processesRepository = processesRepository;
     this.transfersRepository = transfersRepository;
   }
+
+  async create(input: any, getColumns: boolean) {
+    const responseHandler = new ResponseHandler();
+    try {
+      const { error } = CreateApiImportValidator.validate(input);
+      if (error) {
+        responseHandler.setError(400, error);
+        return responseHandler;
+      }
+
+      const impt = await this.processesRepository.create(input);
+
+      if (getColumns === false) {
+        responseHandler.setSuccess(200, {
+          import: impt
+        });
+        return responseHandler;
+      } else {
+        const columns = await this.apiColumnsHelper.find(impt);
+        responseHandler.setSuccess(200, {
+          import: impt,
+          columns
+        });
+      }
+      return responseHandler;
+    } catch (error) {
+      responseHandler.setError(500, error.message);
+      return responseHandler;
+    }
+  }
+
+  async update(req: Request, input: any, getColumns: boolean, start: boolean) {
+    const responseHandler = new ResponseHandler();
+    try {
+      const { error } = UpdateApiImportValidator.validate(input);
+      if (error) {
+        responseHandler.setError(400, error);
+        return responseHandler;
+      }
+
+      const { id } = input;
+
+      const impt = await this.processesRepository.load(id);
+      if (impt === undefined) {
+        responseHandler.setError(404, 'Import not found');
+        return responseHandler;
+      }
+
+      const updatedImport = await this.processesRepository.update(input);
+
+      if (getColumns === true) {
+        const columns = await this.apiColumnsHelper.find(impt);
+        responseHandler.setSuccess(200, {
+          import: updatedImport,
+          columns
+        });
+        return responseHandler; 
+      }
+      
+      else if (start === true) {
+        return this.import(req, updatedImport);
+      }
+      
+      else {
+        responseHandler.setSuccess(200, {
+          import: updatedImport
+        });
+        return responseHandler;
+      }
+    } catch (error) {
+      responseHandler.setError(500, error.message);
+      return responseHandler;
+    }
+  }
+
 
   async getColumns(req: Request, impt: ApiImport): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();

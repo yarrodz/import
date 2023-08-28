@@ -22,6 +22,10 @@ import SqlTransferService from '../modules/sql/sql-transfer.service';
 import ApiTransferService from '../modules/api/api-transfer.service';
 import OAuth2RefreshTokenHelper from '../modules/oauth2/helpers/oath2-refresh-token.helper';
 import PendingTransfersReloader from '../modules/transfers/helpers/pending-transfers.reloader';
+import EmailTransferService from '../modules/email/email-transfer.service';
+import EmailColumnsHelper from '../modules/email/helpers/email-columns.helper';
+import EmailImportHelper from '../modules/email/helpers/email-import.helper';
+import EmailImportService from '../modules/email/email-import.service';
 
 export interface InitServicesParams extends InitRepositoriesResult {
   io: IO;
@@ -92,6 +96,7 @@ export default function initServices(
 
   const sqlColumnsHelper = new SqlColumnsHelper();
   const apiColumnsHelper = new ApiColumnsHelper();
+  const emailColumnsHelper = new EmailColumnsHelper();
 
   const sqlImportHelper = new SqlImportHelper(
     transferFailureHandler,
@@ -106,10 +111,15 @@ export default function initServices(
     cursorPaginationTransferHelper,
     transfersRepository
   );
+  const emailImportHelper = new EmailImportHelper(
+    transferFailureHandler,
+    offsetPaginationTransferHelper
+  )
 
   const sqlImportService = new SqlImportService(
     sqlColumnsHelper,
     sqlImportHelper,
+    processesRepository,
     transfersRepository
   );
   const apiImportService = new ApiImportService(
@@ -117,6 +127,12 @@ export default function initServices(
     apiColumnsHelper,
     apiImportHelper,
     oAuth2AuthUriHelper,
+    processesRepository,
+    transfersRepository
+  );
+  const emailImportService = new EmailImportService(
+    emailColumnsHelper,
+    emailImportHelper,
     processesRepository,
     transfersRepository
   );
@@ -132,17 +148,23 @@ export default function initServices(
     processesRepository,
     transfersRepository
   );
+  const emailTransferService = new EmailTransferService(
+    emailImportHelper,
+    transfersRepository
+  )
 
   const connectionsService = new ConnectionsService(connectionsRepository);
   const importsService = new ImportsService(
     sqlImportService,
     apiImportService,
+    emailImportService,
     processesRepository,
     transfersRepository
   );
   const transfersService = new TransfersService(
     sqlTransferService,
     apiTransferService,
+    emailTransferService,
     transfersRepository,
     processesRepository
   );

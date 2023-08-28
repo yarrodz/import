@@ -7,7 +7,7 @@ import { iFrameDbClient } from 'iframe-ai';
 
 import Websocket from './utils/websocket/websocket';
 import initImports, { InitParams } from './init';
-
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 dotenv.config();
 const PORT = process.env.PORT;
 const IFRAME_SECRET_KEY = process.env.IFRAME_SECRET_KEY;
