@@ -13,10 +13,13 @@ export default interface Transfer {
   offset: number;
   cursor?: string;
 
+  //used for chunk transfer by references
+  references?: string[];
+
   datasetsCount?: number;
   transferedDatasetsCount: number;
 
-  log: string[];
+  log?: string;
   retryAttempts: number;
 
   __: TransferReference;

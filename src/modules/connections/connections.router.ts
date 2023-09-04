@@ -18,6 +18,7 @@ class ConnectionsRouter {
     this.router.post('/', this.connectionsController.create);
     this.router.patch('/', this.connectionsController.update);
     this.router.delete('/:id', this.connectionsController.delete);
+    this.router.post('/check', this.connectionsController.check);
   }
 }
 

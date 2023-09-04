@@ -47,12 +47,14 @@ async function start() {
       connectionsRouter,
       importsRouter,
       transfersRouter,
+      schedulersRouter,
       oAuth2Router,
-      pendingTransfersReloader
+      schedulersCron
     } = initImports(initParams);
 
     app.use('/connections', connectionsRouter.router);
     app.use('/imports', importsRouter.router);
+    app.use('/schedulers', schedulersRouter.router);
     app.use('/transfers', transfersRouter.router);
     app.use('', oAuth2Router.router);
 
@@ -60,7 +62,7 @@ async function start() {
       console.log(`Server listening on port: ${PORT}`)
     );
 
-    // pendingTransfersReloader.reload();
+    schedulersCron.start();
   } catch (error) {
     console.error(error);
   }

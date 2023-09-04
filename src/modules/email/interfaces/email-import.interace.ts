@@ -3,6 +3,7 @@ import ImportField from '../../imports/interfaces/import-field.interface';
 import ImportReference from '../../imports/interfaces/import-reference.interface';
 import RetryOptions from '../../imports/interfaces/retry-options.interace';
 import { ProcessType } from '../../processes/process.type.enum';
+import { EmailImportTarget } from '../enums/email-import-target.enum';
 
 export default interface EmailImport {
   id: number;
@@ -14,6 +15,7 @@ export default interface EmailImport {
   source: Source.EMAIL;
 
   mailbox: string;
+  target: EmailImportTarget;
 
   limit: number;
 

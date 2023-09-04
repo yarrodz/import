@@ -1,13 +1,10 @@
-import ApiExport from '../../api/interfaces/api-export.interface';
-import ApiImport from '../../api/interfaces/api-import.interface';
-import SqlExport from '../../sql/interfaces/sql-export.interface';
-import SqlImport from '../../sql/interfaces/sql-import.interface';
-import CursorPaginationFunction from './cursor-pagination-function.interface';
+import Import from '../../imports/import.type';
 import Transfer from './transfer.interface';
+import CursorPaginationFunction from './cursor-pagination-function.interface';
 
 export default interface CursorPaginationTransferParams {
-  import?: SqlImport | ApiImport;
-  export?: SqlExport | ApiExport;
+  import?: Import;
+  // export?: SqlExport | ApiExport;
   transfer: Transfer;
   limitPerStep: number;
   paginationFunction: {

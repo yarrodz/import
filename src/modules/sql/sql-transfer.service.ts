@@ -44,15 +44,15 @@ class SqlTransferService {
     try {
       const { id: transferId } = transfer;
 
-      const retriedTransfer = await this.transfersRepository.update({
-        id: transferId,
-        status: TransferStatus.PENDING,
-        retryAttempts: 0
-      });
+      // const retriedTransfer = await this.transfersRepository.update({
+      //   id: transferId,
+      //   status: TransferStatus.PENDING,
+      //   retryAttempts: 0
+      // });
 
       this.sqlImportHelper.import({
         import: impt,
-        transfer: retriedTransfer
+        transfer: transfer
       });
       responseHandler.setSuccess(200, transferId);
       return responseHandler;

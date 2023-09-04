@@ -16,7 +16,7 @@ class TransfersRouter {
     this.router.delete('/:id', this.transfersController.delete);
     this.router.post('/pause', this.transfersController.pause);
     this.router.post('/reload', this.transfersController.reload);
-    this.router.post('/retry', this.transfersController.retry);
+    this.router.post('/restart', this.transfersController.restart);
   }
 }
 

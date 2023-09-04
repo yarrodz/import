@@ -114,15 +114,15 @@ class ApiTransferService {
 
       const updatedImport = await this.processesRepository.load(importId);
 
-      const retriedTransfer = await this.transfersRepository.update({
-        id: transferId,
-        retryAttempts: 0,
-        status: TransferStatus.PENDING
-      });
+      // const retriedTransfer = await this.transfersRepository.update({
+      //   id: transferId,
+      //   retryAttempts: 0,
+      //   status: TransferStatus.PENDING
+      // });
 
       this.apiImportHelper.import({
         import: updatedImport,
-        transfer: retriedTransfer
+        transfer: transfer
       });
       responseHandler.setSuccess(200, transferId);
       return responseHandler;

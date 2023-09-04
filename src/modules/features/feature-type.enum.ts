@@ -1,4 +1,6 @@
 export enum FeatureType {
+  HTML = 'html',
+  JSON = 'json',
   TIME = 'time',
   DATE = 'date',
   DATETIME = 'datetime',

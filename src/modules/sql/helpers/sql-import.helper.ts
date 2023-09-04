@@ -4,7 +4,7 @@ import {
   createSqlTableFindDataQuery
 } from '../connector/sql-table.query-builder';
 import { paginateSqlSelect } from '../connector/sql-select.query-builder';
-import TransferFailureHandler from '../../transfers/helpers/transfer-failure.handler';
+import TransferFailureHandler from '../../transfers/helpers/transfer-failure-handler.helper';
 import OffsetPaginationTransferHelper from '../../transfers/helpers/offset-pagination-transfer.helper';
 import Transfer from '../../transfers/interfaces/transfer.interface';
 import { SqlConnector } from '../connector/sql.connector';
@@ -19,17 +19,21 @@ import OuterTransferFunction, {
 import TransfersRepository from '../../transfers/transfers.repository';
 import OffsetPaginationTransferParams from '../../transfers/interfaces/offset-pagination-transfer-params.interface';
 import SqlConnection from '../interfaces/sql.connection.interface';
+import SqlTransferHelper from './sql-transfer.helper';
 
 class SqlImportHelper {
+  private sqlTransferHelper: SqlTransferHelper;
   private transferFailureHandler: TransferFailureHandler;
   private offsetPaginationTransferHelper: OffsetPaginationTransferHelper;
   private transfersReporisotory: TransfersRepository;
 
   constructor(
+    sqlTransferHelper: SqlTransferHelper,
     transferFailureHandler: TransferFailureHandler,
     offsetPaginationTransferHelper: OffsetPaginationTransferHelper,
     transfersReporisotory: TransfersRepository
   ) {
+    this.sqlTransferHelper = sqlTransferHelper;
     this.transferFailureHandler = transferFailureHandler;
     this.offsetPaginationTransferHelper = offsetPaginationTransferHelper;
     this.transfersReporisotory = transfersReporisotory;
@@ -40,12 +44,16 @@ class SqlImportHelper {
   ): Promise<void> => {
     let sqlConnector: SqlConnector;
     const impt = params.import as SqlImport;
-    const { transfer } = params;
     const { target } = impt;
     const connection = impt.__.hasConnection as SqlConnection;
     const { config } = connection;
     const { dialect } = config;
+    let { transfer } = params;
     try {
+      if (transfer === undefined) {
+        transfer = await this.sqlTransferHelper.createStartedTransfer(impt);
+      }
+
       sqlConnector = new SqlConnector(config);
       await sqlConnector.connect();
 
@@ -62,9 +70,11 @@ class SqlImportHelper {
           throw new Error(`Unknown sql import target: ${target}.`);
         }
       }
+
       sqlConnector.disconnect();
     } catch (error) {
       sqlConnector && sqlConnector.disconnect();
+
       this.transferFailureHandler.handle({
         error,
         outerTransferFunction: this.import,
@@ -105,6 +115,53 @@ class SqlImportHelper {
     await this.offsetPaginationTransferHelper.transfer(
       offsetPaginationTransferParams
     );
+  }
+
+  public async checkImport(connection: SqlConnection, impt: SqlImport) {
+    let sqlConnector: SqlConnector;
+    try {
+      const { config } = connection;
+      const { dialect } = config;
+      const { target, table, select, idKey } = impt;
+
+      sqlConnector = new SqlConnector(config);
+      await sqlConnector.connect();
+
+      const pagination: OffsetPagination = {
+        offset: 0,
+        limit: 1
+      };
+
+      switch (target) {
+        case SqlImportTarget.TABLE: {
+          await this.tablePaginationFunction(
+            pagination,
+            sqlConnector,
+            dialect,
+            table,
+            idKey,
+            [idKey]
+          );
+          break;
+        }
+        case SqlImportTarget.SELECT: {
+          await this.selectPaginationFunction(
+            pagination,
+            sqlConnector,
+            select,
+            idKey
+          );
+          break;
+        }
+        default: {
+          throw new Error(`Unknown sql import target: ${target}.`);
+        }
+      }
+      sqlConnector.disconnect();
+    } catch (error) {
+      sqlConnector && sqlConnector.disconnect();
+      throw error;
+    }
   }
 
   private async selectImport(

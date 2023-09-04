@@ -1,6 +1,6 @@
 import ApiConnectionHelper from './api-connection.helper';
 import TransfersRepository from '../../transfers/transfers.repository';
-import TransferFailureHandler from '../../transfers/helpers/transfer-failure.handler';
+import TransferFailureHandler from '../../transfers/helpers/transfer-failure-handler.helper';
 import ChunkTransferHelper from '../../transfers/helpers/chunk-transfer.helper';
 import OffsetPaginationTransferHelper from '../../transfers/helpers/offset-pagination-transfer.helper';
 import CursorPaginationTransferHelper from '../../transfers/helpers/cursor-pagination-transfer.helper';
@@ -21,8 +21,10 @@ import { ConnectionState } from '../enums/connection-state.enum';
 import { TransferStatus } from '../../transfers/enums/transfer-status.enum';
 import { TransferMethod } from '../../transfers/enums/transfer-method.enum';
 import resolvePath from '../../../utils/resolve-path/resolve-path';
+import ApiTransferHelper from './api-transfer-helper';
 
 class ApiImportHelper {
+  private apiTransferHelper: ApiTransferHelper;
   private apiConnectionHelper: ApiConnectionHelper;
   private transferFailureHandler: TransferFailureHandler;
   private chunkTransferHelper: ChunkTransferHelper;
@@ -31,6 +33,7 @@ class ApiImportHelper {
   private transfersRepository: TransfersRepository;
 
   constructor(
+    apiTransferHelper: ApiTransferHelper,
     apiConnectionHelper: ApiConnectionHelper,
     transferFailureHandler: TransferFailureHandler,
     chunkTransferHelper: ChunkTransferHelper,
@@ -38,6 +41,7 @@ class ApiImportHelper {
     cursorPaginationTransferHelper: CursorPaginationTransferHelper,
     transfersRepository: TransfersRepository
   ) {
+    this.apiTransferHelper = apiTransferHelper;
     this.apiConnectionHelper = apiConnectionHelper;
     this.transferFailureHandler = transferFailureHandler;
     this.chunkTransferHelper = chunkTransferHelper;
@@ -51,19 +55,20 @@ class ApiImportHelper {
   ): Promise<void> => {
     const impt = params.import as ApiImport;
     const { transferMethod } = impt;
-    const { transfer } = params;
-    const { id: transferId, log } = transfer;
+    let { transfer } = params;
     try {
+      if (transfer === undefined) {
+        transfer = await this.apiTransferHelper.createStartedTransfer(impt);
+      }
+
+      const { id: transferId } = transfer;
+
       const connectionState = await this.apiConnectionHelper.connect(impt);
       if (connectionState === ConnectionState.OAUTH2_REQUIRED) {
-        log.unshift(
-          'Transfer was paused due OAuth2 authentication requirement.'
-        );
-
         await this.transfersRepository.update({
           id: transferId,
           status: TransferStatus.PAUSED,
-          log
+          log: 'Transfer was paused due OAuth2 authentication requirement.'
         });
       }
 

@@ -39,7 +39,7 @@ class ApiConnectionHelper {
           } catch (error) {
             if (oauth2.refresh_token === undefined) {
               // If api oauth2 does not have refresh tokens - access token never expire(Notion api);
-              // Api import settings that request is generated from not valid
+              // Api import settings not correct
               throw error;
             } else {
               // Try to refresh access token
@@ -51,7 +51,7 @@ class ApiConnectionHelper {
                 return ConnectionState.OAUTH2_REQUIRED;
               }
               // Send request with refreshed access token.
-              // If request fails - Api import settings not valid
+              // If request fails, token was not a reason, api import settings not correct
               const updatedImport = await this.processesRepository.load(
                 importId
               );

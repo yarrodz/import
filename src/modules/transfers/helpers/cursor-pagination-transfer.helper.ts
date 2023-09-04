@@ -35,10 +35,7 @@ class CursorPaginationTransferHelper {
       const stepStartDate = new Date();
       const refreshedTransfer = await this.transfersRepository.load(transferId);
       if (refreshedTransfer.status === TransferStatus.PAUSED) {
-        this.io.to(String(transferId)).emit('transfer', {
-          ...refreshedTransfer,
-          log: refreshedTransfer.log[0]
-        });
+        this.io.to(String(transferId)).emit('transfer', refreshedTransfer);
         return;
       }
 
@@ -91,12 +88,10 @@ class CursorPaginationTransferHelper {
 
     const completedTransfer = await this.transfersRepository.update({
       id: transferId,
-      status: TransferStatus.COMPLETED
+      status: TransferStatus.COMPLETED,
+      log: 'Transfer succesfully completed'
     });
-    this.io.to(String(transferId)).emit('transfer', {
-      ...completedTransfer,
-      log: completedTransfer.log[0]
-    });
+    this.io.to(String(transferId)).emit('transfer', completedTransfer);
   }
 }
 

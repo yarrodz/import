@@ -1,4 +1,4 @@
-import ConnectionReference from '../../connections/interfafces/connection.reference.interface';
+import ConnectionReference from '../../connections/interfaces/connection.reference.interface';
 import { Source } from '../../imports/enums/source.enum';
 
 export default interface EmailConnection {
@@ -12,7 +12,7 @@ export default interface EmailConnection {
     auth: {
       user: string;
       password: string;
-    },
+    };
     host: string;
     port: number;
   };

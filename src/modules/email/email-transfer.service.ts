@@ -17,7 +17,10 @@ class EmailTransferService {
     this.transfersRepository = transfersRepository;
   }
 
-  async reload(impt: EmailImport, transfer: Transfer): Promise<ResponseHandler> {
+  async reload(
+    impt: EmailImport,
+    transfer: Transfer
+  ): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
       const { id: transferId } = transfer;
@@ -44,15 +47,15 @@ class EmailTransferService {
     try {
       const { id: transferId } = transfer;
 
-      const retriedTransfer = await this.transfersRepository.update({
-        id: transferId,
-        status: TransferStatus.PENDING,
-        retryAttempts: 0
-      });
+      // const retriedTransfer = await this.transfersRepository.update({
+      //   id: transferId,
+      //   status: TransferStatus.PENDING,
+      //   retryAttempts: 0
+      // });
 
       this.emailImportHelper.import({
         import: impt,
-        transfer: retriedTransfer
+        transfer: transfer
       });
       responseHandler.setSuccess(200, transferId);
       return responseHandler;

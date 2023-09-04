@@ -36,9 +36,9 @@ export class TransfersController {
     responseHandler.send(res);
   };
 
-  retry = async (req: Request, res: Response) => {
+  restart = async (req: Request, res: Response) => {
     const id = req.body.id;
-    const responseHandler = await this.transfersService.retry(req, id);
+    const responseHandler = await this.transfersService.restart(req, id);
     responseHandler.send(res);
   };
 }

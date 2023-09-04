@@ -1,15 +1,25 @@
 import ConnectionsRepository from './connections.repository';
 import ResponseHandler from '../../utils/response-handler/response-handler';
 import { Source } from '../imports/enums/source.enum';
-import { CreateSqlConnectionValidator } from '../sql/validators/create-sql-connection.validator';
-import { CreateApiConnectionValidator } from '../api/validators/create-api-connection.validator';
-import { UpdateSqlConnectionValidator } from '../sql/validators/update-sql-connection.validator';
-import { UpdateApiConnectionValidator } from '../api/validators/update-api-connection.validator';
+import SqlConnectionService from '../sql/sql-connection.service';
+import ApiConnectionService from '../api/api-conection.service';
+import EmailConnectionService from '../email/email-connection.service';
 
 class ConnectionsService {
+  private sqlConnectionService: SqlConnectionService;
+  private apiConnectionService: ApiConnectionService;
+  private emailConnectionService: EmailConnectionService;
   private connectionsRepository: ConnectionsRepository;
 
-  constructor(connectionsRepository: ConnectionsRepository) {
+  constructor(
+    sqlConnectionService: SqlConnectionService,
+    apiConnectionService: ApiConnectionService,
+    emailConnectionService: EmailConnectionService,
+    connectionsRepository: ConnectionsRepository
+  ) {
+    this.sqlConnectionService = sqlConnectionService;
+    this.apiConnectionService = apiConnectionService;
+    this.emailConnectionService = emailConnectionService;
     this.connectionsRepository = connectionsRepository;
   }
 
@@ -41,93 +51,66 @@ class ConnectionsService {
     }
   }
 
-  async create(input: any): Promise<ResponseHandler> {
-    let responseHandler = new ResponseHandler();
+  async create(connection: any): Promise<ResponseHandler> {
+    const responseHandler = new ResponseHandler();
     try {
-      const { source } = input;
+      const { source } = connection;
 
       switch (source) {
         case Source.SQL: {
-          const { error } = CreateSqlConnectionValidator.validate(input);
-          if (error) {
-            responseHandler.setError(400, error);
-            return responseHandler;
-          }
-          break;
+          return this.sqlConnectionService.create(connection);
         }
         case Source.API: {
-          const { error } = CreateApiConnectionValidator.validate(input);
-          if (error) {
-            responseHandler.setError(400, error);
-            return responseHandler;
-          }
+          return this.apiConnectionService.create(connection);
           break;
         }
         case Source.EMAIL: {
-          break;
+          return this.emailConnectionService.create(connection);
         }
         default: {
           responseHandler.setError(
             400,
-            `Error while creating import. Unknown source '${source}'.`
+            `Error while creating connection. Unknown source '${source}'.`
           );
           return responseHandler;
         }
       }
-
-      const connection = await this.connectionsRepository.create(input);
-      responseHandler.setSuccess(200, connection);
-      return responseHandler;
     } catch (error) {
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
   }
 
-  async update(input: any): Promise<ResponseHandler> {
-    let responseHandler = new ResponseHandler();
+  async update(connection: any): Promise<ResponseHandler> {
+    const responseHandler = new ResponseHandler();
     try {
-      const { source } = input;
+      const { id, source } = connection;
 
-      switch (source) {
-        case Source.SQL: {
-          const { error } = UpdateSqlConnectionValidator.validate(input);
-          if (error) {
-            responseHandler.setError(400, error);
-            return responseHandler;
-          }
-          break;
-        }
-        case Source.API: {
-          const { error } = UpdateApiConnectionValidator.validate(input);
-          if (error) {
-            responseHandler.setError(400, error);
-            return responseHandler;
-          }
-          break;
-        }
-        case Source.EMAIL: {
-          break;
-        }
-        default: {
-          responseHandler.setError(
-            400,
-            `Error while creating import. Unknown source '${source}'.`
-          );
-          return responseHandler;
-        }
-      }
-
-      const { id } = input;
-      const connection = await this.connectionsRepository.load(id);
-      if (!connection) {
+      const existingConnection = await this.connectionsRepository.load(id);
+      if (!existingConnection) {
         responseHandler.setError(404, 'Connection not found');
         return responseHandler;
       }
 
-      const updatedConnection = await this.connectionsRepository.update(input);
-      responseHandler.setSuccess(200, updatedConnection);
-      return responseHandler;
+      switch (source) {
+        case Source.SQL: {
+          return this.sqlConnectionService.update(connection);
+        }
+        case Source.API: {
+          return this.apiConnectionService.update(connection);
+          break;
+        }
+        case Source.EMAIL: {
+          return this.emailConnectionService.update(connection);
+        }
+        default: {
+          responseHandler.setError(
+            400,
+            `Error while creating connection. Unknown source '${source}'.`
+          );
+          return responseHandler;
+        }
+      }
     } catch (error) {
       responseHandler.setError(500, error.message);
       return responseHandler;
@@ -145,6 +128,36 @@ class ConnectionsService {
       await this.connectionsRepository.delete(id);
       responseHandler.setSuccess(200, true);
       return responseHandler;
+    } catch (error) {
+      responseHandler.setError(500, error.message);
+      return responseHandler;
+    }
+  }
+
+  async checkConnection(connection: any) {
+    const responseHandler = new ResponseHandler();
+    try {
+      const { source } = connection;
+
+      switch (source) {
+        case Source.SQL: {
+          return this.sqlConnectionService.checkConnection(connection);
+        }
+        case Source.API: {
+          responseHandler.setError(400, 'Not implemented');
+          return responseHandler;
+        }
+        case Source.EMAIL: {
+          return this.emailConnectionService.checkConnection(connection);
+        }
+        default: {
+          responseHandler.setError(
+            400,
+            `Error while checking connection. Unknown source '${source}'.`
+          );
+          return responseHandler;
+        }
+      }
     } catch (error) {
       responseHandler.setError(500, error.message);
       return responseHandler;

@@ -12,13 +12,13 @@ class TransfersRepository {
 
   async query(select: any, sortings: any, firstOnly: boolean) {
     try {
-      return await new iFrameTransfer(this.client).query(
+      return await new iFrameTransfer(this.client).qq(
         select,
         sortings,
         firstOnly
       );
     } catch (error) {
-      console.error(error)
+      console.error(error);
       throw new error(`Error while querying transfers: ${error}`);
     }
   }
@@ -29,6 +29,7 @@ class TransfersRepository {
         .load(id)
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
+      console.error('Load: ', error);
       throw new error(`Error while loading a transfer: ${error}`);
     }
   }
@@ -39,6 +40,7 @@ class TransfersRepository {
         .insert(input)
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
+      console.error('Create: ', error);
       throw new error(`Error while creating a transfer: ${error}`);
     }
   }
@@ -49,6 +51,7 @@ class TransfersRepository {
         .save()
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
+      console.error('Update: ', error);
       throw new error(`Error while updating a transfer: ${error}`);
     }
   }

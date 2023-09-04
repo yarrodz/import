@@ -1,4 +1,5 @@
 import { Server as IO } from 'socket.io';
+import { load } from 'cheerio';
 
 import Transfer from '../interfaces/transfer.interface';
 import resolvePath from '../../../utils/resolve-path/resolve-path';
@@ -35,13 +36,7 @@ class ImportStepHelper {
   ) {
     const { id: transferId } = transfer;
 
-    const transormedDatasets = await this.transformDatasets(
-      impt,
-      transfer,
-      datasets
-    );
-
-    // console.log('transormedDatasets: ', transormedDatasets);
+    const transormedDatasets = await this.transformDatasets(impt, datasets);
 
     await this.insertDatasets(transormedDatasets);
 
@@ -54,57 +49,35 @@ class ImportStepHelper {
       retryAttempts: 0
     });
 
-    this.io.to(String(transferId)).emit('transfer', {
-      ...updatedTransfer,
-      log: updatedTransfer.log[0]
-    });
+    this.io.to(String(transferId)).emit('transfer', updatedTransfer);
   }
 
   private async transformDatasets(
     impt: SqlImport | ApiImport | EmailImport,
-    transfer: Transfer,
     datasets: object[]
   ) {
     const { id: importId, idKey } = impt;
-    let { id: transferId, log } = transfer;
     const { fields } = impt;
     const unit = impt.__.inUnit;
     const { id: unitId } = unit;
 
     const transformedDatasets = [];
     datasets.forEach(async (dataset) => {
-      try {
-        // const sourceId = resolvePath(dataset, idKey);
-        // console.log('idKey: ', idKey);
-        const sourceId = dataset[idKey];
-        if (sourceId === null) {
-          throw new Error('The id field contains a null value');
-        }
-
-        const records = this.transformRecords(dataset, fields);
-        const transformedDataset = {
-          unitId,
-          importId,
-          sourceId,
-          records
-        };
-
-        transformedDatasets.push(transformedDataset);
-      } catch (error) {
-        // console.log('error: ', error);
-        // console.log(`Cannot parse: ${error}`)
-        // log.unshift(
-        //   `Cannot parse dataset: '${JSON.stringify(dataset)}', Error: '${
-        //     error.message
-        //   }'`
-        // );
-
-
-        // await this.transfersRepository.update({
-        //   id: transferId,
-        //   logc
-        // });
+      // const sourceId = resolvePath(dataset, idKey);
+      const sourceId = dataset[idKey];
+      if (sourceId === null) {
+        throw new Error('The id field contains a null value');
       }
+
+      const records = this.transformRecords(dataset, fields);
+      const transformedDataset = {
+        unitId,
+        importId,
+        sourceId,
+        records
+      };
+
+      transformedDatasets.push(transformedDataset);
     });
 
     return transformedDatasets;
@@ -133,6 +106,11 @@ class ImportStepHelper {
         case FeatureType.TEXT:
         case FeatureType.LONG_TEXT:
           return String(value);
+        case FeatureType.JSON:
+          return JSON.stringify(value);
+        case FeatureType.HTML:
+          const loadedHtml = load(value);
+          return loadedHtml.text();
         case FeatureType.DATE:
         case FeatureType.DATETIME:
           return new Date(value);
@@ -140,12 +118,12 @@ class ImportStepHelper {
           return Boolean(value);
         case FeatureType.NUMBER:
           return Number(value);
-        default:
-          break;
+        default: {
+          return null;
+        }
       }
     } catch (error) {
-      // console.log(error)
-      throw new Error(`Error while parsing record value: ${error.message}`);
+      return null;
     }
   }
 

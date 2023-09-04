@@ -1,7 +1,5 @@
 import { iFrameDbClient, iFrameDataset } from 'iframe-ai';
-// import { iFrameDbClient } from 'iframe-ai';
 
-// import iFrameDataset from './iFrameDataset';
 import Dataset from './dataset.interface';
 
 class DatasetsRepository {

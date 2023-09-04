@@ -47,17 +47,12 @@ class TransferFailureHandler {
   private async failTransfer(error: Error, transfer: Transfer): Promise<void> {
     const { id: transferId, log } = transfer;
 
-    log.unshift(`Transfer was failed with error: ${error.message}`);
-
     const failedTransfer = await this.transfersRepository.update({
       id: transferId,
       status: TransferStatus.FAILED,
-      log
+      log: `Transfer was failed with error: ${error.message}`
     });
-    this.io.to(String(transferId)).emit('transfer', {
-      ...failedTransfer,
-      log: failedTransfer.log[0]
-    });
+    this.io.to(String(transferId)).emit('transfer', failedTransfer);
   }
 
   private async retryTransfer(
@@ -70,19 +65,12 @@ class TransferFailureHandler {
     let { id: transferId, log, retryAttempts } = transfer;
     retryAttempts++;
 
-    log.unshift(
-      `Transfer was failed with error: ${error.message}. Retrying transfer after ${attemptTimeDelay}ms. ${retryAttempts} retry attempts left.`
-    );
-
     const retriedTransfer = await this.transfersRepository.update({
       id: transferId,
       retryAttempts,
-      log
+      log: `Transfer was failed with error: ${error.message}. Retrying transfer after ${attemptTimeDelay}ms. ${retryAttempts} retry attempts left.`
     });
-    this.io.to(String(transferId)).emit('transfer', {
-      ...retriedTransfer,
-      log: retriedTransfer.log[0]
-    });
+    this.io.to(String(transferId)).emit('transfer', retriedTransfer);
 
     await sleep(attemptTimeDelay);
     await outerTransferFunction({

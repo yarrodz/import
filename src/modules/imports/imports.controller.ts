@@ -32,7 +32,12 @@ class ImportsController {
     const data = req.body.data;
     const getColumns = req.body.getColumns || false;
     const start = req.body.start || false;
-    const responseHandler = await this.importsService.update(req, data, getColumns, start);
+    const responseHandler = await this.importsService.update(
+      req,
+      data,
+      getColumns,
+      start
+    );
     responseHandler.send(res);
   };
 
@@ -54,9 +59,20 @@ class ImportsController {
     responseHandler.send(res);
   };
 
-  import = async (req: Request, res: Response) => {
+  checkImport = async (req: Request, res: Response) => {
+    const connection = req.body.connection;
+    const impt = req.body.impt;
+    const responseHandler = await this.importsService.checkImport(
+      req,
+      connection,
+      impt
+    );
+    responseHandler.send(res);
+  };
+
+  startImport = async (req: Request, res: Response) => {
     const id = req.body.id;
-    const responseHandler = await this.importsService.import(req, id);
+    const responseHandler = await this.importsService.startImport(req, id);
     responseHandler.send(res);
   };
 }

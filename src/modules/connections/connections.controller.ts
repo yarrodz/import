@@ -42,6 +42,14 @@ class ConnectionsController {
     const responseHandler = await this.connectionsService.delete(Number(id));
     responseHandler.send(res);
   };
+
+  check = async (req: Request, res: Response) => {
+    const connection = req.body;
+    const responseHandler = await this.connectionsService.checkConnection(
+      connection
+    );
+    responseHandler.send(res);
+  };
 }
 
 export default ConnectionsController;

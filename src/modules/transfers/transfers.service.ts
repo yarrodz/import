@@ -91,7 +91,8 @@ class TransfersService {
 
       await this.transfersRepository.update({
         id,
-        status: TransferStatus.PAUSED
+        status: TransferStatus.PAUSED,
+        log: 'Transfer was pused'
       });
       responseHandler.setSuccess(200, true);
       return responseHandler;
@@ -110,11 +111,18 @@ class TransfersService {
         return responseHandler;
       }
 
-      if (transfer.status !== TransferStatus.PAUSED) {
-        responseHandler.setError(409, 'Only paused transfer can be reloaded');
+      if (
+        transfer.status !== TransferStatus.PAUSED &&
+        transfer.status !== TransferStatus.FAILED
+      ) {
+        responseHandler.setError(
+          409,
+          'Only paused or failed transfer can be reloaded'
+        );
         return responseHandler;
       }
 
+      // console.log('transfer.__: ', transfer.__)
       const { id: importId } = transfer.__.inImport;
       const impt = await this.processesRepository.load(importId);
       if (impt === undefined) {
@@ -122,7 +130,7 @@ class TransfersService {
         return responseHandler;
       }
 
-      const { id: unitId } = transfer.__.inUnit;
+      // const { id: unitId } = transfer.__.inUnit;
 
       // const pendingUnitTransfer = await this.transfersRepository.query(
       //   {
@@ -134,7 +142,8 @@ class TransfersService {
       //         value: TransferStatus.PENDING
       //       },
       //       {
-      //         type: 'inEdge',
+      //         type: 'hasEdge',
+      //         direction: 'out',
       //         label: 'inUnit',
       //         value: unitId
       //       }
@@ -143,6 +152,8 @@ class TransfersService {
       //   {},
       //   true
       // );
+
+      // console.log('pendingUnitTransfer: ', pendingUnitTransfer);
       // if (pendingUnitTransfer) {
       //   responseHandler.setError(
       //     409,
@@ -153,7 +164,9 @@ class TransfersService {
 
       const updatedTransfer = await this.transfersRepository.update({
         id,
-        status: TransferStatus.PENDING
+        status: TransferStatus.PENDING,
+        retryAttempts: 0,
+        log: 'Transfer was reloaded'
       });
 
       const { source } = impt;
@@ -186,7 +199,7 @@ class TransfersService {
     }
   }
 
-  async retry(req: Request, id: number) {
+  async restart(req: Request, id: number) {
     const responseHandler = new ResponseHandler();
     try {
       const transfer = await this.transfersRepository.load(id);
@@ -195,8 +208,14 @@ class TransfersService {
         return responseHandler;
       }
 
-      if (transfer.status !== TransferStatus.FAILED) {
-        responseHandler.setError(409, 'Only failed transfer can be retried');
+      if (
+        transfer.status !== TransferStatus.PAUSED &&
+        transfer.status !== TransferStatus.FAILED
+      ) {
+        responseHandler.setError(
+          409,
+          'Only paused or failed transfer can be restarted'
+        );
         return responseHandler;
       }
 
@@ -209,36 +228,40 @@ class TransfersService {
 
       const { id: unitId } = transfer.__.inUnit;
 
-      const pendingUnitTransfer = await this.transfersRepository.query(
-        {
-          operator: 'and',
-          conditions: [
-            {
-              type: 'equals',
-              property: 'status',
-              value: TransferStatus.PENDING
-            },
-            {
-              type: 'inEdge',
-              label: 'inUnit',
-              value: unitId
-            }
-          ]
-        },
-        {},
-        true
-      );
-      if (pendingUnitTransfer) {
-        responseHandler.setError(
-          409,
-          'This unit is already processing another transfer.'
-        );
-        return responseHandler;
-      }
+      // const pendingUnitTransfer = await this.transfersRepository.query(
+      //   {
+      //     operator: 'and',
+      //     conditions: [
+      //       {
+      //         type: 'equals',
+      //         property: 'status',
+      //         value: TransferStatus.PENDING
+      //       },
+      //       {
+      //         type: 'hasEdge',
+      //         direction: 'out',
+      //         label: 'inUnit',
+      //         value: unitId
+      //       }
+      //     ]
+      //   },
+      //   {},
+      //   true
+      // );
+      // if (pendingUnitTransfer) {
+      //   responseHandler.setError(
+      //     409,
+      //     'This unit is already processing another transfer.'
+      //   );
+      //   return responseHandler;
+      // }
 
       const updatedTransfer = await this.transfersRepository.update({
         id,
-        status: TransferStatus.PENDING
+        status: TransferStatus.PENDING,
+        offset: 0,
+        transferedDatasetsCount: 0,
+        retryAttempts: 0
       });
 
       const { source } = impt;

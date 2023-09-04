@@ -6,7 +6,8 @@ import initRepositories from './init/repositories.init';
 import initServices from './init/services.init';
 import initControllers from './init/controllers.init';
 import initRouters from './init/routers.init';
-import PendingTransfersReloader from './modules/transfers/helpers/pending-transfers.reloader';
+import PendingTransfersReloader from './modules/transfers/helpers/transfers-reloader.helper';
+import SchedulersCron from './modules/scheduler/schedulers.cron';
 
 export interface InitParams {
   io: IO;
@@ -16,11 +17,11 @@ export interface InitParams {
 }
 
 export interface InitResult extends InitRoutersResult {
-  pendingTransfersReloader: PendingTransfersReloader;
+  // pendingTransfersReloader: PendingTransfersReloader;
+  schedulersCron: SchedulersCron;
 }
 
 export default function initImports(params: InitParams): InitResult {
-
   const { io, dbClient, clientUri, oAuth2RedirectUri } = params;
 
   const initRepositoriesResult = initRepositories(dbClient);
@@ -32,7 +33,7 @@ export default function initImports(params: InitParams): InitResult {
     ...initRepositoriesResult
   });
 
-  const { pendingTransfersReloader } = initServicesResult;
+  const { schedulersCron } = initServicesResult;
 
   const initControllersResult = initControllers(initServicesResult);
 
@@ -40,6 +41,6 @@ export default function initImports(params: InitParams): InitResult {
 
   return {
     ...InitRoutersResult,
-    pendingTransfersReloader
+    schedulersCron
   };
 }

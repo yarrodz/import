@@ -1,21 +1,25 @@
 import SqlImportHelper from '../../sql/helpers/sql-import.helper';
-import ApoImportHelper from '../../api/helpers/api-import.helper';
+import ApiImportHelper from '../../api/helpers/api-import.helper';
 import TransfersRepository from '../transfers.repository';
 import { Source } from '../../imports/enums/source.enum';
 import { TransferStatus } from '../enums/transfer-status.enum';
+import EmailImportHelper from '../../email/helpers/email-import.helper';
 
 class PendingTransfersReloader {
-  sqlImportHelper: SqlImportHelper;
-  apiImportHelper: ApoImportHelper;
-  transfersRepository: TransfersRepository;
+  private sqlImportHelper: SqlImportHelper;
+  private apiImportHelper: ApiImportHelper;
+  private emailImportHelper: EmailImportHelper;
+  private transfersRepository: TransfersRepository;
 
   constructor(
     sqlImportHelper: SqlImportHelper,
-    apiImportHelper: ApoImportHelper,
+    apiImportHelper: ApiImportHelper,
+    emailImportHelper: EmailImportHelper,
     transfersRepository: TransfersRepository
   ) {
     this.sqlImportHelper = sqlImportHelper;
     this.apiImportHelper = apiImportHelper;
+    this.emailImportHelper = emailImportHelper;
     this.transfersRepository = transfersRepository;
   }
 
@@ -47,6 +51,13 @@ class PendingTransfersReloader {
             }
             case Source.API: {
               await this.apiImportHelper.import({
+                import: impt,
+                transfer
+              });
+              break;
+            }
+            case Source.EMAIL: {
+              await this.emailImportHelper.import({
                 import: impt,
                 transfer
               });

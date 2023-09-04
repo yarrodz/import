@@ -1,7 +1,6 @@
-import SqlImport from '../../sql/interfaces/sql-import.interface';
-import ApiImport from '../../api/interfaces/api-import.interface';
+import Import from '../../imports/import.type';
 
 export default interface TransferReference {
-  inImport?: SqlImport | ApiImport;
+  inImport?: Import;
   inUnit?: any;
 }

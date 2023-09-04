@@ -15,18 +15,21 @@ export default class ResponseHandler {
     this.type = ResponseHandlerType.SUCCESS;
     this.statusCode = statusCode;
     this.result = result;
+    return this;
   }
 
   setError(statusCode: number, message: any) {
     this.type = ResponseHandlerType.ERROR;
     this.statusCode = statusCode;
     this.message = message;
+    return this;
   }
 
   setRedirect(uri: string) {
     this.type = ResponseHandlerType.REDIRECT;
     this.statusCode = 201;
     this.redirectUri = uri;
+    return this;
   }
 
   send(res: Response) {

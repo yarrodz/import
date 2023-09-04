@@ -35,15 +35,11 @@ class OffsetPaginationTransferHelper {
       const stepStartDate = new Date();
       const refreshedTransfer = await this.transfersRepository.load(transferId);
       if (refreshedTransfer.status === TransferStatus.PAUSED) {
-        this.io.to(String(transferId)).emit('transfer', {
-          ...refreshedTransfer,
-          log: refreshedTransfer[0]
-        });
+        this.io.to(String(transferId)).emit('transfer', refreshedTransfer);
         return;
       }
 
       const offset = refreshedTransfer.offset;
-      // console.log('Offset: ', offset);
 
       if (datasetsCount && offset >= datasetsCount) {
         break;
@@ -77,13 +73,10 @@ class OffsetPaginationTransferHelper {
 
     const completedTransfer = await this.transfersRepository.update({
       id: transferId,
-      status: TransferStatus.COMPLETED
+      status: TransferStatus.COMPLETED,
+      log: 'Transfer succesfully completed'
     });
-    console.log('Transfer Complete')
-    this.io.to(String(transferId)).emit('transfer', {
-      ...completedTransfer,
-      log: completedTransfer.log[0]
-    });
+    this.io.to(String(transferId)).emit('transfer', completedTransfer);
   }
 }
 

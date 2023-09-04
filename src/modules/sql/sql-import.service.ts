@@ -9,23 +9,25 @@ import { TransferStatus } from '../transfers/enums/transfer-status.enum';
 import ProcessesRepository from '../processes/process.repository';
 import { CreateSqlImportValidator } from './validators/create-sql-import.validator';
 import { UpdateSqlImportValidator } from './validators/update-sql-import.validator';
+import SqlTransferHelper from './helpers/sql-transfer.helper';
+import SqlConnection from './interfaces/sql.connection.interface';
 
 class SqlImportService {
   private sqlColumnsHelper: SqlColumnsHelper;
   private sqlImportHelper: SqlImportHelper;
+  private sqlTransferHelper: SqlTransferHelper;
   private processesRepository: ProcessesRepository;
-  private transfersRepository: TransfersRepository;
 
   constructor(
     sqlColumnsHelper: SqlColumnsHelper,
     sqlImportHelper: SqlImportHelper,
-    processesRepository: ProcessesRepository,
-    transefersRepository: TransfersRepository
+    sqlTransferHelper: SqlTransferHelper,
+    processesRepository: ProcessesRepository
   ) {
     this.sqlColumnsHelper = sqlColumnsHelper;
     this.sqlImportHelper = sqlImportHelper;
+    this.sqlTransferHelper = sqlTransferHelper;
     this.processesRepository = processesRepository;
-    this.transfersRepository = transefersRepository;
   }
 
   async create(input: any, getColumns: boolean) {
@@ -37,26 +39,22 @@ class SqlImportService {
         return responseHandler;
       }
 
-
       ////TO DO FIX
       let impt = await this.processesRepository.create(input);
       impt = await this.processesRepository.load(impt.id);
 
       if (getColumns === false) {
-        responseHandler.setSuccess(200, {
+        return responseHandler.setSuccess(200, {
           import: impt
         });
-        return responseHandler;
       } else {
         const columns = await this.sqlColumnsHelper.find(impt);
-        responseHandler.setSuccess(200, {
+        return responseHandler.setSuccess(200, {
           import: impt,
           columns
         });
-        return responseHandler;
       }
     } catch (error) {
-      console.error(error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -83,22 +81,16 @@ class SqlImportService {
 
       if (getColumns === true) {
         const columns = await this.sqlColumnsHelper.find(impt);
-        responseHandler.setSuccess(200, {
+        return responseHandler.setSuccess(200, {
           import: updatedImport,
           columns
         });
-        return responseHandler;
-      }
-      
-      else if (start === true) {
-        return this.import(updatedImport);
-      }
-      
-      else {
-        responseHandler.setSuccess(200, {
+      } else if (start === true) {
+        return this.startImport(updatedImport);
+      } else {
+        return responseHandler.setSuccess(200, {
           import: updatedImport
         });
-        return responseHandler;
       }
     } catch (error) {
       responseHandler.setError(500, error.message);
@@ -133,39 +125,42 @@ class SqlImportService {
     }
   }
 
-  async import(impt: SqlImport): Promise<ResponseHandler> {
+  async checkImport(
+    connection: SqlConnection,
+    impt: any
+  ): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const { id: importId } = impt;
-      const unit = impt.__.inUnit;
-      const { id: unitId } = unit;
+      const error =
+        CreateSqlImportValidator.validate(impt).error ||
+        UpdateSqlImportValidator.validate(impt).error;
+      if (error) {
+        responseHandler.setError(400, error);
+        return responseHandler;
+      }
 
-      const transfer = await this.transfersRepository.create({
-        type: TransferType.IMPORT,
-        method: TransferMethod.OFFSET_PAGINATION,
-        status: TransferStatus.PENDING,
-        offset: 0,
-        transferedDatasetsCount: 0,
-        log: [],
-        retryAttempts: 0,
-        __: {
-          inImport: {
-            id: importId,
-            _d: 'out'
-          },
-          inUnit: {
-            id: unitId,
-            _d: 'out'
-          }
-        }
-      });
+      await this.sqlImportHelper.checkImport(connection, impt);
+
+      responseHandler.setSuccess(200, true);
+      return responseHandler;
+    } catch (error) {
+      responseHandler.setError(500, error.message);
+      return responseHandler;
+    }
+  }
+
+  async startImport(impt: SqlImport): Promise<ResponseHandler> {
+    const responseHandler = new ResponseHandler();
+    try {
+      const transfer = await this.sqlTransferHelper.createStartedTransfer(impt);
+
+      const { id: transferId } = transfer;
 
       this.sqlImportHelper.import({
         import: impt,
         transfer
       });
 
-      const { id: transferId } = transfer;
       responseHandler.setSuccess(200, transferId);
       return responseHandler;
     } catch (error) {

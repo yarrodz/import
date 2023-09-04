@@ -1,17 +1,13 @@
 import { Request } from 'express';
 
-import ProcessesRepository from '../processes/process.repository';
 import SqlImportService from '../sql/sql-import.service';
 import ApiImportService from '../api/api-import.service';
+import EmailImportService from '../email/email-import.service';
+import ProcessesRepository from '../processes/process.repository';
+import TransfersRepository from '../transfers/transfers.repository';
 import ResponseHandler from '../../utils/response-handler/response-handler';
 import { Source } from './enums/source.enum';
-import { CreateSqlImportValidator } from '../sql/validators/create-sql-import.validator';
-import { CreateApiImportValidator } from '../api/validators/create-api-import.validator';
-import { UpdateSqlImportValidator } from '../sql/validators/update-sql-import.validator';
-import { UpdateApiImportValidator } from '../api/validators/update-api-import.validator';
-import TransfersRepository from '../transfers/transfers.repository';
 import { TransferStatus } from '../transfers/enums/transfer-status.enum';
-import EmailImportService from '../email/email-import.service';
 
 class ImportsService {
   private sqlImportService: SqlImportService;
@@ -42,11 +38,9 @@ class ImportsService {
         sortings,
         false
       );
-      responseHandler.setSuccess(200, imports);
-      return responseHandler;
+      return responseHandler.setSuccess(200, imports);
     } catch (error) {
-      responseHandler.setError(500, error.message);
-      return responseHandler;
+      return responseHandler.setError(500, error.message);
     }
   }
 
@@ -54,16 +48,14 @@ class ImportsService {
     const responseHandler = new ResponseHandler();
     try {
       const impt = await this.processesRepository.load(id);
-      responseHandler.setSuccess(200, impt);
-      return responseHandler;
+      return responseHandler.setSuccess(200, impt);
     } catch (error) {
-      responseHandler.setError(500, error.message);
-      return responseHandler;
+      return responseHandler.setError(500, error.message);
     }
   }
 
   async create(input: any, getColumns: boolean): Promise<ResponseHandler> {
-    let responseHandler = new ResponseHandler();
+    const responseHandler = new ResponseHandler();
     try {
       const { source } = input;
 
@@ -86,14 +78,17 @@ class ImportsService {
         }
       }
     } catch (error) {
-      console.error(error)
-      responseHandler.setError(500, error.message);
-      return responseHandler;
+      return responseHandler.setError(500, error.message);
     }
   }
 
-  async update(req: Request, input: any, getColumns: boolean, start: boolean): Promise<ResponseHandler> {
-    let responseHandler = new ResponseHandler();
+  async update(
+    req: Request,
+    input: any,
+    getColumns: boolean,
+    start: boolean
+  ): Promise<ResponseHandler> {
+    const responseHandler = new ResponseHandler();
     try {
       const { source } = input;
 
@@ -108,16 +103,14 @@ class ImportsService {
           return this.emailImportService.update(input, getColumns, start);
         }
         default: {
-          responseHandler.setError(
+          return responseHandler.setError(
             400,
             `Error while creating import. Unknown source '${source}'.`
           );
-          return responseHandler;
         }
       }
     } catch (error) {
-      responseHandler.setError(500, error.message);
-      return responseHandler;
+      return responseHandler.setError(500, error.message);
     }
   }
 
@@ -127,16 +120,13 @@ class ImportsService {
       const impt = await this.processesRepository.load(id);
 
       if (impt === undefined) {
-        responseHandler.setError(404, 'Import not found');
-        return responseHandler;
+        return responseHandler.setError(404, 'Import not found');
       }
 
       await this.processesRepository.delete(id);
-      responseHandler.setSuccess(200, true);
-      return responseHandler;
+      return responseHandler.setSuccess(200, true);
     } catch (error) {
-      responseHandler.setError(500, error.message);
-      return responseHandler;
+      return responseHandler.setError(500, error.message);
     }
   }
 
@@ -146,8 +136,7 @@ class ImportsService {
       const impt = await this.processesRepository.load(id);
 
       if (impt === undefined) {
-        responseHandler.setError(404, 'Import not found');
-        return responseHandler;
+        return responseHandler.setError(404, 'Import not found');
       }
       const { source } = impt;
 
@@ -170,8 +159,7 @@ class ImportsService {
         }
       }
     } catch (error) {
-      responseHandler.setError(500, error.message);
-      return responseHandler;
+      return responseHandler.setError(500, error.message);
     }
   }
 
@@ -184,8 +172,7 @@ class ImportsService {
       const impt = await this.processesRepository.load(id);
 
       if (impt === undefined) {
-        responseHandler.setError(404, 'Import not found');
-        return responseHandler;
+        return responseHandler.setError(404, 'Import not found');
       }
 
       const { source } = impt;
@@ -198,7 +185,39 @@ class ImportsService {
           return await this.apiImportService.checkIdColumnUniqueness(req, impt);
         }
         case Source.EMAIL: {
-          return await this.emailImportService.checkIdColumnUniqueness(impt);
+          return responseHandler.setSuccess(200, true);
+        }
+        default: {
+          return responseHandler.setError(
+            400,
+            `Error while checking column uniqueness. Unknown source '${source}'.`
+          );
+        }
+      }
+    } catch (error) {
+      return responseHandler.setError(500, error.message);
+    }
+  }
+
+  async checkImport(
+    req: Request,
+    connection: any,
+    impt: any
+  ): Promise<ResponseHandler> {
+    const responseHandler = new ResponseHandler();
+    try {
+      const { source } = impt;
+
+      switch (source) {
+        case Source.SQL: {
+          return await this.sqlImportService.checkImport(connection, impt);
+        }
+        case Source.API: {
+          responseHandler.setError(400, 'Not implemented');
+          return responseHandler;
+        }
+        case Source.EMAIL: {
+          return await this.emailImportService.checkImport(connection, impt);
         }
         default: {
           responseHandler.setError(
@@ -214,24 +233,22 @@ class ImportsService {
     }
   }
 
-  async import(req: Request, id: number): Promise<ResponseHandler> {
+  async startImport(req: Request, id: number): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
       const impt = await this.processesRepository.load(id);
 
       if (impt === undefined) {
-        responseHandler.setError(404, 'Import not found');
-        return responseHandler;
+        return responseHandler.setError(404, 'Import not found');
       }
 
       const { fields } = impt;
 
       if (fields === undefined) {
-        responseHandler.setError(400, 'Fields for import not set.');
-        return responseHandler;
+        return responseHandler.setError(400, 'Fields for import not set.');
       }
 
-      const { id: unitId } = impt.__.inUnit;
+      // const { id: unitId } = impt.__.inUnit;
 
       // const pendingUnitTransfer = await this.transfersRepository.query(
       //   {
@@ -243,7 +260,8 @@ class ImportsService {
       //         value: TransferStatus.PENDING
       //       },
       //       {
-      //         type: 'inEdge',
+      //         type: 'hasEdge',
+      //         direction: 'out',
       //         label: 'inUnit',
       //         value: unitId
       //       }
@@ -253,36 +271,33 @@ class ImportsService {
       //   true
       // );
       // if (pendingUnitTransfer) {
-      //   responseHandler.setError(
+      //   return responseHandler.setError(
       //     409,
       //     'This unit is already processing another transfer.'
       //   );
-      //   return responseHandler;
       // }
 
       const { source } = impt;
 
       switch (source) {
         case Source.SQL: {
-          return await this.sqlImportService.import(impt);
+          return await this.sqlImportService.startImport(impt);
         }
         case Source.API: {
-          return await this.apiImportService.import(req, impt);
+          return await this.apiImportService.startImport(req, impt);
         }
         case Source.EMAIL: {
-          return await this.emailImportService.import(impt);
+          return await this.emailImportService.startImport(impt);
         }
         default: {
-          responseHandler.setError(
+          return responseHandler.setError(
             400,
             `Error while starting import. Unknown import source '${source}'.`
           );
-          return responseHandler;
         }
       }
     } catch (error) {
-      responseHandler.setError(500, error.message);
-      return responseHandler;
+      return responseHandler.setError(500, error.message);
     }
   }
 }

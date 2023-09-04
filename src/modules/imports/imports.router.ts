@@ -23,7 +23,8 @@ class ImportsRouter {
       '/idColumnUniqueness',
       this.importsController.checkIdColumnUniqueness
     );
-    this.router.post('/import', this.importsController.import);
+    this.router.post('/check', this.importsController.checkImport);
+    this.router.post('/import', this.importsController.startImport);
   }
 }
 
