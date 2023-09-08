@@ -1,9 +1,9 @@
 import { InitServicesResult } from './services.init';
-import OAuth2Controller from '../modules/oauth2/oauth2.controller';
-import TransfersController from '../modules/transfers/transfers.controller';
-import ImportsController from '../modules/imports/imports.controller';
-import ConnectionsController from '../modules/connections/connections.controller';
-import SchedulersController from '../modules/scheduler/schedulers.controller';
+import { OAuth2Controller } from '../modules/oauth2/oauth2.controller';
+import { TransfersController } from '../modules/transfers/transfers.controller';
+import { ImportsController } from '../modules/imports/imports.controller';
+import { ConnectionsController } from '../modules/connections/connections.controller';
+import { SchedulersController } from '../modules/scheduler/schedulers.controller';
 
 export interface InitControllersResult {
   connectionsController: ConnectionsController;
@@ -13,7 +13,7 @@ export interface InitControllersResult {
   oAuth2Controller: OAuth2Controller;
 }
 
-export default function initControllers(
+export function initControllers(
   params: InitServicesResult
 ): InitControllersResult {
   const {

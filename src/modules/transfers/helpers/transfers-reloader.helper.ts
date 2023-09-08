@@ -1,26 +1,30 @@
-import SqlImportHelper from '../../sql/helpers/sql-import.helper';
-import ApiImportHelper from '../../api/helpers/api-import.helper';
-import TransfersRepository from '../transfers.repository';
+import { SqlImportHelper } from '../../sql/helpers/sql-import.helper';
+import { ApiImportHelper } from '../../api/helpers/api-import.helper';
+import { EmailImportHelper } from '../../email/helpers/email-import.helper';
+import { TransfersRepository } from '../transfers.repository';
 import { Source } from '../../imports/enums/source.enum';
 import { TransferStatus } from '../enums/transfer-status.enum';
-import EmailImportHelper from '../../email/helpers/email-import.helper';
+import { ProcessesRepository } from '../../processes/process.repository';
 
-class PendingTransfersReloader {
+export class PendingTransfersReloader {
   private sqlImportHelper: SqlImportHelper;
   private apiImportHelper: ApiImportHelper;
   private emailImportHelper: EmailImportHelper;
   private transfersRepository: TransfersRepository;
+  private processesRepository: ProcessesRepository;
 
   constructor(
     sqlImportHelper: SqlImportHelper,
     apiImportHelper: ApiImportHelper,
     emailImportHelper: EmailImportHelper,
-    transfersRepository: TransfersRepository
+    transfersRepository: TransfersRepository,
+    processesRepository: ProcessesRepository
   ) {
     this.sqlImportHelper = sqlImportHelper;
     this.apiImportHelper = apiImportHelper;
     this.emailImportHelper = emailImportHelper;
     this.transfersRepository = transfersRepository;
+    this.processesRepository = processesRepository;
   }
 
   async reload() {
@@ -37,7 +41,12 @@ class PendingTransfersReloader {
     await Promise.all(
       pendingTransfers.map(async (transfer) => {
         try {
-          const impt = transfer.__.inImport;
+          const loadedTransfer = await this.transfersRepository.load(
+            transfer.id
+          );
+
+          const importId = loadedTransfer.__.inImport.id;
+          const impt = await this.processesRepository.load(importId);
 
           const { source } = impt;
 
@@ -76,5 +85,3 @@ class PendingTransfersReloader {
     );
   }
 }
-
-export default PendingTransfersReloader;

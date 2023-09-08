@@ -1,11 +1,11 @@
 import { ProcessType } from '../../processes/process.type.enum';
 import { Source } from '../../imports/enums/source.enum';
-import ImportField from '../../imports/interfaces/import-field.interface';
-import RetryOptions from '../../imports/interfaces/retry-options.interace';
+import { ImportField } from '../../imports/interfaces/import-field.interface';
+import { RetryOptions } from '../../imports/interfaces/retry-options.interace';
 import { SqlImportTarget } from '../enums/sql-import-target.enum';
-import ImportReference from '../../imports/interfaces/import-reference.interface';
+import { ImportReference } from '../../imports/interfaces/import-reference.interface';
 
-export default interface SqlImport {
+export interface SqlImport {
   id: number;
 
   name: string;

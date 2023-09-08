@@ -1,26 +1,30 @@
-import ConnectionsRepository from './connections.repository';
-import ResponseHandler from '../../utils/response-handler/response-handler';
+import { ConnectionsRepository } from './connections.repository';
+import { ResponseHandler } from '../../utils/response-handler/response-handler';
 import { Source } from '../imports/enums/source.enum';
-import SqlConnectionService from '../sql/sql-connection.service';
-import ApiConnectionService from '../api/api-conection.service';
-import EmailConnectionService from '../email/email-connection.service';
+import { SqlConnectionService } from '../sql/sql-connection.service';
+import { ApiConnectionService } from '../api/api-conection.service';
+import { EmailConnectionService } from '../email/email-connection.service';
+import { ProcessesRepository } from '../processes/process.repository';
 
-class ConnectionsService {
+export class ConnectionsService {
   private sqlConnectionService: SqlConnectionService;
   private apiConnectionService: ApiConnectionService;
   private emailConnectionService: EmailConnectionService;
   private connectionsRepository: ConnectionsRepository;
+  private processesRepository: ProcessesRepository;
 
   constructor(
     sqlConnectionService: SqlConnectionService,
     apiConnectionService: ApiConnectionService,
     emailConnectionService: EmailConnectionService,
-    connectionsRepository: ConnectionsRepository
+    connectionsRepository: ConnectionsRepository,
+    processesRepository: ProcessesRepository
   ) {
     this.sqlConnectionService = sqlConnectionService;
     this.apiConnectionService = apiConnectionService;
     this.emailConnectionService = emailConnectionService;
     this.connectionsRepository = connectionsRepository;
+    this.processesRepository = processesRepository;
   }
 
   async getAll(select: any, sortings: any): Promise<ResponseHandler> {
@@ -125,6 +129,30 @@ class ConnectionsService {
         responseHandler.setError(404, 'Connection not found');
         return responseHandler;
       }
+
+      const impt = await this.processesRepository.query(
+        {
+          operator: 'and',
+          conditions: [
+            {
+              type: 'hasEdge',
+              direction: 'in',
+              label: 'hasConnection',
+              value: id
+            }
+          ]
+        },
+        {},
+        true
+      );
+
+      if (impt) {
+        return responseHandler.setError(
+          409,
+          'Connection cannot be deleted. There are imports related to this connection.'
+        );
+      }
+
       await this.connectionsRepository.delete(id);
       responseHandler.setSuccess(200, true);
       return responseHandler;
@@ -164,5 +192,3 @@ class ConnectionsService {
     }
   }
 }
-
-export default ConnectionsService;

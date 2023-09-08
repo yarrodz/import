@@ -1,4 +1,4 @@
-export default function transformIFrameInstance(instance: any) {
+export function transformIFrameInstance(instance: any) {
   if (instance === undefined) {
     return undefined;
   } else {

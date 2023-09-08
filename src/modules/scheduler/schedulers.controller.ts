@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 
-import SchedulersService from './schedulers.service';
+import { SchedulersService } from './schedulers.service';
 
-class SchedulersController {
+export class SchedulersController {
   private schedulersService: SchedulersService;
 
   constructor(schedulersService: SchedulersService) {
@@ -43,5 +43,3 @@ class SchedulersController {
     responseHandler.send(res);
   };
 }
-
-export default SchedulersController;

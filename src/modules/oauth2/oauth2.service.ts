@@ -1,17 +1,17 @@
 import { Request } from 'express';
 import axios, { AxiosRequestConfig } from 'axios';
 
-import ConnectionsRepository from '../connections/connections.repository';
-import OAuth2CallbackProcess from './interfaces/oauth2-callback-process.interface';
-import OAuth2CallbackBody from './interfaces/oauth2-callback-body.interface';
-import OAuth2SessionHelper from './helpers/oauth2-session.helper';
-import OAuth2SessionCallbackParams from './interfaces/oauth2-session-callback-params.interface';
-import ResponseHandler from '../../utils/response-handler/response-handler';
+import { ConnectionsRepository } from '../connections/connections.repository';
+import { OAuth2CallbackProcess } from './interfaces/oauth2-callback-process.interface';
+import { OAuth2CallbackBody } from './interfaces/oauth2-callback-body.interface';
+import { OAuth2SessionCallbackParams } from './interfaces/oauth2-session-callback-params.interface';
+import { ResponseHandler } from '../../utils/response-handler/response-handler';
 import { ContextAction } from '../imports/enums/context-action-enum';
+import { OAuth2SessionHelper } from './helpers/oauth2-session.helper';
 
 const GRANT_TYPE = 'authorization_code';
 
-class OAuth2Service {
+export class OAuth2Service {
   private oAuth2RedirectUri: string;
   private clientUri: string;
   private connectionsRepository: ConnectionsRepository;
@@ -166,5 +166,3 @@ class OAuth2Service {
     }
   }
 }
-
-export default OAuth2Service;

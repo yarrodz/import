@@ -1,7 +1,7 @@
-import ConnectionReference from '../../connections/interfaces/connection.reference.interface';
+import { ConnectionReference } from '../../connections/interfaces/connection.reference.interface';
 import { Source } from '../../imports/enums/source.enum';
 
-export default interface EmailConnection {
+export interface EmailConnection {
   id: number;
 
   name: string;

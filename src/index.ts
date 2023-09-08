@@ -5,8 +5,8 @@ import session from 'express-session';
 import cors from 'cors';
 import { iFrameDbClient } from 'iframe-ai';
 
-import Websocket from './utils/websocket/websocket';
-import initImports, { InitParams } from './init';
+import { Websocket } from './utils/websocket/websocket';
+import { initImports, InitParams } from './init';
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 dotenv.config();
 const PORT = process.env.PORT;
@@ -49,6 +49,7 @@ async function start() {
       transfersRouter,
       schedulersRouter,
       oAuth2Router,
+      pendingTransfersReloader,
       schedulersCron
     } = initImports(initParams);
 
@@ -62,6 +63,7 @@ async function start() {
       console.log(`Server listening on port: ${PORT}`)
     );
 
+    pendingTransfersReloader.reload();
     schedulersCron.start();
   } catch (error) {
     console.error(error);

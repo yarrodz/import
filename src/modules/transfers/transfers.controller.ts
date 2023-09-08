@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 
-import TransfersService from './transfers.service';
+import { TransfersService } from './transfers.service';
 
 export class TransfersController {
   private transfersService: TransfersService;
@@ -42,5 +42,3 @@ export class TransfersController {
     responseHandler.send(res);
   };
 }
-
-export default TransfersController;

@@ -1,6 +1,6 @@
 import { RequestMethod } from '../enums/request-method.enum';
 
-export default interface Request {
+export interface Request {
   method: RequestMethod;
   url: string;
   headers?: object;

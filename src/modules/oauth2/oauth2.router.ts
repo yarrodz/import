@@ -1,20 +1,18 @@
 import { Router } from 'express';
 
-import OAuthController from './oauth2.controller';
+import { OAuth2Controller } from './oauth2.controller';
 
-class OAuth2Router {
+export class OAuth2Router {
   public router: Router;
-  private oAuthController: OAuthController;
+  private oAuth2Controller: OAuth2Controller;
 
-  constructor(oAuthController: OAuthController) {
+  constructor(oAuth2Controller: OAuth2Controller) {
     this.router = Router();
-    this.oAuthController = oAuthController;
+    this.oAuth2Controller = oAuth2Controller;
     this.initializeRoutes();
   }
 
   private initializeRoutes() {
-    this.router.get('/oauth-callback', this.oAuthController.oAuth2Callback);
+    this.router.get('/oauth-callback', this.oAuth2Controller.oAuth2Callback);
   }
 }
-
-export default OAuth2Router;

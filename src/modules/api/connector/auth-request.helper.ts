@@ -1,10 +1,10 @@
 import { AxiosRequestConfig } from 'axios';
 
 import { ApiKeyPlacement } from '../enums/api-key-placement.enum';
-import ApiConnection from '../interfaces/api-connection.interface';
+import { ApiConnection } from '../interfaces/api-connection.interface';
 import { ApiConnectionType } from '../enums/api-connection-type.enum';
 
-class AuthRequestHelper {
+export class AuthRequestHelper {
   public static async auth(request: AxiosRequestConfig, auth?: ApiConnection) {
     if (auth === undefined) {
       return;
@@ -83,5 +83,3 @@ class AuthRequestHelper {
     }
   }
 }
-
-export default AuthRequestHelper;

@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 
-import ImportsService from './imports.service';
+import { ImportsService } from './imports.service';
 
-class ImportsController {
+export class ImportsController {
   private importsService: ImportsService;
 
   constructor(importsService: ImportsService) {
@@ -76,5 +76,3 @@ class ImportsController {
     responseHandler.send(res);
   };
 }
-
-export default ImportsController;

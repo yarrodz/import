@@ -1,20 +1,15 @@
-import TransfersRepository from '../transfers/transfers.repository';
-import SqlImportHelper from './helpers/sql-import.helper';
-import ResponseHandler from '../../utils/response-handler/response-handler';
-import Transfer from '../transfers/interfaces/transfer.interface';
+import { TransfersRepository } from '../transfers/transfers.repository';
+import { SqlImportHelper } from './helpers/sql-import.helper';
+import { ResponseHandler } from '../../utils/response-handler/response-handler';
+import { Transfer } from '../transfers/interfaces/transfer.interface';
 import { TransferStatus } from '../transfers/enums/transfer-status.enum';
-import SqlImport from './interfaces/sql-import.interface';
+import { SqlImport } from './interfaces/sql-import.interface';
 
-class SqlTransferService {
+export class SqlTransferService {
   private sqlImportHelper: SqlImportHelper;
-  private transfersRepository: TransfersRepository;
 
-  constructor(
-    sqlImportHelper: SqlImportHelper,
-    transfersRepository: TransfersRepository
-  ) {
+  constructor(sqlImportHelper: SqlImportHelper) {
     this.sqlImportHelper = sqlImportHelper;
-    this.transfersRepository = transfersRepository;
   }
 
   async reload(impt: SqlImport, transfer: Transfer): Promise<ResponseHandler> {
@@ -22,14 +17,9 @@ class SqlTransferService {
     try {
       const { id: transferId } = transfer;
 
-      const reloadedTransfer = await this.transfersRepository.update({
-        id: transferId,
-        status: TransferStatus.PENDING
-      });
-
       this.sqlImportHelper.import({
         import: impt,
-        transfer: reloadedTransfer
+        transfer
       });
       responseHandler.setSuccess(200, transferId);
       return responseHandler;
@@ -39,7 +29,7 @@ class SqlTransferService {
     }
   }
 
-  async retry(impt: SqlImport, transfer: Transfer): Promise<ResponseHandler> {
+  async restart(impt: SqlImport, transfer: Transfer): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
       const { id: transferId } = transfer;
@@ -62,5 +52,3 @@ class SqlTransferService {
     }
   }
 }
-
-export default SqlTransferService;

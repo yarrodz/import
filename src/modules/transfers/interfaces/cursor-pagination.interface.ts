@@ -1,4 +1,4 @@
-export default interface CursorPagination {
+export interface CursorPagination {
   cursor?: string;
   limit: number;
 }

@@ -1,4 +1,4 @@
-export default interface Record {
+export interface Record {
   value: any;
   featureId: number;
 }

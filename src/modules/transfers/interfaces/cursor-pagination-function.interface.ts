@@ -1,11 +1,11 @@
-import CursorPagination from './cursor-pagination.interface';
+import { CursorPagination } from './cursor-pagination.interface';
 
 interface CursorPaginationFunctionResult {
   cursor?: string;
   datasets: object[];
 }
 
-export default interface CursorPaginationFunction {
+export interface CursorPaginationFunction {
   (
     pagination: CursorPagination,
     ...params: any[]

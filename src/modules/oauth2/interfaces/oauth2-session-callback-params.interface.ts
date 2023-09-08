@@ -1,4 +1,4 @@
-export default interface OAuth2SessionCallbackParams {
+export interface OAuth2SessionCallbackParams {
   client_id: string;
   client_secret?: string;
   code_verifier?: string;

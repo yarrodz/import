@@ -1,7 +1,7 @@
-import Column from '../../columns/column.interface';
+import { Column } from '../../imports/interfaces/column.interface';
 import { EmailImportTarget } from '../enums/email-import-target.enum';
 
-class EmailColumnsHelper {
+export class EmailColumnsHelper {
   get(target: EmailImportTarget): Column[] {
     switch (target) {
       case EmailImportTarget.EMAILS: {
@@ -22,16 +22,28 @@ class EmailColumnsHelper {
       type: 'string'
     },
     {
-      name: 'from',
+      name: 'inReplyTo',
       type: 'string'
+    },
+    {
+      name: 'date',
+      type: 'Date'
+    },
+    {
+      name: 'from',
+      type: 'json'
     },
     {
       name: 'to',
       type: 'json'
     },
     {
-      name: 'date',
-      type: 'Date'
+      name: 'cc',
+      type: 'json'
+    },
+    {
+      name: 'bcc',
+      type: 'json'
     },
     {
       name: 'subject',
@@ -43,7 +55,15 @@ class EmailColumnsHelper {
     },
     {
       name: 'html',
-      type: 'html'
+      type: 'string'
+    },
+    {
+      name: 'flags',
+      type: 'string'
+    },
+    {
+      name: 'labels',
+      type: 'string'
     },
     {
       name: 'threadId',

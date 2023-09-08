@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 
-import OAuth2Service from './oauth2.service';
+import { OAuth2Service } from './oauth2.service';
 
-class OAuth2Controller {
+export class OAuth2Controller {
   private oAuth2Service: OAuth2Service;
 
   constructor(oAuthService: OAuth2Service) {
@@ -14,5 +14,3 @@ class OAuth2Controller {
     responseHandler.send(res);
   };
 }
-
-export default OAuth2Controller;

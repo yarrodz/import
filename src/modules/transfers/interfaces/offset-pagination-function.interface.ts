@@ -1,5 +1,5 @@
-import OffsetPagination from './offset-pagination.interface';
+import { OffsetPagination } from './offset-pagination.interface';
 
-export default interface OffsetPaginationFunction {
+export interface OffsetPaginationFunction {
   (pagination: OffsetPagination, ...params: any[]): Promise<object[]>;
 }

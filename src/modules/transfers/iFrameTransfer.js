@@ -303,4 +303,4 @@ class iFrameTransfer extends BaseVertexModel {
   }
 }
 
-module.exports = iFrameTransfer;
+module.exports = { iFrameTransfer };

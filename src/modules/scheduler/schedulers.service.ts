@@ -1,9 +1,9 @@
-import ResponseHandler from '../../utils/response-handler/response-handler';
-import SchedulersRepository from './schedulers.repository';
+import { ResponseHandler } from '../../utils/response-handler/response-handler';
+import { SchedulersRepository } from './schedulers.repository';
 import { CreateSchedulerValidator } from './validators/create-scheduler.validator';
 import { UpdateSchedulerValidator } from './validators/update-scheduler.validator';
 
-class SchedulersService {
+export class SchedulersService {
   private schedulersRepository: SchedulersRepository;
 
   constructor(schedulersRepository: SchedulersRepository) {
@@ -84,5 +84,3 @@ class SchedulersService {
     }
   }
 }
-
-export default SchedulersService;

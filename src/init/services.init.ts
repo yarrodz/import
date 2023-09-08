@@ -1,41 +1,41 @@
 import { Server as IO } from 'socket.io';
 
 import { InitRepositoriesResult } from './repositories.init';
-import OAuth2Service from '../modules/oauth2/oauth2.service';
-import SqlColumnsHelper from '../modules/sql/helpers/sql-columns.helper';
-import OffsetPaginationTransferHelper from '../modules/transfers/helpers/offset-pagination-transfer.helper';
-import TransferFailureHandler from '../modules/transfers/helpers/transfer-failure-handler.helper';
-import ImportStepHelper from '../modules/transfers/helpers/import-step.helper';
-import ChunkTransferHelper from '../modules/transfers/helpers/chunk-transfer.helper';
-import CursorPaginationTransferHelper from '../modules/transfers/helpers/cursor-pagination-transfer.helper';
-import OAuth2AuthUriHelper from '../modules/oauth2/helpers/oauth2-auth-uri.helper';
-import ApiConnectionHelper from '../modules/api/helpers/api-connection.helper';
-import TransfersService from '../modules/transfers/transfers.service';
-import ImportsService from '../modules/imports/imports.service';
-import ConnectionsService from '../modules/connections/connections.service';
-import SqlImportHelper from '../modules/sql/helpers/sql-import.helper';
-import ApiImportHelper from '../modules/api/helpers/api-import.helper';
-import ApiColumnsHelper from '../modules/api/helpers/api-columns.helper';
-import SqlImportService from '../modules/sql/sql-import.service';
-import ApiImportService from '../modules/api/api-import.service';
-import SqlTransferService from '../modules/sql/sql-transfer.service';
-import ApiTransferService from '../modules/api/api-transfer.service';
-import OAuth2RefreshTokenHelper from '../modules/oauth2/helpers/oath2-refresh-token.helper';
-import PendingTransfersReloader from '../modules/transfers/helpers/transfers-reloader.helper';
-import EmailTransferService from '../modules/email/email-transfer.service';
-import EmailColumnsHelper from '../modules/email/helpers/email-columns.helper';
-import EmailImportHelper from '../modules/email/helpers/email-import.helper';
-import EmailImportService from '../modules/email/email-import.service';
-import SqlTransferHelper from '../modules/sql/helpers/sql-transfer.helper';
-import ApiTransferHelper from '../modules/api/helpers/api-transfer-helper';
-import EmailTransferHelper from '../modules/email/helpers/email-transfer-helper';
-import SqlConnectionHelper from '../modules/sql/helpers/sql-connection.helper';
-import EmailConnectionHelper from '../modules/email/helpers/email-connection.helper';
-import SqlConnectionService from '../modules/sql/sql-connection.service';
-import ApiConnectionService from '../modules/api/api-conection.service';
-import EmailConnectionService from '../modules/email/email-connection.service';
-import SchedulersService from '../modules/scheduler/schedulers.service';
-import SchedulersCron from '../modules/scheduler/schedulers.cron';
+import { OAuth2Service } from '../modules/oauth2/oauth2.service';
+import { SqlColumnsHelper } from '../modules/sql/helpers/sql-columns.helper';
+import { OffsetPaginationTransferHelper } from '../modules/transfers/helpers/offset-pagination-transfer.helper';
+import { TransferFailureHandler } from '../modules/transfers/helpers/transfer-failure-handler.helper';
+import { ImportStepHelper } from '../modules/transfers/helpers/import-step.helper';
+import { ChunkTransferHelper } from '../modules/transfers/helpers/chunk-transfer.helper';
+import { CursorPaginationTransferHelper } from '../modules/transfers/helpers/cursor-pagination-transfer.helper';
+import { OAuth2AuthUriHelper } from '../modules/oauth2/helpers/oauth2-auth-uri.helper';
+import { ApiConnectionHelper } from '../modules/api/helpers/api-connection.helper';
+import { TransfersService } from '../modules/transfers/transfers.service';
+import { ImportsService } from '../modules/imports/imports.service';
+import { ConnectionsService } from '../modules/connections/connections.service';
+import { SqlImportHelper } from '../modules/sql/helpers/sql-import.helper';
+import { ApiImportHelper } from '../modules/api/helpers/api-import.helper';
+import { ApiColumnsHelper } from '../modules/api/helpers/api-columns.helper';
+import { SqlImportService } from '../modules/sql/sql-import.service';
+import { ApiImportService } from '../modules/api/api-import.service';
+import { SqlTransferService } from '../modules/sql/sql-transfer.service';
+import { ApiTransferService } from '../modules/api/api-transfer.service';
+import { OAuth2RefreshTokenHelper } from '../modules/oauth2/helpers/oath2-refresh-token.helper';
+import { PendingTransfersReloader } from '../modules/transfers/helpers/transfers-reloader.helper';
+import { EmailTransferService } from '../modules/email/email-transfer.service';
+import { EmailColumnsHelper } from '../modules/email/helpers/email-columns.helper';
+import { EmailImportHelper } from '../modules/email/helpers/email-import.helper';
+import { EmailImportService } from '../modules/email/email-import.service';
+import { SqlTransferHelper } from '../modules/sql/helpers/sql-transfer.helper';
+import { ApiTransferHelper } from '../modules/api/helpers/api-transfer-helper';
+import { EmailTransferHelper } from '../modules/email/helpers/email-transfer-helper';
+import { SqlConnectionHelper } from '../modules/sql/helpers/sql-connection.helper';
+import { EmailConnectionHelper } from '../modules/email/helpers/email-connection.helper';
+import { SqlConnectionService } from '../modules/sql/sql-connection.service';
+import { ApiConnectionService } from '../modules/api/api-conection.service';
+import { EmailConnectionService } from '../modules/email/email-connection.service';
+import { SchedulersService } from '../modules/scheduler/schedulers.service';
+import { SchedulersCron } from '../modules/scheduler/schedulers.cron';
 
 export interface InitServicesParams extends InitRepositoriesResult {
   io: IO;
@@ -49,12 +49,11 @@ export interface InitServicesResult {
   transfersService: TransfersService;
   schedulersService: SchedulersService;
   oAuth2Service: OAuth2Service;
+  pendingTransfersReloader: PendingTransfersReloader;
   schedulersCron: SchedulersCron;
 }
 
-export default function initServices(
-  params: InitServicesParams
-): InitServicesResult {
+export function initServices(params: InitServicesParams): InitServicesResult {
   const {
     io,
     clientUri,
@@ -161,10 +160,7 @@ export default function initServices(
     processesRepository
   );
 
-  const sqlTransferService = new SqlTransferService(
-    sqlImportHelper,
-    transfersRepository
-  );
+  const sqlTransferService = new SqlTransferService(sqlImportHelper);
   const apiTransferService = new ApiTransferService(
     apiConnectionHelper,
     apiImportHelper,
@@ -172,10 +168,7 @@ export default function initServices(
     processesRepository,
     transfersRepository
   );
-  const emailTransferService = new EmailTransferService(
-    emailImportHelper,
-    transfersRepository
-  );
+  const emailTransferService = new EmailTransferService(emailImportHelper);
 
   const sqlConnectionService = new SqlConnectionService(
     sqlConnectionHelper,
@@ -191,7 +184,8 @@ export default function initServices(
     sqlConnectionService,
     apiConnectionService,
     emailConnectionService,
-    connectionsRepository
+    connectionsRepository,
+    processesRepository
   );
   const importsService = new ImportsService(
     sqlImportService,
@@ -201,6 +195,7 @@ export default function initServices(
     transfersRepository
   );
   const transfersService = new TransfersService(
+    io,
     sqlTransferService,
     apiTransferService,
     emailTransferService,
@@ -214,7 +209,8 @@ export default function initServices(
     sqlImportHelper,
     apiImportHelper,
     emailImportHelper,
-    transfersRepository
+    transfersRepository,
+    processesRepository
   );
 
   const schedulersCron = new SchedulersCron(
@@ -232,6 +228,7 @@ export default function initServices(
     transfersService,
     schedulersService,
     oAuth2Service,
+    pendingTransfersReloader,
     schedulersCron
   };
 }

@@ -1,8 +1,8 @@
-import Import from '../../imports/import.type';
-import Transfer from './transfer.interface';
-import CursorPaginationFunction from './cursor-pagination-function.interface';
+import { Import } from '../../imports/import.type';
+import { Transfer } from './transfer.interface';
+import { CursorPaginationFunction } from './cursor-pagination-function.interface';
 
-export default interface CursorPaginationTransferParams {
+export interface CursorPaginationTransferParams {
   import?: Import;
   // export?: SqlExport | ApiExport;
   transfer: Transfer;

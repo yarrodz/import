@@ -1,5 +1,5 @@
-import Import from '../../imports/import.type';
-import Transfer from './transfer.interface';
+import { Import } from '../../imports/import.type';
+import { Transfer } from './transfer.interface';
 
 export interface OuterTransferFunctionParams {
   import?: Import;
@@ -7,6 +7,6 @@ export interface OuterTransferFunctionParams {
   transfer?: Transfer;
 }
 
-export default interface OuterTransferFunction {
+export interface OuterTransferFunction {
   (params: OuterTransferFunctionParams): Promise<void>;
 }

@@ -1,3 +1,3 @@
-export default interface Bearer {
+export interface Bearer {
   token: string;
 }

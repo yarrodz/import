@@ -1,15 +1,15 @@
 import { Request } from 'express';
 
-import SqlImportService from '../sql/sql-import.service';
-import ApiImportService from '../api/api-import.service';
-import EmailImportService from '../email/email-import.service';
-import ProcessesRepository from '../processes/process.repository';
-import TransfersRepository from '../transfers/transfers.repository';
-import ResponseHandler from '../../utils/response-handler/response-handler';
+import { SqlImportService } from '../sql/sql-import.service';
+import { ApiImportService } from '../api/api-import.service';
+import { EmailImportService } from '../email/email-import.service';
+import { ProcessesRepository } from '../processes/process.repository';
+import { TransfersRepository } from '../transfers/transfers.repository';
+import { ResponseHandler } from '../../utils/response-handler/response-handler';
 import { Source } from './enums/source.enum';
 import { TransferStatus } from '../transfers/enums/transfer-status.enum';
 
-class ImportsService {
+export class ImportsService {
   private sqlImportService: SqlImportService;
   private apiImportService: ApiImportService;
   private emailImportService: EmailImportService;
@@ -121,6 +121,29 @@ class ImportsService {
 
       if (impt === undefined) {
         return responseHandler.setError(404, 'Import not found');
+      }
+
+      const transfer = await this.transfersRepository.query(
+        {
+          operator: 'and',
+          conditions: [
+            {
+              type: 'hasEdge',
+              direction: 'in',
+              label: 'inImport',
+              value: id
+            }
+          ]
+        },
+        {},
+        true
+      );
+
+      if (transfer) {
+        return responseHandler.setError(
+          409,
+          'Import cannot be deleted. There are transfers related to this import.'
+        );
       }
 
       await this.processesRepository.delete(id);
@@ -248,34 +271,34 @@ class ImportsService {
         return responseHandler.setError(400, 'Fields for import not set.');
       }
 
-      // const { id: unitId } = impt.__.inUnit;
+      const { id: unitId } = impt.__.inUnit;
 
-      // const pendingUnitTransfer = await this.transfersRepository.query(
-      //   {
-      //     operator: 'and',
-      //     conditions: [
-      //       {
-      //         type: 'equals',
-      //         property: 'status',
-      //         value: TransferStatus.PENDING
-      //       },
-      //       {
-      //         type: 'hasEdge',
-      //         direction: 'out',
-      //         label: 'inUnit',
-      //         value: unitId
-      //       }
-      //     ]
-      //   },
-      //   {},
-      //   true
-      // );
-      // if (pendingUnitTransfer) {
-      //   return responseHandler.setError(
-      //     409,
-      //     'This unit is already processing another transfer.'
-      //   );
-      // }
+      const pendingUnitTransfer = await this.transfersRepository.query(
+        {
+          operator: 'and',
+          conditions: [
+            {
+              type: 'equals',
+              property: 'status',
+              value: TransferStatus.PENDING
+            },
+            {
+              type: 'hasEdge',
+              direction: 'in',
+              label: 'inUnit',
+              value: unitId
+            }
+          ]
+        },
+        {},
+        true
+      );
+      if (pendingUnitTransfer) {
+        return responseHandler.setError(
+          409,
+          'This unit is already processing another transfer.'
+        );
+      }
 
       const { source } = impt;
 
@@ -301,5 +324,3 @@ class ImportsService {
     }
   }
 }
-
-export default ImportsService;

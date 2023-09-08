@@ -1,19 +1,18 @@
-import TransfersRepository from '../../transfers/transfers.repository';
-
-import SqlImport from '../interfaces/sql-import.interface';
-import Transfer from '../../transfers/interfaces/transfer.interface';
+import { TransfersRepository } from '../../transfers/transfers.repository';
+import { SqlImport } from '../interfaces/sql-import.interface';
+import { Transfer } from '../../transfers/interfaces/transfer.interface';
 import { TransferType } from '../../transfers/enums/transfer-type.enum';
 import { TransferStatus } from '../../transfers/enums/transfer-status.enum';
 import { TransferMethod } from '../../transfers/enums/transfer-method.enum';
 
-class SqlTransferHelper {
+export class SqlTransferHelper {
   private transfersRepository: TransfersRepository;
 
   constructor(transfersRepository: TransfersRepository) {
     this.transfersRepository = transfersRepository;
   }
 
-  public async createStartedTransfer(impt: SqlImport): Promise<Transfer> {
+  public async createTransfer(impt: SqlImport): Promise<Transfer> {
     const { id: importId } = impt;
     const unit = impt.__.inUnit;
     const { id: unitId } = unit;
@@ -24,7 +23,7 @@ class SqlTransferHelper {
       status: TransferStatus.PENDING,
       offset: 0,
       transferedDatasetsCount: 0,
-      log: '',
+      log: 'Transfer was started',
       retryAttempts: 0,
       __: {
         inImport: {
@@ -38,6 +37,15 @@ class SqlTransferHelper {
       }
     });
   }
-}
 
-export default SqlTransferHelper;
+  public async restartTransfer(id: number): Promise<Transfer> {
+    return await this.transfersRepository.update({
+      id,
+      status: TransferStatus.PENDING,
+      offset: 0,
+      transferedDatasetsCount: 0,
+      retryAttempts: 0,
+      log: 'Transfer was restarted'
+    });
+  }
+}

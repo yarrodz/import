@@ -1,9 +1,9 @@
 import { iFrameDbClient } from 'iFrame-ai';
 
-import iFrameScheduler from './iFrameScheduler';
-import transformIFrameInstance from '../../utils/transform-iFrame-instance/transform-iFrame-instance';
+import { iFrameScheduler } from './iFrameScheduler';
+import { transformIFrameInstance } from '../../utils/transform-iFrame-instance/transform-iFrame-instance';
 
-class SchedulersRepository {
+export class SchedulersRepository {
   private client: iFrameDbClient;
 
   constructor(client: iFrameDbClient) {
@@ -18,6 +18,7 @@ class SchedulersRepository {
         firstOnly
       );
     } catch (error) {
+      console.error(error);
       throw new error(`Error while querying schedulers: ${error}`);
     }
   }
@@ -61,5 +62,3 @@ class SchedulersRepository {
     }
   }
 }
-
-export default SchedulersRepository;

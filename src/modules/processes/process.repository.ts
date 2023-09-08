@@ -1,9 +1,9 @@
 import { iFrameDbClient } from 'iFrame-ai';
 
-import iFrameProcess from './iFrameProcess';
-import transformIFrameInstance from '../../utils/transform-iFrame-instance/transform-iFrame-instance';
+import { iFrameProcess } from './iFrameProcess';
+import { transformIFrameInstance } from '../../utils/transform-iFrame-instance/transform-iFrame-instance';
 
-class ProcessesRepository {
+export class ProcessesRepository {
   private client: iFrameDbClient;
 
   constructor(client: iFrameDbClient) {
@@ -61,5 +61,3 @@ class ProcessesRepository {
     }
   }
 }
-
-export default ProcessesRepository;

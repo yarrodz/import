@@ -1,9 +1,9 @@
 import { TransferStatus } from '../enums/transfer-status.enum';
 import { TransferMethod } from '../enums/transfer-method.enum';
 import { TransferType } from '../../transfers/enums/transfer-type.enum';
-import TransferReference from './transfer-reference.interface';
+import { TransferReference } from './transfer-reference.interface';
 
-export default interface Transfer {
+export interface Transfer {
   id: number;
 
   type: TransferType;

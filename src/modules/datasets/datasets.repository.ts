@@ -1,8 +1,8 @@
 import { iFrameDbClient, iFrameDataset } from 'iframe-ai';
 
-import Dataset from './dataset.interface';
+import { Dataset } from './interfaces/dataset.interface';
 
-class DatasetsRepository {
+export class DatasetsRepository {
   private client: iFrameDbClient;
 
   constructor(client: iFrameDbClient) {
@@ -17,5 +17,3 @@ class DatasetsRepository {
     }
   }
 }
-
-export default DatasetsRepository;

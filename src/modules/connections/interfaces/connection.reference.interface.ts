@@ -1,3 +1,3 @@
-export default interface ConnectionReference {
+export interface ConnectionReference {
   inUnit?: any;
 }

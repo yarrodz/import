@@ -1,7 +1,7 @@
 import { SqlConnector } from '../connector/sql.connector';
-import SqlConnection from '../interfaces/sql.connection.interface';
+import { SqlConnection } from '../interfaces/sql.connection.interface';
 
-class SqlConnectionHelper {
+export class SqlConnectionHelper {
   public checkConnection = async (connection: SqlConnection): Promise<void> => {
     let sqlConnector: SqlConnector;
     try {
@@ -15,5 +15,3 @@ class SqlConnectionHelper {
     }
   };
 }
-
-export default SqlConnectionHelper;

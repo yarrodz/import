@@ -1,11 +1,10 @@
-import TransfersRepository from '../../transfers/transfers.repository';
-
-import ApiImport from '../interfaces/api-import.interface';
-import Transfer from '../../transfers/interfaces/transfer.interface';
+import { TransfersRepository } from '../../transfers/transfers.repository';
+import { ApiImport } from '../interfaces/api-import.interface';
+import { Transfer } from '../../transfers/interfaces/transfer.interface';
 import { TransferType } from '../../transfers/enums/transfer-type.enum';
 import { TransferStatus } from '../../transfers/enums/transfer-status.enum';
 
-class ApiTransferHelper {
+export class ApiTransferHelper {
   private transfersRepository: TransfersRepository;
 
   constructor(transfersRepository: TransfersRepository) {
@@ -39,5 +38,3 @@ class ApiTransferHelper {
     });
   }
 }
-
-export default ApiTransferHelper;

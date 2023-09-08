@@ -1,11 +1,12 @@
 import { Source } from '../../imports/enums/source.enum';
-import ImportField from '../../imports/interfaces/import-field.interface';
-import ImportReference from '../../imports/interfaces/import-reference.interface';
-import RetryOptions from '../../imports/interfaces/retry-options.interace';
+import { ImportField } from '../../imports/interfaces/import-field.interface';
+import { ImportReference } from '../../imports/interfaces/import-reference.interface';
+import { RetryOptions } from '../../imports/interfaces/retry-options.interace';
 import { ProcessType } from '../../processes/process.type.enum';
 import { EmailImportTarget } from '../enums/email-import-target.enum';
+import { EmailFilter } from './email-filter.interface';
 
-export default interface EmailImport {
+export interface EmailImport {
   id: number;
 
   name: string;
@@ -16,6 +17,12 @@ export default interface EmailImport {
 
   mailbox: string;
   target: EmailImportTarget;
+  filter: Partial<EmailFilter>;
+  unseen: boolean;
+
+  setSeen: boolean;
+
+  addSeenFlag: boolean;
 
   limit: number;
 

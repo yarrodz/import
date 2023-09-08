@@ -1,8 +1,8 @@
 import { Router } from 'express';
 
-import SchedulersController from './schedulers.controller';
+import { SchedulersController } from './schedulers.controller';
 
-class SchedulersRouter {
+export class SchedulersRouter {
   public router: Router;
   private schedulersController: SchedulersController;
 
@@ -20,5 +20,3 @@ class SchedulersRouter {
     this.router.delete('/:id', this.schedulersController.delete);
   }
 }
-
-export default SchedulersRouter;

@@ -1,4 +1,4 @@
-export default interface OffsetPagination {
+export interface OffsetPagination {
   offset: number;
   limit: number;
 }

@@ -1,20 +1,20 @@
 import crypto from 'crypto';
 import { Request } from 'express';
 
-import OAuth2SessionHelper from './oauth2-session.helper';
-import OAuth2SessionCallbackParams from '../interfaces/oauth2-session-callback-params.interface';
-import OAuth2CallbackProcess from '../interfaces/oauth2-callback-process.interface';
-import OAuth2AuthUriParams from '../interfaces/oauth2-auth-uri-params.interface';
-import ApiConnection from '../../api/interfaces/api-connection.interface';
+import { OAuth2SessionHelper } from './oauth2-session.helper';
+import { OAuth2SessionCallbackParams } from '../interfaces/oauth2-session-callback-params.interface';
+import { OAuth2CallbackProcess } from '../interfaces/oauth2-callback-process.interface';
+import { OAuth2AuthUriParams } from '../interfaces/oauth2-auth-uri-params.interface';
+import { ApiConnection } from '../../api/interfaces/api-connection.interface';
 import { OAuth2 } from '../interfaces/oauth2.interface';
-import Context from '../../imports/interfaces/context.interface';
+import { Context } from '../../imports/interfaces/context.interface';
 
 const PROMPT = 'consent';
 const ACCESS_TYPE = 'offline';
 const RESPONSE_TYPE = 'code';
 const CODE_CHALANGE_METHOD = 'S256';
 
-class OAuth2AuthUriHelper {
+export class OAuth2AuthUriHelper {
   private oAuth2RedirectUri: string;
 
   constructor(oAuth2RedirectUri: string) {
@@ -120,5 +120,3 @@ class OAuth2AuthUriHelper {
       .join('&');
   }
 }
-
-export default OAuth2AuthUriHelper;

@@ -1,6 +1,6 @@
-import Import from '../../imports/import.type';
+import { Import } from '../../imports/import.type';
 
-export default interface TransferReference {
+export interface TransferReference {
   inImport?: Import;
   inUnit?: any;
 }

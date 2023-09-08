@@ -1,6 +1,6 @@
-import Import from '../../imports/import.type';
+import { Import } from '../../imports/import.type';
 
-export default interface SchedulerReference {
+export interface SchedulerReference {
   inUnit?: any;
   process?: Import;
 }

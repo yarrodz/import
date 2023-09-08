@@ -1,29 +1,30 @@
-import ApiConnectionHelper from './api-connection.helper';
-import TransfersRepository from '../../transfers/transfers.repository';
-import TransferFailureHandler from '../../transfers/helpers/transfer-failure-handler.helper';
-import ChunkTransferHelper from '../../transfers/helpers/chunk-transfer.helper';
-import OffsetPaginationTransferHelper from '../../transfers/helpers/offset-pagination-transfer.helper';
-import CursorPaginationTransferHelper from '../../transfers/helpers/cursor-pagination-transfer.helper';
-import OuterTransferFunction, {
+import { ApiConnectionHelper } from './api-connection.helper';
+import { TransfersRepository } from '../../transfers/transfers.repository';
+import { TransferFailureHandler } from '../../transfers/helpers/transfer-failure-handler.helper';
+import { ChunkTransferHelper } from '../../transfers/helpers/chunk-transfer.helper';
+import { OffsetPaginationTransferHelper } from '../../transfers/helpers/offset-pagination-transfer.helper';
+import { CursorPaginationTransferHelper } from '../../transfers/helpers/cursor-pagination-transfer.helper';
+import {
+  OuterTransferFunction,
   OuterTransferFunctionParams
 } from '../../transfers/interfaces/outer-transfer-function.interface';
-import ApiImport from '../interfaces/api-import.interface';
-import Transfer from '../../transfers/interfaces/transfer.interface';
-import ApiConnector from '../connector/api-connector';
-import ChunkTransferParams from '../../transfers/interfaces/chunk-transfer-params.interface';
-import OffsetPagination from '../../transfers/interfaces/offset-pagination.interface';
-import OffsetPaginationFunction from '../../transfers/interfaces/offset-pagination-function.interface';
-import OffsetPaginationTransferParams from '../../transfers/interfaces/offset-pagination-transfer-params.interface';
-import CursorPagination from '../../transfers/interfaces/cursor-pagination.interface';
-import CursorPaginationFunction from '../../transfers/interfaces/cursor-pagination-function.interface';
-import CursorPaginationTransferParams from '../../transfers/interfaces/cursor-pagination-transfer-params.interface';
+import { ApiImport } from '../interfaces/api-import.interface';
+import { Transfer } from '../../transfers/interfaces/transfer.interface';
+import { ApiConnector } from '../connector/api-connector';
+import { ChunkTransferParams } from '../../transfers/interfaces/chunk-transfer-params.interface';
+import { OffsetPagination } from '../../transfers/interfaces/offset-pagination.interface';
+import { OffsetPaginationFunction } from '../../transfers/interfaces/offset-pagination-function.interface';
+import { OffsetPaginationTransferParams } from '../../transfers/interfaces/offset-pagination-transfer-params.interface';
+import { CursorPagination } from '../../transfers/interfaces/cursor-pagination.interface';
+import { CursorPaginationFunction } from '../../transfers/interfaces/cursor-pagination-function.interface';
+import { CursorPaginationTransferParams } from '../../transfers/interfaces/cursor-pagination-transfer-params.interface';
 import { ConnectionState } from '../enums/connection-state.enum';
 import { TransferStatus } from '../../transfers/enums/transfer-status.enum';
 import { TransferMethod } from '../../transfers/enums/transfer-method.enum';
-import resolvePath from '../../../utils/resolve-path/resolve-path';
-import ApiTransferHelper from './api-transfer-helper';
+import { resolvePath } from '../../../utils/resolve-path/resolve-path';
+import { ApiTransferHelper } from './api-transfer-helper';
 
-class ApiImportHelper {
+export class ApiImportHelper {
   private apiTransferHelper: ApiTransferHelper;
   private apiConnectionHelper: ApiConnectionHelper;
   private transferFailureHandler: TransferFailureHandler;
@@ -189,5 +190,3 @@ class ApiImportHelper {
     };
   };
 }
-
-export default ApiImportHelper;

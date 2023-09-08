@@ -1,10 +1,10 @@
-import Import from '../../imports/import.type';
+import { Import } from '../../imports/import.type';
 import { SchedulerPeriod } from '../enum/scheduler-period.enum';
 import { SchedulerType } from '../enum/scheduler-type.enum';
 import { Weekday } from '../enum/weekday.enum';
-import SchedulerReference from './scheduler-reference.interface';
+import { SchedulerReference } from './scheduler-reference.interface';
 
-export default interface Scheduler {
+export interface Scheduler {
   id: number;
 
   name: string;

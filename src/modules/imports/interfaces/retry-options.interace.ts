@@ -1,4 +1,4 @@
-export default interface RetryOptions {
+export interface RetryOptions {
   maxAttempts: number;
   attemptTimeDelay: number;
 }

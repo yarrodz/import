@@ -1,12 +1,12 @@
-import ApiConnector from '../connector/api-connector';
-import resolvePath from '../../../utils/resolve-path/resolve-path';
-import Column from '../../columns/column.interface';
-import ApiImport from '../interfaces/api-import.interface';
+import { ApiConnector } from '../connector/api-connector';
+import { resolvePath } from '../../../utils/resolve-path/resolve-path';
+import { Column } from '../../imports/interfaces/column.interface';
+import { ApiImport } from '../interfaces/api-import.interface';
 import { TransferMethod } from '../../transfers/enums/transfer-method.enum';
-import OffsetPagination from '../../transfers/interfaces/offset-pagination.interface';
-import CursorPagination from '../../transfers/interfaces/cursor-pagination.interface';
+import { OffsetPagination } from '../../transfers/interfaces/offset-pagination.interface';
+import { CursorPagination } from '../../transfers/interfaces/cursor-pagination.interface';
 
-class ApiColumnsHelper {
+export class ApiColumnsHelper {
   public async find(impt: ApiImport): Promise<Column[]> {
     try {
       const { transferMethod, datasetsPath } = impt;
@@ -119,5 +119,3 @@ class ApiColumnsHelper {
     return uniqueValues.length === array.length;
   }
 }
-
-export default ApiColumnsHelper;

@@ -1,6 +1,6 @@
 import Joi from 'joi';
 
-import { FeatureType } from '../../features/feature-type.enum';
+import { FeatureType } from '../../datasets/enums/feature-type.enum';
 
 export const ImportFieldValidator = Joi.object({
   feature: Joi.object({

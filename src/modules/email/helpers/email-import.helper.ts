@@ -1,22 +1,26 @@
-import ChunkTransferHelper from '../../transfers/helpers/chunk-transfer.helper';
-import OffsetPaginationTransferHelper from '../../transfers/helpers/offset-pagination-transfer.helper';
-import TransferFailureHandler from '../../transfers/helpers/transfer-failure-handler.helper';
-import ChunkTransferParams from '../../transfers/interfaces/chunk-transfer-params.interface';
-import OffsetPaginationFunction from '../../transfers/interfaces/offset-pagination-function.interface';
-import OffsetPaginationTransferParams from '../../transfers/interfaces/offset-pagination-transfer-params.interface';
-import OffsetPagination from '../../transfers/interfaces/offset-pagination.interface';
-import OuterTransferFunction, {
+import { SearchObject } from 'imapflow';
+import { ChunkTransferHelper } from '../../transfers/helpers/chunk-transfer.helper';
+import { OffsetPaginationTransferHelper } from '../../transfers/helpers/offset-pagination-transfer.helper';
+import { TransferFailureHandler } from '../../transfers/helpers/transfer-failure-handler.helper';
+import { ChunkTransferParams } from '../../transfers/interfaces/chunk-transfer-params.interface';
+import { OffsetPaginationFunction } from '../../transfers/interfaces/offset-pagination-function.interface';
+import { OffsetPaginationTransferParams } from '../../transfers/interfaces/offset-pagination-transfer-params.interface';
+import { OffsetPagination } from '../../transfers/interfaces/offset-pagination.interface';
+import {
+  OuterTransferFunction,
   OuterTransferFunctionParams
 } from '../../transfers/interfaces/outer-transfer-function.interface';
-import Transfer from '../../transfers/interfaces/transfer.interface';
-import TransfersRepository from '../../transfers/transfers.repository';
+import { Transfer } from '../../transfers/interfaces/transfer.interface';
+import { TransfersRepository } from '../../transfers/transfers.repository';
 import { ImapConnector } from '../connector/imap.connector';
 import { EmailImportTarget } from '../enums/email-import-target.enum';
-import EmailConnection from '../interfaces/email-connection.interface';
-import EmailImport from '../interfaces/email-import.interace';
-import EmailTransferHelper from './email-transfer-helper';
+import { EmailConnection } from '../interfaces/email-connection.interface';
+import { EmailImport } from '../interfaces/email-import.interace';
+import { EmailPaginationHelper } from './email-pagination.helper';
+import { EmailSearchObjectHelper } from './email-search-object.helper';
+import { EmailTransferHelper } from './email-transfer-helper';
 
-class EmailImportHelper {
+export class EmailImportHelper {
   private emailTransferHelper: EmailTransferHelper;
   private transferFailureHandler: TransferFailureHandler;
   private offsetPaginationTransferHelper: OffsetPaginationTransferHelper;
@@ -48,7 +52,7 @@ class EmailImportHelper {
     let { transfer } = params;
     try {
       if (transfer === undefined) {
-        transfer = await this.emailTransferHelper.createStartedTransfer(impt);
+        transfer = await this.emailTransferHelper.createTransfer(impt);
       }
 
       imapConnector = new ImapConnector(config);
@@ -57,7 +61,7 @@ class EmailImportHelper {
 
       switch (target) {
         case EmailImportTarget.EMAILS: {
-          await this.emailImport(impt, transfer, imapConnector);
+          await this.email2Import(impt, transfer, imapConnector);
           break;
         }
         case EmailImportTarget.CONVERSATIONS: {
@@ -90,7 +94,12 @@ class EmailImportHelper {
       imapConnector = new ImapConnector(config);
       await imapConnector.connect();
       await imapConnector.openMailbox(mailbox);
-      await imapConnector.getEmails(0, 1);
+      const range = EmailPaginationHelper.createRange({
+        offset: 0,
+        limit: 1
+      });
+      const searchObject: SearchObject = {};
+      await imapConnector.getEmails(range, searchObject);
     } catch (error) {
       imapConnector && imapConnector.disconnect();
       throw error;
@@ -102,7 +111,9 @@ class EmailImportHelper {
     transfer: Transfer,
     imapConnector: ImapConnector
   ) {
-    const { limit } = impt;
+    const { limit, filter } = impt;
+    // console.log('impt: ', impt)
+    const searchObject = EmailSearchObjectHelper.fromFilter(filter);
 
     const offsetPaginationTransferParams: OffsetPaginationTransferParams = {
       import: impt,
@@ -110,7 +121,7 @@ class EmailImportHelper {
       limitPerStep: limit,
       paginationFunction: {
         fn: this.paginationFunction,
-        params: [imapConnector]
+        params: [imapConnector, searchObject]
       }
     };
 
@@ -119,15 +130,55 @@ class EmailImportHelper {
     );
   }
 
-  private async conversationImport(
+  private async email2Import(
     impt: EmailImport,
     transfer: Transfer,
     imapConnector: ImapConnector
   ) {
     const { id: transferId } = transfer;
+    const { limit, filter, setSeen } = impt;
 
     if (transfer.references === undefined) {
-      const threadIds = await imapConnector.getThreadIds();
+      const searchObject = EmailSearchObjectHelper.fromFilter(filter);
+      const uids = await imapConnector.getUids(searchObject);
+      // console.log('uids: ', uids);
+      transfer = await this.transfersRepository.update({
+        id: transferId,
+        references: uids
+      });
+    }
+
+    const { references: uids } = transfer;
+
+    const offsetPaginationTransferParams: OffsetPaginationTransferParams = {
+      import: impt,
+      transfer,
+      limitPerStep: limit,
+      paginationFunction: {
+        fn: this.paginationFunction2,
+        params: [imapConnector, uids]
+      }
+    };
+
+    await this.offsetPaginationTransferHelper.transfer(
+      offsetPaginationTransferParams
+    );
+
+    // if (setSeen) {
+    //   await imapConnector.setSeen(uids.join(','))
+    // }
+  }
+
+  private async conversationImport(
+    impt: EmailImport,
+    transfer: Transfer,
+    imapConnector: ImapConnector
+  ) {
+    const { unseen } = impt;
+    const { id: transferId } = transfer;
+
+    if (transfer.references === undefined) {
+      const threadIds = await imapConnector.getThreadIds(unseen);
       transfer = await this.transfersRepository.update({
         id: transferId,
         references: threadIds
@@ -138,15 +189,34 @@ class EmailImportHelper {
 
     const datasets = await Promise.all(
       threadIds.map(async (threadId) => {
-        const emails = await imapConnector.getEmailsByThredId(threadId);
+        const range = EmailPaginationHelper.createRange({
+          offset: 0,
+          limit: '*'
+        });
+        const searchObject = EmailSearchObjectHelper.fromFilter({ threadId });
+
+        const emails = await imapConnector.getEmails(range, searchObject);
+        // if (setSeen) {
+        //   await imapConnector.setSeen(range);
+
+        // }
 
         const conversation = emails
           .sort((a, b) => b.date?.getTime() - a.date?.getTime())
-          .map(({ from, to, date, text }) => {
-            return { from, to, date, text };
+          .map(({ messageId, inReplyTo, from, to, cc, bcc, date, text }) => {
+            return {
+              messageId,
+              inReplyTo,
+              date,
+              from,
+              to,
+              cc,
+              bcc,
+              text
+            };
           });
 
-        const date = conversation[0].date;
+        const date = conversation[0]?.date;
 
         return {
           threadId,
@@ -168,11 +238,19 @@ class EmailImportHelper {
 
   private paginationFunction: OffsetPaginationFunction = async (
     offsetPagination: OffsetPagination,
-    imapConnector: ImapConnector
+    imapConnector: ImapConnector,
+    searchObject: SearchObject
   ) => {
-    const { offset, limit } = offsetPagination;
-    return await imapConnector.getEmails(offset, limit);
+    const range = EmailPaginationHelper.createRange(offsetPagination);
+    return await imapConnector.getEmails(range, searchObject);
+  };
+
+  private paginationFunction2: OffsetPaginationFunction = async (
+    offsetPagination: OffsetPagination,
+    imapConnector: ImapConnector,
+    uids: number[]
+  ) => {
+    const range = EmailPaginationHelper.createRange2(offsetPagination, uids);
+    return await imapConnector.getEmails(range, {});
   };
 }
-
-export default EmailImportHelper;

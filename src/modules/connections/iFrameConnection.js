@@ -37,4 +37,4 @@ class iFrameConnection extends BaseVertexModel {
   }
 }
 
-module.exports = iFrameConnection;
+module.exports = { iFrameConnection };

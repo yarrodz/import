@@ -1,14 +1,15 @@
-import ResponseHandler from '../../utils/response-handler/response-handler';
-import EmailColumnsHelper from './helpers/email-columns.helper';
-import EmailImportHelper from './helpers/email-import.helper';
-import EmailImport from './interfaces/email-import.interace';
-import ProcessesRepository from '../processes/process.repository';
-import EmailTransferHelper from './helpers/email-transfer-helper';
+import { ResponseHandler } from '../../utils/response-handler/response-handler';
+import { EmailColumnsHelper } from './helpers/email-columns.helper';
+import { EmailImportHelper } from './helpers/email-import.helper';
+import { EmailImport } from './interfaces/email-import.interace';
+import { ProcessesRepository } from '../processes/process.repository';
+import { EmailTransferHelper } from './helpers/email-transfer-helper';
 import { CreateEmailImportValidator } from './validators/create-email-import.validator';
-import EmailConnection from './interfaces/email-connection.interface';
+import { EmailConnection } from './interfaces/email-connection.interface';
 import { UpdateEmailImportValidator } from './validators/update-email-import.validator';
+import { Transfer } from '../transfers/interfaces/transfer.interface';
 
-class EmailImportService {
+export class EmailImportService {
   private emailColumnsHelper: EmailColumnsHelper;
   private emailImportHelper: EmailImportHelper;
   private emailTransferHelper: EmailTransferHelper;
@@ -130,12 +131,15 @@ class EmailImportService {
     }
   }
 
-  async startImport(impt: EmailImport): Promise<ResponseHandler> {
+  async startImport(
+    impt: EmailImport,
+    transfer?: Transfer
+  ): Promise<ResponseHandler> {
     const responseHandler = new ResponseHandler();
     try {
-      const transfer = await this.emailTransferHelper.createStartedTransfer(
-        impt
-      );
+      if (transfer === undefined) {
+        transfer = await this.emailTransferHelper.createTransfer(impt);
+      }
 
       const { id: transferId } = transfer;
 
@@ -152,5 +156,3 @@ class EmailImportService {
     }
   }
 }
-
-export default EmailImportService;

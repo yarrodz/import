@@ -2,7 +2,7 @@ import { Response } from 'express';
 
 import { ResponseHandlerType } from './response-handler-type.enum';
 
-export default class ResponseHandler {
+export class ResponseHandler {
   constructor(
     private type?: ResponseHandlerType,
     private statusCode?: number,

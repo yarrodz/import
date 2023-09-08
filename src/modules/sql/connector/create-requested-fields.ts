@@ -1,4 +1,4 @@
-import ImportField from '../../imports/interfaces/import-field.interface';
+import { ImportField } from '../../imports/interfaces/import-field.interface';
 
 export function createRequestedFields(fields: ImportField[], idColumn: string) {
   const requestedFields = fields.map(({ source }) => source);

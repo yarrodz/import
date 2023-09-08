@@ -1,12 +1,12 @@
 import { ApiConnectionType } from '../enums/api-connection-type.enum';
 import { OAuth2 } from '../../oauth2/interfaces/oauth2.interface';
-import ApiKey from './connection/api-key.interface';
-import BasicDigest from './connection/basic-digest.inteface';
-import Bearer from './connection/bearer.interface';
+import { ApiKey } from './connection/api-key.interface';
+import { BasicDigest } from './connection/basic-digest.inteface';
+import { Bearer } from './connection/bearer.interface';
 import { Source } from '../../imports/enums/source.enum';
-import ConnectionReference from '../../connections/interfaces/connection.reference.interface';
+import { ConnectionReference } from '../../connections/interfaces/connection.reference.interface';
 
-export default interface ApiConnection {
+export interface ApiConnection {
   id: number;
 
   name: string;

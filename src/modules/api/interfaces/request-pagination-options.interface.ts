@@ -1,6 +1,6 @@
 import { RequestPaginationPlacement } from '../enums/request-pagination-placement';
 
-export default interface RequestPaginationOptions {
+export interface RequestPaginationOptions {
   placement: RequestPaginationPlacement;
 
   cursorKey?: string;

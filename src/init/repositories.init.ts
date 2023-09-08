@@ -1,10 +1,10 @@
 import { iFrameDbClient } from 'iFrame-ai';
 
-import ConnectionsRepository from '../modules/connections/connections.repository';
-import DatasetsRepository from '../modules/datasets/datasets.repository';
-import ProcessesRepository from '../modules/processes/process.repository';
-import TransfersRepository from '../modules/transfers/transfers.repository';
-import SchedulersRepository from '../modules/scheduler/schedulers.repository';
+import { ConnectionsRepository } from '../modules/connections/connections.repository';
+import { DatasetsRepository } from '../modules/datasets/datasets.repository';
+import { ProcessesRepository } from '../modules/processes/process.repository';
+import { TransfersRepository } from '../modules/transfers/transfers.repository';
+import { SchedulersRepository } from '../modules/scheduler/schedulers.repository';
 
 export interface InitRepositoriesResult {
   datasetsRepository: DatasetsRepository;
@@ -14,7 +14,7 @@ export interface InitRepositoriesResult {
   schedulersRepository: SchedulersRepository;
 }
 
-export default function initRepositories(
+export function initRepositories(
   dbClient: iFrameDbClient
 ): InitRepositoriesResult {
   const datasetsRepository = new DatasetsRepository(dbClient);

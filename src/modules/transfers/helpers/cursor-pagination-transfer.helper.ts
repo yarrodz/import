@@ -1,13 +1,13 @@
 import { Server as IO } from 'socket.io';
 
-import ImportStepHelper from './import-step.helper';
-import TransfersRepository from '../transfers.repository';
-import CursorPaginationTransferParams from '../interfaces/cursor-pagination-transfer-params.interface';
+import { ImportStepHelper } from './import-step.helper';
+import { TransfersRepository } from '../transfers.repository';
+import { CursorPaginationTransferParams } from '../interfaces/cursor-pagination-transfer-params.interface';
 import { TransferStatus } from '../enums/transfer-status.enum';
-import CursorPagination from '../interfaces/cursor-pagination.interface';
-import sleep from '../../../utils/sleep/sleep';
+import { CursorPagination } from '../interfaces/cursor-pagination.interface';
+import { sleep } from '../../../utils/sleep/sleep';
 
-class CursorPaginationTransferHelper {
+export class CursorPaginationTransferHelper {
   private io: IO;
   private importStepHelper: ImportStepHelper;
   private transfersRepository: TransfersRepository;
@@ -27,6 +27,7 @@ class CursorPaginationTransferHelper {
     const { fn: paginationFn, params: paginationFnParams } = paginationFunction;
     const { limitRequestsPerSecond } = impt;
     let { id: transferId, datasetsCount } = transfer;
+    const { id: unitId } = impt.__.inUnit;
 
     let datasets = [];
     let requestCounter = 0;
@@ -34,8 +35,12 @@ class CursorPaginationTransferHelper {
     do {
       const stepStartDate = new Date();
       const refreshedTransfer = await this.transfersRepository.load(transferId);
-      if (refreshedTransfer.status === TransferStatus.PAUSED) {
-        this.io.to(String(transferId)).emit('transfer', refreshedTransfer);
+      if (refreshedTransfer.status === TransferStatus.PAUSING) {
+        const pausedTransfer = await this.transfersRepository.update({
+          id: transferId,
+          status: TransferStatus.PAUSED
+        });
+        this.io.to(String(unitId)).emit('transfer', pausedTransfer);
         return;
       }
 
@@ -65,6 +70,7 @@ class CursorPaginationTransferHelper {
         impt,
         refreshedTransfer,
         datasets,
+        limitPerStep,
         cursor
       );
 
@@ -91,8 +97,6 @@ class CursorPaginationTransferHelper {
       status: TransferStatus.COMPLETED,
       log: 'Transfer succesfully completed'
     });
-    this.io.to(String(transferId)).emit('transfer', completedTransfer);
+    this.io.to(String(unitId)).emit('transfer', completedTransfer);
   }
 }
-
-export default CursorPaginationTransferHelper;

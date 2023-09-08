@@ -303,4 +303,4 @@ class iFrameScheduler extends BaseVertexModel {
   }
 }
 
-module.exports = iFrameScheduler;
+module.exports = { iFrameScheduler };

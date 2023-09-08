@@ -1,6 +1,6 @@
-import Feature from '../../features/feature.interafce';
+import { Feature } from '../../datasets/interfaces/feature.interafce';
 
-export default interface ImportField {
+export interface ImportField {
   feature: Feature;
   source: string;
 }

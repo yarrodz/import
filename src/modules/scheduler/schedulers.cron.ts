@@ -1,19 +1,18 @@
 import { CronJob } from 'cron';
 
-import SqlImportHelper from '../sql/helpers/sql-import.helper';
-import ApiImportHelper from '../api/helpers/api-import.helper';
-import EmailImportHelper from '../email/helpers/email-import.helper';
-import SchedulersRepository from './schedulers.repository';
-import TransfersRepository from '../transfers/transfers.repository';
-import Scheduler from './interfaces/schedule.interface';
+import { SqlImportHelper } from '../sql/helpers/sql-import.helper';
+import { ApiImportHelper } from '../api/helpers/api-import.helper';
+import { EmailImportHelper } from '../email/helpers/email-import.helper';
+import { SchedulersRepository } from './schedulers.repository';
+import { TransfersRepository } from '../transfers/transfers.repository';
+import { Scheduler } from './interfaces/schedule.interface';
 import { SchedulerPeriod } from './enum/scheduler-period.enum';
-import Import from '../imports/import.type';
 import { Source } from '../imports/enums/source.enum';
 import { TransferStatus } from '../transfers/enums/transfer-status.enum';
 import { WeekdayNumberMapping } from './enum/weekday.enum';
-import ProcessesRepository from '../processes/process.repository';
+import { ProcessesRepository } from '../processes/process.repository';
 
-class SchedulersCron {
+export class SchedulersCron {
   private sqlImportHelper: SqlImportHelper;
   private apiImportHelper: ApiImportHelper;
   private emailImportHelper: EmailImportHelper;
@@ -71,9 +70,15 @@ class SchedulersCron {
 
     const readyImports = [];
     activeSchedulers.forEach((scheduler: Scheduler) => {
-      const { period, minutes, hours, day, date } = scheduler;
+      const {
+        period,
+        minutes,
+        hours,
+        day: scheduledWeekday,
+        date: scheduledDate
+      } = scheduler;
       const scheduledMinutesPeriod = hours * 60 + minutes;
-      const scheduledTime = hours * 60 + minutes;
+      const scheduledMinutesTime = hours * 60 + minutes;
 
       switch (period) {
         case SchedulerPeriod.TIME: {
@@ -82,22 +87,25 @@ class SchedulersCron {
           }
         }
         case SchedulerPeriod.DAY: {
-          if (nowMinutes === scheduledTime) {
+          if (nowMinutes === scheduledMinutesTime) {
             readyImports.push(scheduler.process?.id);
           }
           break;
         }
         case SchedulerPeriod.WEEK: {
           if (
-            WeekdayNumberMapping[day] === nowday &&
-            nowMinutes === scheduledTime
+            WeekdayNumberMapping[scheduledWeekday] === nowday &&
+            nowMinutes === scheduledMinutesTime
           ) {
             readyImports.push(scheduler.process?.id);
           }
           break;
         }
         case SchedulerPeriod.MONTH: {
-          if (date === nowDate && nowMinutes === scheduledTime) {
+          if (
+            scheduledDate === nowDate &&
+            nowMinutes === scheduledMinutesTime
+          ) {
             readyImports.push(scheduler.process?.id);
           }
           break;
@@ -157,7 +165,7 @@ class SchedulersCron {
           },
           {
             type: 'hasEdge',
-            direction: 'out',
+            direction: 'in',
             label: 'inUnit',
             value: unitId
           }
@@ -176,5 +184,3 @@ class SchedulersCron {
     this.job.stop();
   }
 }
-
-export default SchedulersCron;

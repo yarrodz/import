@@ -1,9 +1,9 @@
-import ResponseHandler from '../../utils/response-handler/response-handler';
-import ConnectionsRepository from '../connections/connections.repository';
+import { ResponseHandler } from '../../utils/response-handler/response-handler';
+import { ConnectionsRepository } from '../connections/connections.repository';
 import { CreateApiConnectionValidator } from './validators/create-api-connection.validator';
 import { UpdateApiConnectionValidator } from './validators/update-api-connection.validator';
 
-class ApiConnectionService {
+export class ApiConnectionService {
   //   private apiConnectionHelper: apiConnectionHelper;
   private connectionsRepository: ConnectionsRepository;
 
@@ -80,5 +80,3 @@ class ApiConnectionService {
   //     }
   //   }
 }
-
-export default ApiConnectionService;

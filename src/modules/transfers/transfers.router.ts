@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import TransfersController from './transfers.controller';
+import { TransfersController } from './transfers.controller';
 
-class TransfersRouter {
+export class TransfersRouter {
   public router: Router;
   private transfersController: TransfersController;
 
@@ -19,5 +19,3 @@ class TransfersRouter {
     this.router.post('/restart', this.transfersController.restart);
   }
 }
-
-export default TransfersRouter;

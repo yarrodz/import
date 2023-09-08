@@ -1,16 +1,16 @@
 import { Server as IO } from 'socket.io';
 
-import TransfersRepository from '../transfers.repository';
-import OuterTransferFunction from '../interfaces/outer-transfer-function.interface';
-import Transfer from '../interfaces/transfer.interface';
+import { TransfersRepository } from '../transfers.repository';
+import { OuterTransferFunction } from '../interfaces/outer-transfer-function.interface';
+import { Transfer } from '../interfaces/transfer.interface';
 import { TransferStatus } from '../enums/transfer-status.enum';
-import sleep from '../../../utils/sleep/sleep';
-import TransferFailureHandleParams from '../interfaces/transfer-failure-handle-params.interface';
-import SqlImport from '../../sql/interfaces/sql-import.interface';
-import ApiImport from '../../api/interfaces/api-import.interface';
-import EmailImport from '../../email/interfaces/email-import.interace';
+import { sleep } from '../../../utils/sleep/sleep';
+import { TransferFailureHandleParams } from '../interfaces/transfer-failure-handle-params.interface';
+import { SqlImport } from '../../sql/interfaces/sql-import.interface';
+import { ApiImport } from '../../api/interfaces/api-import.interface';
+import { EmailImport } from '../../email/interfaces/email-import.interace';
 
-class TransferFailureHandler {
+export class TransferFailureHandler {
   private io: IO;
   private transfersRepository: TransfersRepository;
 
@@ -24,13 +24,14 @@ class TransferFailureHandler {
     const { id: transferId } = transfer;
     const { retryOptions } = impt;
     const { maxAttempts, attemptTimeDelay } = retryOptions;
+    const { id: unitId } = impt.__.inUnit;
 
     const refreshedTransfer = await this.transfersRepository.load(transferId);
     const { retryAttempts } = refreshedTransfer;
 
     switch (retryAttempts) {
       case maxAttempts:
-        await this.failTransfer(error, refreshedTransfer);
+        await this.failTransfer(error, refreshedTransfer, unitId);
         break;
       default:
         await this.retryTransfer(
@@ -44,7 +45,11 @@ class TransferFailureHandler {
     }
   }
 
-  private async failTransfer(error: Error, transfer: Transfer): Promise<void> {
+  private async failTransfer(
+    error: Error,
+    transfer: Transfer,
+    unitId: number
+  ): Promise<void> {
     const { id: transferId, log } = transfer;
 
     const failedTransfer = await this.transfersRepository.update({
@@ -52,7 +57,7 @@ class TransferFailureHandler {
       status: TransferStatus.FAILED,
       log: `Transfer was failed with error: ${error.message}`
     });
-    this.io.to(String(transferId)).emit('transfer', failedTransfer);
+    this.io.to(String(unitId)).emit('transfer', failedTransfer);
   }
 
   private async retryTransfer(
@@ -63,6 +68,7 @@ class TransferFailureHandler {
     attemptTimeDelay: number
   ): Promise<void> {
     let { id: transferId, log, retryAttempts } = transfer;
+    const { id: unitId } = impt.__.inUnit;
     retryAttempts++;
 
     const retriedTransfer = await this.transfersRepository.update({
@@ -70,7 +76,7 @@ class TransferFailureHandler {
       retryAttempts,
       log: `Transfer was failed with error: ${error.message}. Retrying transfer after ${attemptTimeDelay}ms. ${retryAttempts} retry attempts left.`
     });
-    this.io.to(String(transferId)).emit('transfer', retriedTransfer);
+    this.io.to(String(unitId)).emit('transfer', retriedTransfer);
 
     await sleep(attemptTimeDelay);
     await outerTransferFunction({
@@ -79,5 +85,3 @@ class TransferFailureHandler {
     });
   }
 }
-
-export default TransferFailureHandler;

@@ -1,8 +1,8 @@
-import Import from '../../imports/import.type';
-import Transfer from './transfer.interface';
-import OuterTransferFunction from './outer-transfer-function.interface';
+import { Import } from '../../imports/import.type';
+import { Transfer } from './transfer.interface';
+import { OuterTransferFunction } from './outer-transfer-function.interface';
 
-export default interface TransferFailureHandleParams {
+export interface TransferFailureHandleParams {
   error: Error;
   outerTransferFunction: OuterTransferFunction;
   import?: Import;

@@ -1,10 +1,10 @@
-import ResponseHandler from '../../utils/response-handler/response-handler';
+import { ResponseHandler } from '../../utils/response-handler/response-handler';
 import { CreateSqlConnectionValidator } from './validators/create-sql-connection.validator';
-import ConnectionsRepository from '../connections/connections.repository';
-import SqlConnectionHelper from './helpers/sql-connection.helper';
+import { ConnectionsRepository } from '../connections/connections.repository';
+import { SqlConnectionHelper } from './helpers/sql-connection.helper';
 import { UpdateSqlConnectionValidator } from './validators/update-sql-connection.validator';
 
-class SqlConnectionService {
+export class SqlConnectionService {
   private sqlConnectionHelper: SqlConnectionHelper;
   private connectionsRepository: ConnectionsRepository;
 
@@ -81,5 +81,3 @@ class SqlConnectionService {
     }
   }
 }
-
-export default SqlConnectionService;

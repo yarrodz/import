@@ -1,10 +1,10 @@
-import ResponseHandler from '../../utils/response-handler/response-handler';
-import EmailConnectionHelper from './helpers/email-connection.helper';
-import ConnectionsRepository from '../connections/connections.repository';
+import { ResponseHandler } from '../../utils/response-handler/response-handler';
+import { EmailConnectionHelper } from './helpers/email-connection.helper';
+import { ConnectionsRepository } from '../connections/connections.repository';
 import { CreateEmailConnectionValidator } from './validators/create-email-connection.validator';
 import { UpdateEmailConnectionValidator } from './validators/update-email-connection.validator';
 
-class EmailConnectionService {
+export class EmailConnectionService {
   private emailConnectionHelper: EmailConnectionHelper;
   private connectionsRepository: ConnectionsRepository;
 
@@ -81,5 +81,3 @@ class EmailConnectionService {
     }
   }
 }
-
-export default EmailConnectionService;

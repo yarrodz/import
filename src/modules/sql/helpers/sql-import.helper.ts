@@ -4,24 +4,25 @@ import {
   createSqlTableFindDataQuery
 } from '../connector/sql-table.query-builder';
 import { paginateSqlSelect } from '../connector/sql-select.query-builder';
-import TransferFailureHandler from '../../transfers/helpers/transfer-failure-handler.helper';
-import OffsetPaginationTransferHelper from '../../transfers/helpers/offset-pagination-transfer.helper';
-import Transfer from '../../transfers/interfaces/transfer.interface';
+import { TransferFailureHandler } from '../../transfers/helpers/transfer-failure-handler.helper';
+import { OffsetPaginationTransferHelper } from '../../transfers/helpers/offset-pagination-transfer.helper';
+import { Transfer } from '../../transfers/interfaces/transfer.interface';
 import { SqlConnector } from '../connector/sql.connector';
-import SqlImport from '../interfaces/sql-import.interface';
+import { SqlImport } from '../interfaces/sql-import.interface';
 import { createRequestedFields } from '../connector/create-requested-fields';
-import OffsetPaginationFunction from '../../transfers/interfaces/offset-pagination-function.interface';
-import OffsetPagination from '../../transfers/interfaces/offset-pagination.interface';
+import { OffsetPaginationFunction } from '../../transfers/interfaces/offset-pagination-function.interface';
+import { OffsetPagination } from '../../transfers/interfaces/offset-pagination.interface';
 import { SqlDialect } from '../enums/sql-dialect.enum';
-import OuterTransferFunction, {
+import {
+  OuterTransferFunction,
   OuterTransferFunctionParams
 } from '../../transfers/interfaces/outer-transfer-function.interface';
-import TransfersRepository from '../../transfers/transfers.repository';
-import OffsetPaginationTransferParams from '../../transfers/interfaces/offset-pagination-transfer-params.interface';
-import SqlConnection from '../interfaces/sql.connection.interface';
-import SqlTransferHelper from './sql-transfer.helper';
+import { TransfersRepository } from '../../transfers/transfers.repository';
+import { OffsetPaginationTransferParams } from '../../transfers/interfaces/offset-pagination-transfer-params.interface';
+import { SqlConnection } from '../interfaces/sql.connection.interface';
+import { SqlTransferHelper } from './sql-transfer.helper';
 
-class SqlImportHelper {
+export class SqlImportHelper {
   private sqlTransferHelper: SqlTransferHelper;
   private transferFailureHandler: TransferFailureHandler;
   private offsetPaginationTransferHelper: OffsetPaginationTransferHelper;
@@ -51,7 +52,7 @@ class SqlImportHelper {
     let { transfer } = params;
     try {
       if (transfer === undefined) {
-        transfer = await this.sqlTransferHelper.createStartedTransfer(impt);
+        transfer = await this.sqlTransferHelper.createTransfer(impt);
       }
 
       sqlConnector = new SqlConnector(config);
@@ -217,5 +218,3 @@ class SqlImportHelper {
     return await sqlConnector.queryRows(paginatedQuery);
   };
 }
-
-export default SqlImportHelper;

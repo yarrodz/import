@@ -1,6 +1,6 @@
-import Record from '../records/record.interface';
+import { Record } from './record.interface';
 
-export default interface Dataset {
+export interface Dataset {
   records: Record[];
   sourceId?: string;
   importId?: number;

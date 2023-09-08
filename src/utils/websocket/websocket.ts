@@ -6,7 +6,7 @@ const WEBSOCKET_CORS = {
   methods: ['GET', 'POST']
 };
 
-class Websocket extends Server {
+export class Websocket extends Server {
   private static io: Websocket;
 
   constructor(httpServer: HttpServer) {
@@ -22,5 +22,3 @@ class Websocket extends Server {
     return Websocket.io;
   }
 }
-
-export default Websocket;

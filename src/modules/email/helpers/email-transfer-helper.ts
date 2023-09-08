@@ -1,20 +1,20 @@
-import TransfersRepository from '../../transfers/transfers.repository';
-
+import { TransfersRepository } from '../../transfers/transfers.repository';
 import { TransferType } from '../../transfers/enums/transfer-type.enum';
 import { TransferStatus } from '../../transfers/enums/transfer-status.enum';
 import { TransferMethod } from '../../transfers/enums/transfer-method.enum';
-import EmailImport from '../interfaces/email-import.interace';
-import Transfer from '../../transfers/interfaces/transfer.interface';
+import { EmailImport } from '../interfaces/email-import.interace';
+import { Transfer } from '../../transfers/interfaces/transfer.interface';
+import { EmailImportTarget } from '../enums/email-import-target.enum';
 
-class EmailTransferHelper {
+export class EmailTransferHelper {
   private transfersRepository: TransfersRepository;
 
   constructor(transfersRepository: TransfersRepository) {
     this.transfersRepository = transfersRepository;
   }
 
-  public async createStartedTransfer(impt: EmailImport): Promise<Transfer> {
-    const { id: importId } = impt;
+  public async createTransfer(impt: EmailImport): Promise<Transfer> {
+    const { id: importId, target } = impt;
     const unit = impt.__.inUnit;
     const { id: unitId } = unit;
 
@@ -22,9 +22,9 @@ class EmailTransferHelper {
       type: TransferType.IMPORT,
       method: TransferMethod.OFFSET_PAGINATION,
       status: TransferStatus.PENDING,
-      offset: 1,
+      offset: 0,
       transferedDatasetsCount: 0,
-      log: '',
+      log: 'Transfer was started',
       retryAttempts: 0,
       __: {
         inImport: {
@@ -38,6 +38,18 @@ class EmailTransferHelper {
       }
     });
   }
-}
 
-export default EmailTransferHelper;
+  public async restartTransfer(
+    id: number,
+    target: EmailImportTarget
+  ): Promise<Transfer> {
+    return await this.transfersRepository.update({
+      id,
+      status: TransferStatus.PENDING,
+      offset: target === EmailImportTarget.EMAILS ? 1 : 0,
+      transferedDatasetsCount: 0,
+      retryAttempts: 0,
+      log: 'Transfer was restarted'
+    });
+  }
+}

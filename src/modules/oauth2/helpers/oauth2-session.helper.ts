@@ -1,8 +1,8 @@
 import { Session } from 'express-session';
-import OAuth2Session from '../interfaces/oauth2-session.interface';
-import OAuth2CallbackProcess from '../interfaces/oauth2-callback-process.interface';
+import { OAuth2Session } from '../interfaces/oauth2-session.interface';
+import { OAuth2CallbackProcess } from '../interfaces/oauth2-callback-process.interface';
 
-class OAuth2SessionHelper {
+export class OAuth2SessionHelper {
   private session: OAuth2Session;
 
   constructor(session: Session) {
@@ -42,5 +42,3 @@ class OAuth2SessionHelper {
       this.session.oAuth2CallbackProcesses.filter((p) => p.state !== state);
   }
 }
-
-export default OAuth2SessionHelper;

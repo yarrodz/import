@@ -1,8 +1,8 @@
 import { Router } from 'express';
 
-import ConnectionsController from './connections.controller';
+import { ConnectionsController } from './connections.controller';
 
-class ConnectionsRouter {
+export class ConnectionsRouter {
   public router: Router;
   private connectionsController: ConnectionsController;
 
@@ -21,5 +21,3 @@ class ConnectionsRouter {
     this.router.post('/check', this.connectionsController.check);
   }
 }
-
-export default ConnectionsRouter;

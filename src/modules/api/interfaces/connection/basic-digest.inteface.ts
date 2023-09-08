@@ -1,4 +1,4 @@
-export default interface BasicDigest {
+export interface BasicDigest {
   username: string;
   password: string;
 }

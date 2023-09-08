@@ -1,12 +1,12 @@
 import { AxiosRequestConfig } from 'axios';
 
 import { TransferMethod } from '../../transfers/enums/transfer-method.enum';
-import RequestPaginationOptions from '../interfaces/request-pagination-options.interface';
-import OffsetPagination from '../../transfers/interfaces/offset-pagination.interface';
-import CursorPagination from '../../transfers/interfaces/cursor-pagination.interface';
+import { RequestPaginationOptions } from '../interfaces/request-pagination-options.interface';
+import { OffsetPagination } from '../../transfers/interfaces/offset-pagination.interface';
+import { CursorPagination } from '../../transfers/interfaces/cursor-pagination.interface';
 import { RequestPaginationPlacement } from '../enums/request-pagination-placement';
 
-class PaginateRequestHelper {
+export class PaginateRequestHelper {
   public static paginate(
     request: AxiosRequestConfig,
     paginationType: TransferMethod,
@@ -113,5 +113,3 @@ class PaginateRequestHelper {
     }
   }
 }
-
-export default PaginateRequestHelper;

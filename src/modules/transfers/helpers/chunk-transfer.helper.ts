@@ -1,11 +1,11 @@
 import { Server as IO } from 'socket.io';
 
-import ImportStepHelper from './import-step.helper';
-import TransfersRepository from '../transfers.repository';
-import ChunkTransferParams from '../interfaces/chunk-transfer-params.interface';
+import { ImportStepHelper } from './import-step.helper';
+import { TransfersRepository } from '../transfers.repository';
+import { ChunkTransferParams } from '../interfaces/chunk-transfer-params.interface';
 import { TransferStatus } from '../enums/transfer-status.enum';
 
-class ChunkTransferHelper {
+export class ChunkTransferHelper {
   private io: IO;
   private importStepHelper: ImportStepHelper;
   private transfersRepository: TransfersRepository;
@@ -23,6 +23,7 @@ class ChunkTransferHelper {
   public async transfer(params: ChunkTransferParams) {
     let { import: impt, transfer, datasets, chunkLength } = params;
     const { id: transferId, offset } = transfer;
+    const { id: unitId } = impt.__.inUnit;
 
     let slicedDatasets = datasets.slice(offset, datasets.length);
     datasets = null;
@@ -31,13 +32,22 @@ class ChunkTransferHelper {
 
     while (chunkedDatasets.length) {
       const refreshedTransfer = await this.transfersRepository.load(transferId);
-      if (refreshedTransfer.status === TransferStatus.PAUSED) {
-        this.io.to(String(transferId)).emit('transfer', refreshedTransfer);
+      if (refreshedTransfer.status === TransferStatus.PAUSING) {
+        const pausedTransfer = await this.transfersRepository.update({
+          id: transferId,
+          status: TransferStatus.PAUSED
+        });
+        this.io.to(String(unitId)).emit('transfer', pausedTransfer);
         return;
       }
 
       const datasetsChunk = chunkedDatasets.shift();
-      await this.importStepHelper.step(impt, refreshedTransfer, datasetsChunk);
+      await this.importStepHelper.step(
+        impt,
+        refreshedTransfer,
+        datasetsChunk,
+        chunkLength
+      );
     }
 
     const completedTransfer = await this.transfersRepository.update({
@@ -45,7 +55,7 @@ class ChunkTransferHelper {
       status: TransferStatus.COMPLETED,
       log: 'Transfer succesfully completed'
     });
-    this.io.to(String(transferId)).emit('transfer', completedTransfer);
+    this.io.to(String(unitId)).emit('transfer', completedTransfer);
   }
 
   // chunkObjectArray([1,2,3,4,5,6,7,8,9], 3) => [[1,2,3],[4,5,6],[7,8,9]]
@@ -58,5 +68,3 @@ class ChunkTransferHelper {
     return chunkedArray;
   }
 }
-
-export default ChunkTransferHelper;

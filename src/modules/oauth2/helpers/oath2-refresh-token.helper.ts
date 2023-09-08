@@ -1,12 +1,12 @@
 import axios, { AxiosRequestConfig } from 'axios';
 
-import ConnectionsRepository from '../../connections/connections.repository';
-import OAuth2RefreshTokenBody from '../interfaces/oauts2-refresh-token-body';
-import ApiConnection from '../../api/interfaces/api-connection.interface';
+import { ConnectionsRepository } from '../../connections/connections.repository';
+import { OAuth2RefreshTokenBody } from '../interfaces/oauts2-refresh-token-body';
+import { ApiConnection } from '../../api/interfaces/api-connection.interface';
 
 const GRANT_TYPE = 'refresh_token';
 
-class OAuth2RefreshTokenHelper {
+export class OAuth2RefreshTokenHelper {
   private connectionsRepository: ConnectionsRepository;
 
   constructor(connectionsRepository: ConnectionsRepository) {
@@ -68,5 +68,3 @@ class OAuth2RefreshTokenHelper {
     }
   };
 }
-
-export default OAuth2RefreshTokenHelper;

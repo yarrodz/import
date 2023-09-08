@@ -1,20 +1,20 @@
 import { Request } from 'express';
 
-import ProcessesRepository from '../processes/process.repository';
-import TransfersRepository from '../transfers/transfers.repository';
-import ApiConnectionHelper from './helpers/api-connection.helper';
-import ApiImportHelper from './helpers/api-import.helper';
-import OAuth2AuthUriHelper from '../oauth2/helpers/oauth2-auth-uri.helper';
-import ResponseHandler from '../../utils/response-handler/response-handler';
-import ApiImport from './interfaces/api-import.interface';
-import Transfer from '../transfers/interfaces/transfer.interface';
+import { ProcessesRepository } from '../processes/process.repository';
+import { TransfersRepository } from '../transfers/transfers.repository';
+import { ApiConnectionHelper } from './helpers/api-connection.helper';
+import { ApiImportHelper } from './helpers/api-import.helper';
+import { OAuth2AuthUriHelper } from '../oauth2/helpers/oauth2-auth-uri.helper';
+import { ResponseHandler } from '../../utils/response-handler/response-handler';
+import { ApiImport } from './interfaces/api-import.interface';
+import { Transfer } from '../transfers/interfaces/transfer.interface';
 import { ConnectionState } from './enums/connection-state.enum';
 import { TransferStatus } from '../transfers/enums/transfer-status.enum';
-import Context from '../imports/interfaces/context.interface';
+import { Context } from '../imports/interfaces/context.interface';
 import { ContextAction } from '../imports/enums/context-action-enum';
-import ApiConnection from './interfaces/api-connection.interface';
+import { ApiConnection } from './interfaces/api-connection.interface';
 
-class ApiTransferService {
+export class ApiTransferService {
   private apiConnectionHelper: ApiConnectionHelper;
   private apiImportHelper: ApiImportHelper;
   private oAuth2AuthUriHelper: OAuth2AuthUriHelper;

@@ -6,11 +6,11 @@ import {
   createSqlTableFindDataQuery
 } from '../connector/sql-table.query-builder';
 import { paginateSqlSelect } from '../connector/sql-select.query-builder';
-import Column from '../../columns/column.interface';
-import SqlImport from '../interfaces/sql-import.interface';
-import SqlConnection from '../interfaces/sql.connection.interface';
+import { Column } from '../../imports/interfaces/column.interface';
+import { SqlImport } from '../interfaces/sql-import.interface';
+import { SqlConnection } from '../interfaces/sql.connection.interface';
 
-class SqlColumnsHelper {
+export class SqlColumnsHelper {
   public async find(impt: SqlImport): Promise<Column[]> {
     let sqlConnector: SqlConnector;
     try {
@@ -134,5 +134,3 @@ class SqlColumnsHelper {
     });
   }
 }
-
-export default SqlColumnsHelper;

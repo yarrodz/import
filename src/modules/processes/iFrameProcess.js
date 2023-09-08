@@ -55,4 +55,4 @@ class iFrameProcess extends BaseVertexModel {
   }
 }
 
-module.exports = iFrameProcess;
+module.exports = { iFrameProcess };

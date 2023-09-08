@@ -1,15 +1,15 @@
-import ProcessesRepository from '../../processes/process.repository';
-import OAuth2RefreshTokenHelper from '../../oauth2/helpers/oath2-refresh-token.helper';
-import ApiImport from '../interfaces/api-import.interface';
-import ApiConnector from '../connector/api-connector';
+import { ProcessesRepository } from '../../processes/process.repository';
+import { OAuth2RefreshTokenHelper } from '../../oauth2/helpers/oath2-refresh-token.helper';
+import { ApiImport } from '../interfaces/api-import.interface';
+import { ApiConnector } from '../connector/api-connector';
 import { ConnectionState } from '../enums/connection-state.enum';
 import { ApiConnectionType } from '../enums/api-connection-type.enum';
 import { TransferMethod } from '../../transfers/enums/transfer-method.enum';
-import OffsetPagination from '../../transfers/interfaces/offset-pagination.interface';
-import CursorPagination from '../../transfers/interfaces/cursor-pagination.interface';
-import ApiConnection from '../interfaces/api-connection.interface';
+import { OffsetPagination } from '../../transfers/interfaces/offset-pagination.interface';
+import { CursorPagination } from '../../transfers/interfaces/cursor-pagination.interface';
+import { ApiConnection } from '../interfaces/api-connection.interface';
 
-class ApiConnectionHelper {
+export class ApiConnectionHelper {
   private oAuth2RefreshTokenHelper: OAuth2RefreshTokenHelper;
   private processesRepository: ProcessesRepository;
 
@@ -102,5 +102,3 @@ class ApiConnectionHelper {
     }
   }
 }
-
-export default ApiConnectionHelper;

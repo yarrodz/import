@@ -1,8 +1,8 @@
 import { Router } from 'express';
 
-import ImportsController from './imports.controller';
+import { ImportsController } from './imports.controller';
 
-class ImportsRouter {
+export class ImportsRouter {
   public router: Router;
   private importsController: ImportsController;
 
@@ -27,5 +27,3 @@ class ImportsRouter {
     this.router.post('/import', this.importsController.startImport);
   }
 }
-
-export default ImportsRouter;

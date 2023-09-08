@@ -1,7 +1,7 @@
 import { ImapConnector } from '../connector/imap.connector';
-import EmailConnection from '../interfaces/email-connection.interface';
+import { EmailConnection } from '../interfaces/email-connection.interface';
 
-class EmailConnectionHelper {
+export class EmailConnectionHelper {
   public checkConnection = async (
     connection: EmailConnection
   ): Promise<void> => {
@@ -17,5 +17,3 @@ class EmailConnectionHelper {
     }
   };
 }
-
-export default EmailConnectionHelper;

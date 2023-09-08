@@ -1,13 +1,13 @@
 import { Server as IO } from 'socket.io';
 
-import ImportStepHelper from './import-step.helper';
-import TransfersRepository from '../transfers.repository';
-import OffsetPaginationTransferParams from '../interfaces/offset-pagination-transfer-params.interface';
+import { ImportStepHelper } from './import-step.helper';
+import { TransfersRepository } from '../transfers.repository';
+import { OffsetPaginationTransferParams } from '../interfaces/offset-pagination-transfer-params.interface';
 import { TransferStatus } from '../enums/transfer-status.enum';
-import OffsetPagination from '../interfaces/offset-pagination.interface';
-import sleep from '../../../utils/sleep/sleep';
+import { OffsetPagination } from '../interfaces/offset-pagination.interface';
+import { sleep } from '../../../utils/sleep/sleep';
 
-class OffsetPaginationTransferHelper {
+export class OffsetPaginationTransferHelper {
   private io: IO;
   private importStepHelper: ImportStepHelper;
   private transfersRepository: TransfersRepository;
@@ -26,7 +26,8 @@ class OffsetPaginationTransferHelper {
     const { import: impt, transfer, limitPerStep, paginationFunction } = params;
     const { fn: paginationFn, params: paginationFnParams } = paginationFunction;
     const { limitRequestsPerSecond } = impt;
-    let { id: transferId, datasetsCount } = transfer;
+    let { id: transferId, datasetsCount, references } = transfer;
+    const { id: unitId } = impt.__.inUnit;
 
     let datasets = [];
     let requestCounter = 0;
@@ -34,8 +35,12 @@ class OffsetPaginationTransferHelper {
     do {
       const stepStartDate = new Date();
       const refreshedTransfer = await this.transfersRepository.load(transferId);
-      if (refreshedTransfer.status === TransferStatus.PAUSED) {
-        this.io.to(String(transferId)).emit('transfer', refreshedTransfer);
+      if (refreshedTransfer.status === TransferStatus.PAUSING) {
+        const pausedTransfer = await this.transfersRepository.update({
+          id: transferId,
+          status: TransferStatus.PAUSED
+        });
+        this.io.to(String(unitId)).emit('transfer', pausedTransfer);
         return;
       }
 
@@ -45,18 +50,29 @@ class OffsetPaginationTransferHelper {
         break;
       }
 
+      if (references !== undefined && offset >= references.length) {
+        break;
+      }
+
       const offsetPagination: OffsetPagination = {
         offset,
         limit: limitPerStep
       };
 
+      // console.log('offsetPagination: ' ,offsetPagination)
+
       datasets = await paginationFn(offsetPagination, ...paginationFnParams);
 
-      if (datasets.length === 0) {
+      if (datasets.length === 0 && references === undefined) {
         break;
       }
 
-      await this.importStepHelper.step(impt, refreshedTransfer, datasets);
+      await this.importStepHelper.step(
+        impt,
+        refreshedTransfer,
+        datasets,
+        limitPerStep
+      );
 
       const stepEndDate = new Date();
       const stepExectionTime = stepEndDate.getTime() - stepStartDate.getTime();
@@ -76,8 +92,6 @@ class OffsetPaginationTransferHelper {
       status: TransferStatus.COMPLETED,
       log: 'Transfer succesfully completed'
     });
-    this.io.to(String(transferId)).emit('transfer', completedTransfer);
+    this.io.to(String(unitId)).emit('transfer', completedTransfer);
   }
 }
-
-export default OffsetPaginationTransferHelper;

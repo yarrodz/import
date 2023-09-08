@@ -1,5 +1,12 @@
-import { ImapFlow, ImapFlowOptions } from 'imapflow';
+import {
+  FetchMessageObject,
+  ImapFlow,
+  ImapFlowOptions,
+  SearchObject
+} from 'imapflow';
 import { ParsedMail, simpleParser } from 'mailparser';
+import { FetchedMessage } from '../interfaces/fetched-message.interface';
+import { EmailSeenOption } from '../enums/filter-options/email-seen-option.enum';
 
 export class ImapConnector {
   private client: ImapFlow;
@@ -30,7 +37,6 @@ export class ImapConnector {
   }
 
   async openMailbox(mailbox: string) {
-    // console.log('openMailbox')
     try {
       await this.client.getMailboxLock(mailbox);
     } catch (error) {
@@ -39,59 +45,104 @@ export class ImapConnector {
     }
   }
 
-  async getThreadIds() {
-    // console.log('getThreadIds');
+  async getUids(searchObject: SearchObject) {
     try {
-      const threadIds = [];
-      for await (const message of this.client.fetch('1:*', {
+      const uids = [];
+
+      // console.log('{ uid: 1:*, ...searchObject }: ', { uid: '1:*', ...searchObject });
+      for await (const message of this.client.fetch(
+        { uid: '1:*', ...searchObject },
+        {
+          uid: true
+        }
+      )) {
+        const { uid } = message;
+        // console.log('uid: ', uid)
+        uids.push(uid);
+      }
+      return uids;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getThreadIds(unseen?: boolean) {
+    try {
+      const uniqueThreadIds = [];
+
+      const searchObject: SearchObject = { uid: '1:*' };
+      if (unseen === true) {
+        searchObject.seen = false;
+      }
+
+      // console.log('searchObject: ', searchObject)
+
+      for await (const message of this.client.fetch(searchObject, {
         threadId: true
       })) {
         const threadId = message.threadId;
-        if (threadIds.indexOf(threadId) === -1) {
-          threadIds.push(threadId);
+        if (uniqueThreadIds.indexOf(threadId) === -1) {
+          uniqueThreadIds.push(threadId);
         }
       }
-      return threadIds;
+      return uniqueThreadIds;
     } catch (error) {
       throw error;
     }
   }
 
-  async getEmailsByThredId(threadId: string): Promise<ParsedMail[]> {
+  async getEmails(
+    range: string,
+    searchObject: SearchObject
+  ): Promise<FetchedMessage[]> {
     try {
-      const messages = [];
-      for await (const message of this.client.fetch(
-        { threadId },
-        { source: true }
+      const messages: FetchedMessage[] = [];
+
+      // console.log('{ uid: range, ...searchObject }: ', { uid: range, ...searchObject });
+
+      for await (let message of this.client.fetch(
+        { uid: range, ...searchObject },
+        {
+          source: true,
+          envelope: true,
+          threadId: true,
+          flags: true,
+          labels: true
+        }
       )) {
-        const parsedMessage = await simpleParser(message.source);
-        messages.push(parsedMessage);
+        const { source, envelope, threadId, flags, labels } = message;
+        const parsedMessage = await simpleParser(source);
+        const { messageId, html, text } = parsedMessage;
+        const { inReplyTo, date, subject, from, to, cc, bcc } = envelope;
+        messages.push({
+          messageId,
+          inReplyTo,
+          date,
+          from,
+          to,
+          cc,
+          bcc,
+          subject,
+          text,
+          html: html || '',
+          flags: Array.from(flags),
+          labels: Array.from(labels),
+          threadId
+        });
       }
+
       return messages;
     } catch (error) {
       throw error;
     }
   }
 
-  async getEmails(offset: number, limit: number): Promise<ParsedMail[]> {
-    try {
-      const messages = [];
-      const range = this.createRange(offset, limit);
-
-      for await (let message of this.client.fetch(range, {
-        source: true,
-        threadId: true
-      })) {
-        const parsedMessage = await simpleParser(message.source);
-        messages.push({ ...parsedMessage, threadId: message.threadId });
-      }
-      return messages;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  private createRange(offset: number, limit: number) {
-    return `${offset}:${offset + limit - 1}`;
-  }
+  // async setSeen(range: string) {
+  //   try {
+  //     console.log('seTsern:', range);
+  //     await this.client.messageFlagsAdd(range, ['\Seen'], {uid: true});
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
 }

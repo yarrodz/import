@@ -1,19 +1,18 @@
 import { Server as IO } from 'socket.io';
-import { load } from 'cheerio';
 
-import Transfer from '../interfaces/transfer.interface';
-import resolvePath from '../../../utils/resolve-path/resolve-path';
-import Feature from '../../features/feature.interafce';
-import { FeatureType } from '../../features/feature-type.enum';
-import Dataset from '../../datasets/dataset.interface';
-import ImportField from '../../imports/interfaces/import-field.interface';
-import TransfersRepository from '../transfers.repository';
-import SqlImport from '../../sql/interfaces/sql-import.interface';
-import ApiImport from '../../api/interfaces/api-import.interface';
-import DatasetsRepository from '../../datasets/datasets.repository';
-import EmailImport from '../../email/interfaces/email-import.interace';
+import { Transfer } from '../interfaces/transfer.interface';
+import { resolvePath } from '../../../utils/resolve-path/resolve-path';
+import { Feature } from '../../datasets/interfaces/feature.interafce';
+import { FeatureType } from '../../datasets/enums/feature-type.enum';
+import { Dataset } from '../../datasets/interfaces/dataset.interface';
+import { ImportField } from '../../imports/interfaces/import-field.interface';
+import { TransfersRepository } from '../transfers.repository';
+import { SqlImport } from '../../sql/interfaces/sql-import.interface';
+import { ApiImport } from '../../api/interfaces/api-import.interface';
+import { DatasetsRepository } from '../../datasets/datasets.repository';
+import { EmailImport } from '../../email/interfaces/email-import.interace';
 
-class ImportStepHelper {
+export class ImportStepHelper {
   private io: IO;
   private transfersRepository: TransfersRepository;
   private datasetsRepository: DatasetsRepository;
@@ -32,9 +31,11 @@ class ImportStepHelper {
     impt: SqlImport | ApiImport | EmailImport,
     transfer: Transfer,
     datasets: object[],
+    limit: number,
     cursor?: string
   ) {
     const { id: transferId } = transfer;
+    const { id: unitId } = impt.__.inUnit;
 
     const transormedDatasets = await this.transformDatasets(impt, datasets);
 
@@ -43,13 +44,13 @@ class ImportStepHelper {
     const updatedTransfer = await this.transfersRepository.update({
       id: transferId,
       cursor,
-      offset: transfer.offset + datasets.length,
+      offset: transfer.offset + limit,
       transferedDatasetsCount:
         transfer.transferedDatasetsCount + transormedDatasets.length,
       retryAttempts: 0
     });
 
-    this.io.to(String(transferId)).emit('transfer', updatedTransfer);
+    this.io.to(String(unitId)).emit('transfer', updatedTransfer);
   }
 
   private async transformDatasets(
@@ -66,7 +67,8 @@ class ImportStepHelper {
       // const sourceId = resolvePath(dataset, idKey);
       const sourceId = dataset[idKey];
       if (sourceId === null) {
-        throw new Error('The id field contains a null value');
+        return;
+        // throw new Error('The id field contains a null value');
       }
 
       const records = this.transformRecords(dataset, fields);
@@ -104,13 +106,18 @@ class ImportStepHelper {
       switch (feature.type) {
         case FeatureType.TIME:
         case FeatureType.TEXT:
-        case FeatureType.LONG_TEXT:
+        case FeatureType.LONG_TEXT: {
           return String(value);
-        case FeatureType.JSON:
-          return JSON.stringify(value);
-        case FeatureType.HTML:
-          const loadedHtml = load(value);
-          return loadedHtml.text();
+        }
+        case FeatureType.JSON: {
+          if (typeof value === 'string') {
+            return JSON.parse(value);
+          } else if (typeof value === 'object') {
+            return value;
+          } else {
+            return null;
+          }
+        }
         case FeatureType.DATE:
         case FeatureType.DATETIME:
           return new Date(value);
@@ -135,5 +142,3 @@ class ImportStepHelper {
     }
   }
 }
-
-export default ImportStepHelper;

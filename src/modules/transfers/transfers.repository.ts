@@ -1,9 +1,9 @@
 import { iFrameDbClient } from 'iFrame-ai';
 
-import iFrameTransfer from './iFrameTransfer';
-import transformIFrameInstance from '../../utils/transform-iFrame-instance/transform-iFrame-instance';
+import { iFrameTransfer } from './iFrameTransfer';
+import { transformIFrameInstance } from '../../utils/transform-iFrame-instance/transform-iFrame-instance';
 
-class TransfersRepository {
+export class TransfersRepository {
   private client: iFrameDbClient;
 
   constructor(client: iFrameDbClient) {
@@ -64,5 +64,3 @@ class TransfersRepository {
     }
   }
 }
-
-export default TransfersRepository;

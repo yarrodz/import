@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 
-import ConnectionsService from './connections.service';
+import { ConnectionsService } from './connections.service';
 
-class ConnectionsController {
+export class ConnectionsController {
   private connectionsService: ConnectionsService;
 
   constructor(connectionsService: ConnectionsService) {
@@ -51,5 +51,3 @@ class ConnectionsController {
     responseHandler.send(res);
   };
 }
-
-export default ConnectionsController;

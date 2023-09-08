@@ -1,9 +1,9 @@
 import { iFrameDbClient } from 'iFrame-ai';
 
-import iFrameConnection from './iFrameConnection';
-import transformIFrameInstance from '../../utils/transform-iFrame-instance/transform-iFrame-instance';
+import { iFrameConnection } from './iFrameConnection';
+import { transformIFrameInstance } from '../../utils/transform-iFrame-instance/transform-iFrame-instance';
 
-class ConnectionsRepository {
+export class ConnectionsRepository {
   private client: iFrameDbClient;
 
   constructor(client: iFrameDbClient) {
@@ -60,5 +60,3 @@ class ConnectionsRepository {
     }
   }
 }
-
-export default ConnectionsRepository;
