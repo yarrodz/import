@@ -2,7 +2,7 @@ import { TransfersRepository } from '../../transfers/transfers.repository';
 import { ApiImport } from '../interfaces/api-import.interface';
 import { Transfer } from '../../transfers/interfaces/transfer.interface';
 import { TransferType } from '../../transfers/enums/transfer-type.enum';
-import { TransferStatus } from '../../transfers/enums/transfer-status.enum';
+// import { TransferStatus } from '../../transfers/enums/transfer-state.enum';
 
 export class ApiTransferHelper {
   private transfersRepository: TransfersRepository;
@@ -20,7 +20,7 @@ export class ApiTransferHelper {
     return await this.transfersRepository.create({
       type: TransferType.IMPORT,
       method: transferMethod,
-      status: TransferStatus.PENDING,
+      // status: TransferStatus.PENDING,
       offset: 0,
       transferedDatasetsCount: 0,
       log: '',

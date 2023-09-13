@@ -1,11 +1,7 @@
-import { TransfersRepository } from '../transfers/transfers.repository';
 import { SqlColumnsHelper } from './helpers/sql-columns.helper';
 import { SqlImportHelper } from './helpers/sql-import.helper';
 import { SqlImport } from './interfaces/sql-import.interface';
 import { ResponseHandler } from '../../utils/response-handler/response-handler';
-import { TransferType } from '../transfers/enums/transfer-type.enum';
-import { TransferMethod } from '../transfers/enums/transfer-method.enum';
-import { TransferStatus } from '../transfers/enums/transfer-status.enum';
 import { ProcessesRepository } from '../processes/process.repository';
 import { CreateSqlImportValidator } from './validators/create-sql-import.validator';
 import { UpdateSqlImportValidator } from './validators/update-sql-import.validator';

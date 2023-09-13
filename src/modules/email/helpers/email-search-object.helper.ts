@@ -122,15 +122,11 @@ export class EmailSearchObjectHelper {
   }
 
   private static addSinceOption(value: any, searchObject: EmailSearchObject) {
-    if (new Date(value) instanceof Date) {
-      searchObject.sentSince = value;
-    }
+    searchObject.sentSince = value;
   }
 
   private static addBeforeOption(value: any, searchObject: EmailSearchObject) {
-    if (new Date(value) instanceof Date) {
-      searchObject.sentBefore = value;
-    }
+    searchObject.sentBefore = value;
   }
 
   private static addFromOption(value: any, searchObject: EmailSearchObject) {
@@ -213,7 +209,7 @@ export class EmailSearchObjectHelper {
     searchObject: EmailSearchObject
   ) {
     if (typeof value === 'string') {
-      searchObject.keyword = '\\' + value;
+      searchObject.keyword = value;
     }
   }
 
@@ -222,7 +218,7 @@ export class EmailSearchObjectHelper {
     searchObject: EmailSearchObject
   ) {
     if (typeof value === 'string') {
-      searchObject.unKeyword = '\\' + value;
+      searchObject.unKeyword = value;
     }
   }
 

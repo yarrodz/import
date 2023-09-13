@@ -1,6 +1,6 @@
 import Joi from 'joi';
 
-import { ProcessType } from '../../processes/process.type.enum';
+import { ProcessType } from '../../processes/enums/process.type.enum';
 import { Source } from '../../imports/enums/source.enum';
 import { SqlImportTarget } from '../enums/sql-import-target.enum';
 import { ImportFieldValidator } from '../../imports/validators/import-field.validator';

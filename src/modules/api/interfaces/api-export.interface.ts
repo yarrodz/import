@@ -1,4 +1,4 @@
-import { ProcessType } from '../../processes/process.type.enum';
+import { ProcessType } from '../../processes/enums/process.type.enum';
 import { Source } from '../../imports/enums/source.enum';
 import { RetryOptions } from '../../imports/interfaces/retry-options.interace';
 import { ApiConnection } from './api-connection.interface';

@@ -18,7 +18,7 @@ export class SchedulersRepository {
         firstOnly
       );
     } catch (error) {
-      console.error(error);
+      // console.error(error);
       throw new error(`Error while querying schedulers: ${error}`);
     }
   }
@@ -39,7 +39,7 @@ export class SchedulersRepository {
         .insert(input)
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      console.error(error);
+      // console.error(error);
       throw new error(`Error while creating a scheduler: ${error}`);
     }
   }

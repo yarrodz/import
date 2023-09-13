@@ -2,7 +2,7 @@ import { TransfersRepository } from '../transfers/transfers.repository';
 import { SqlImportHelper } from './helpers/sql-import.helper';
 import { ResponseHandler } from '../../utils/response-handler/response-handler';
 import { Transfer } from '../transfers/interfaces/transfer.interface';
-import { TransferStatus } from '../transfers/enums/transfer-status.enum';
+import { TransferState } from '../transfers/enums/transfer-state.enum';
 import { SqlImport } from './interfaces/sql-import.interface';
 
 export class SqlTransferService {

@@ -54,16 +54,12 @@ export class EmailColumnsHelper {
       type: 'string'
     },
     {
-      name: 'html',
-      type: 'string'
-    },
-    {
       name: 'flags',
-      type: 'string'
+      type: 'json'
     },
     {
       name: 'labels',
-      type: 'string'
+      type: 'json'
     },
     {
       name: 'threadId',

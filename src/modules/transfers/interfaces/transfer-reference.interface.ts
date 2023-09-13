@@ -1,6 +1,6 @@
-import { Import } from '../../imports/import.type';
+import { Process } from '../../processes/process.type';
 
 export interface TransferReference {
-  inImport?: Import;
-  inUnit?: any;
+  process?: Process;
+  unit?: any;
 }

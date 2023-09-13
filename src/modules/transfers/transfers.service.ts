@@ -4,7 +4,7 @@ import { Server as IO } from 'socket.io';
 import { SqlTransferService } from '../sql/sql-transfer.service';
 import { ApiTransferService } from '../api/api-transfer.service';
 import { ResponseHandler } from '../../utils/response-handler/response-handler';
-import { TransferStatus } from './enums/transfer-status.enum';
+import { TransferState } from './enums/transfer-state.enum';
 import { TransfersRepository } from './transfers.repository';
 import { ProcessesRepository } from '../processes/process.repository';
 import { Source } from '../imports/enums/source.enum';
@@ -60,8 +60,8 @@ export class TransfersService {
       }
 
       if (
-        transfer.status === TransferStatus.PENDING ||
-        transfer.status === TransferStatus.PAUSING
+        transfer.status === TransferState.PENDING ||
+        transfer.status === TransferState.PAUSING
       ) {
         responseHandler.setError(
           409,
@@ -89,7 +89,7 @@ export class TransfersService {
         return responseHandler;
       }
 
-      if (transfer.status !== TransferStatus.PENDING) {
+      if (transfer.status !== TransferState.PENDING) {
         responseHandler.setError(
           409,
           'Only pending transfer process can be paused'
@@ -99,7 +99,7 @@ export class TransfersService {
 
       const pausingTransfer = await this.transfersRepository.update({
         id,
-        status: TransferStatus.PAUSING,
+        status: TransferState.PAUSING,
         log: 'Transfer was pused'
       });
 
@@ -122,8 +122,8 @@ export class TransfersService {
       }
 
       if (
-        transfer.status !== TransferStatus.PAUSED &&
-        transfer.status !== TransferStatus.FAILED
+        transfer.status !== TransferState.PAUSED &&
+        transfer.status !== TransferState.FAILED
       ) {
         responseHandler.setError(
           409,
@@ -148,7 +148,7 @@ export class TransfersService {
             {
               type: 'equals',
               property: 'status',
-              value: TransferStatus.PENDING
+              value: TransferState.PENDING
             },
             {
               type: 'hasEdge',
@@ -162,7 +162,7 @@ export class TransfersService {
         true
       );
 
-      console.log('pendingUnitTransfer: ', pendingUnitTransfer);
+      // console.log('pendingUnitTransfer: ', pendingUnitTransfer);
       if (pendingUnitTransfer) {
         responseHandler.setError(
           409,
@@ -173,7 +173,7 @@ export class TransfersService {
 
       const updatedTransfer = await this.transfersRepository.update({
         id,
-        status: TransferStatus.PENDING,
+        status: TransferState.PENDING,
         retryAttempts: 0,
         log: 'Transfer was reloaded'
       });
@@ -246,7 +246,7 @@ export class TransfersService {
             {
               type: 'equals',
               property: 'status',
-              value: TransferStatus.PENDING
+              value: TransferState.PENDING
             },
             {
               type: 'hasEdge',
@@ -269,7 +269,7 @@ export class TransfersService {
 
       let updatedTransfer = await this.transfersRepository.update({
         id,
-        status: TransferStatus.PENDING,
+        status: TransferState.PENDING,
         references: undefined,
         offset: 0,
         transferedDatasetsCount: 0,

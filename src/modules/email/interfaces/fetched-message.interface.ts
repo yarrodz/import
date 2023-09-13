@@ -1,4 +1,5 @@
 export interface FetchedMessage {
+  uid: number;
   messageId: string;
   inReplyTo: string;
   date: Date;
@@ -8,7 +9,6 @@ export interface FetchedMessage {
   bcc: object;
   subject: string;
   text: string;
-  html: string;
   flags: string[];
   labels: string[];
   threadId: string;

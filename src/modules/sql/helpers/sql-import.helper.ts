@@ -5,12 +5,10 @@ import {
 } from '../connector/sql-table.query-builder';
 import { paginateSqlSelect } from '../connector/sql-select.query-builder';
 import { TransferFailureHandler } from '../../transfers/helpers/transfer-failure-handler.helper';
-import { OffsetPaginationTransferHelper } from '../../transfers/helpers/offset-pagination-transfer.helper';
 import { Transfer } from '../../transfers/interfaces/transfer.interface';
 import { SqlConnector } from '../connector/sql.connector';
 import { SqlImport } from '../interfaces/sql-import.interface';
 import { createRequestedFields } from '../connector/create-requested-fields';
-import { OffsetPaginationFunction } from '../../transfers/interfaces/offset-pagination-function.interface';
 import { OffsetPagination } from '../../transfers/interfaces/offset-pagination.interface';
 import { SqlDialect } from '../enums/sql-dialect.enum';
 import {
@@ -18,26 +16,40 @@ import {
   OuterTransferFunctionParams
 } from '../../transfers/interfaces/outer-transfer-function.interface';
 import { TransfersRepository } from '../../transfers/transfers.repository';
-import { OffsetPaginationTransferParams } from '../../transfers/interfaces/offset-pagination-transfer-params.interface';
 import { SqlConnection } from '../interfaces/sql.connection.interface';
 import { SqlTransferHelper } from './sql-transfer.helper';
+import { TransferHelper } from '../../transfers/helpers/transfer.helper';
+import { TransferParams } from '../../transfers/interfaces/transfer-params.interace';
+import { PaginationType } from '../../transfers/enums/pagination-type.enum';
+import { TransformDatasetsHelper } from '../../datasets/helpers/transform-datasets.helper';
+import { DatasetsRepository } from '../../datasets/datasets.repository';
+import { TransformDatasetsFunction } from '../../transfers/interfaces/transform-datasets-function.interface';
+import { SaveDatasetsFunction } from '../../transfers/interfaces/save-datasets-function.interface';
+import { Dataset } from '../../datasets/interfaces/dataset.interface';
+import { FetchDatasetsFunction } from '../../transfers/interfaces/fetch-datasets-function.interface';
 
 export class SqlImportHelper {
   private sqlTransferHelper: SqlTransferHelper;
+  private transferHelper: TransferHelper;
   private transferFailureHandler: TransferFailureHandler;
-  private offsetPaginationTransferHelper: OffsetPaginationTransferHelper;
+  private transformDatasetsHelper: TransformDatasetsHelper;
   private transfersReporisotory: TransfersRepository;
+  private datasetsRepository: DatasetsRepository;
 
   constructor(
     sqlTransferHelper: SqlTransferHelper,
+    transferHelper: TransferHelper,
     transferFailureHandler: TransferFailureHandler,
-    offsetPaginationTransferHelper: OffsetPaginationTransferHelper,
-    transfersReporisotory: TransfersRepository
+    transformDatasetsHelper: TransformDatasetsHelper,
+    transfersReporisotory: TransfersRepository,
+    datasetsRepository: DatasetsRepository
   ) {
     this.sqlTransferHelper = sqlTransferHelper;
     this.transferFailureHandler = transferFailureHandler;
-    this.offsetPaginationTransferHelper = offsetPaginationTransferHelper;
+    this.transferHelper = transferHelper;
+    this.transformDatasetsHelper = transformDatasetsHelper;
     this.transfersReporisotory = transfersReporisotory;
+    this.datasetsRepository = datasetsRepository;
   }
 
   public import: OuterTransferFunction = async (
@@ -85,39 +97,6 @@ export class SqlImportHelper {
     }
   };
 
-  private async tableImport(
-    impt: SqlImport,
-    transfer: Transfer,
-    sqlConnector: SqlConnector,
-    dialect: string
-  ) {
-    const { id: transferId } = transfer;
-    const { table, limit, fields, idKey } = impt;
-
-    const countQuery = createSqlTableCountQuery(table);
-    const datasetsCount = await sqlConnector.queryResult(countQuery);
-    const updatedTransfer = await this.transfersReporisotory.update({
-      id: transferId,
-      datasetsCount: Number(datasetsCount)
-    });
-
-    const requestedFields = createRequestedFields(fields, idKey);
-
-    const offsetPaginationTransferParams: OffsetPaginationTransferParams = {
-      import: impt,
-      transfer: updatedTransfer,
-      limitPerStep: limit,
-      paginationFunction: {
-        fn: this.tablePaginationFunction,
-        params: [sqlConnector, dialect, table, idKey, requestedFields]
-      }
-    };
-
-    await this.offsetPaginationTransferHelper.transfer(
-      offsetPaginationTransferParams
-    );
-  }
-
   public async checkImport(connection: SqlConnection, impt: SqlImport) {
     let sqlConnector: SqlConnector;
     try {
@@ -135,23 +114,25 @@ export class SqlImportHelper {
 
       switch (target) {
         case SqlImportTarget.TABLE: {
-          await this.tablePaginationFunction(
-            pagination,
+          const tableFetchFunction = this.createTableFetchFunction(
             sqlConnector,
             dialect,
             table,
             idKey,
             [idKey]
           );
+
+          await tableFetchFunction(pagination);
           break;
         }
         case SqlImportTarget.SELECT: {
-          await this.selectPaginationFunction(
-            pagination,
+          const selectFetchFunction = this.createSelectFetchFunction(
             sqlConnector,
             select,
             idKey
           );
+
+          await selectFetchFunction(pagination);
           break;
         }
         default: {
@@ -165,56 +146,132 @@ export class SqlImportHelper {
     }
   }
 
+  private async tableImport(
+    import_: SqlImport,
+    transfer: Transfer,
+    sqlConnector: SqlConnector,
+    dialect: SqlDialect
+  ) {
+    const { id: transferId } = transfer;
+    const { table, limit, fields, idKey } = import_;
+
+    const countQuery = createSqlTableCountQuery(table);
+    const datasetsCount = await sqlConnector.queryResult(countQuery);
+
+    const updatedTransfer = await this.transfersReporisotory.update({
+      id: transferId,
+      datasetsCount: Number(datasetsCount)
+    });
+
+    const requestedFields = createRequestedFields(fields, idKey);
+
+    const fetchFunction = this.createTableFetchFunction(
+      sqlConnector,
+      dialect,
+      table,
+      idKey,
+      requestedFields
+    );
+    const transformFunction = this.createTransformFunction(import_);
+    const saveFunction = this.createSaveFunction();
+
+    const transferParams: TransferParams = {
+      process: import_,
+      transfer: updatedTransfer,
+      limitDatasetsPerStep: limit,
+      paginationType: PaginationType.OFFSET,
+      useReferences: false,
+      fetchFunction,
+      transformFunction,
+      saveFunction
+    };
+
+    await this.transferHelper.transfer(transferParams);
+  }
+
   private async selectImport(
-    impt: SqlImport,
+    import_: SqlImport,
     transfer: Transfer,
     sqlConnector: SqlConnector
   ) {
-    const { select, limit, idKey } = impt;
+    const { select, limit, idKey } = import_;
 
-    const offsetPaginationTransferParams: OffsetPaginationTransferParams = {
-      import: impt,
+    const fetchFunction = this.createSelectFetchFunction(
+      sqlConnector,
+      select,
+      idKey
+    );
+    const transformFunction = this.createTransformFunction(import_);
+    const saveFunction = this.createSaveFunction();
+
+    const transferParams: TransferParams = {
+      process: import_,
       transfer,
-      limitPerStep: limit,
-      paginationFunction: {
-        fn: this.selectPaginationFunction,
-        params: [sqlConnector, select, idKey]
-      }
+      limitDatasetsPerStep: limit,
+      paginationType: PaginationType.OFFSET,
+      useReferences: false,
+      fetchFunction,
+      transformFunction,
+      saveFunction
     };
 
-    await this.offsetPaginationTransferHelper.transfer(
-      offsetPaginationTransferParams
-    );
+    await this.transferHelper.transfer(transferParams);
   }
 
-  private tablePaginationFunction: OffsetPaginationFunction = async (
-    offsetPagination: OffsetPagination,
+  private createTableFetchFunction(
     sqlConnector: SqlConnector,
     dialect: SqlDialect,
     table: string,
     idColumn: string,
     requestedFields: string[]
-  ) => {
-    const { offset, limit } = offsetPagination;
-    const rowsQuery = createSqlTableFindDataQuery(
-      dialect,
-      table,
-      idColumn,
-      offset,
-      limit,
-      requestedFields
-    );
-    return await sqlConnector.queryRows(rowsQuery);
-  };
+  ): FetchDatasetsFunction {
+    return async function (pagination: OffsetPagination) {
+      const { offset, limit } = pagination;
 
-  private selectPaginationFunction: OffsetPaginationFunction = async (
-    offsetPagination: OffsetPagination,
+      const rowsQuery = createSqlTableFindDataQuery(
+        dialect,
+        table,
+        idColumn,
+        offset,
+        limit,
+        requestedFields
+      );
+      const datasets = await sqlConnector.queryRows(rowsQuery);
+
+      return { datasets };
+    };
+  }
+
+  private createSelectFetchFunction(
     sqlConnector: SqlConnector,
     select: string,
     idColumn: string
-  ) => {
-    const { offset, limit } = offsetPagination;
-    const paginatedQuery = paginateSqlSelect(select, idColumn, offset, limit);
-    return await sqlConnector.queryRows(paginatedQuery);
-  };
+  ): FetchDatasetsFunction {
+    return async function (pagination: OffsetPagination) {
+      const { offset, limit } = pagination;
+
+      const paginatedQuery = paginateSqlSelect(select, idColumn, offset, limit);
+      const datasets = await sqlConnector.queryRows(paginatedQuery);
+
+      return { datasets };
+    };
+  }
+
+  private createTransformFunction(
+    import_: SqlImport
+  ): TransformDatasetsFunction {
+    const self = this;
+
+    return function (datasets: object[]) {
+      return self.transformDatasetsHelper.transform(datasets, import_);
+    };
+  }
+
+  private createSaveFunction(): SaveDatasetsFunction {
+    const self = this;
+
+    return function (datasets: Dataset[]) {
+      return self.datasetsRepository.bulkSave(datasets);
+    };
+  }
 }

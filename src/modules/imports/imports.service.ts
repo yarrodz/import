@@ -7,7 +7,7 @@ import { ProcessesRepository } from '../processes/process.repository';
 import { TransfersRepository } from '../transfers/transfers.repository';
 import { ResponseHandler } from '../../utils/response-handler/response-handler';
 import { Source } from './enums/source.enum';
-import { TransferStatus } from '../transfers/enums/transfer-status.enum';
+import { TransferState } from '../transfers/enums/transfer-state.enum';
 
 export class ImportsService {
   private sqlImportService: SqlImportService;
@@ -280,7 +280,7 @@ export class ImportsService {
             {
               type: 'equals',
               property: 'status',
-              value: TransferStatus.PENDING
+              value: TransferState.PENDING
             },
             {
               type: 'hasEdge',

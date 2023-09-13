@@ -8,7 +8,7 @@ import { OAuth2AuthUriHelper } from '../oauth2/helpers/oauth2-auth-uri.helper';
 import { ResponseHandler } from '../../utils/response-handler/response-handler';
 import { ApiImport } from './interfaces/api-import.interface';
 import { TransferType } from '../transfers/enums/transfer-type.enum';
-import { TransferStatus } from '../transfers/enums/transfer-status.enum';
+// import { TransferStatus } from '../transfers/enums/transfer-state.enum';
 import { ConnectionState } from './enums/connection-state.enum';
 import { Context } from '../imports/interfaces/context.interface';
 import { ContextAction } from '../imports/enums/context-action-enum';

@@ -25,7 +25,7 @@ export class ImapConnector {
     try {
       await this.client.connect();
     } catch (error) {
-      console.error(error);
+      // console.error(error);
       throw new Error(
         `Error while connecting to email service: ${error.message}`
       );
@@ -40,7 +40,7 @@ export class ImapConnector {
     try {
       await this.client.getMailboxLock(mailbox);
     } catch (error) {
-      console.error(error);
+      // console.error(error);
       throw new Error(`Error while opening mailbox: ${error.message}`);
     }
   }
@@ -66,20 +66,16 @@ export class ImapConnector {
     }
   }
 
-  async getThreadIds(unseen?: boolean) {
+  async getThreadIds(searchObject: SearchObject) {
     try {
       const uniqueThreadIds = [];
 
-      const searchObject: SearchObject = { uid: '1:*' };
-      if (unseen === true) {
-        searchObject.seen = false;
-      }
-
-      // console.log('searchObject: ', searchObject)
-
-      for await (const message of this.client.fetch(searchObject, {
-        threadId: true
-      })) {
+      for await (const message of this.client.fetch(
+        { uid: '1:*', ...searchObject },
+        {
+          threadId: true
+        }
+      )) {
         const threadId = message.threadId;
         if (uniqueThreadIds.indexOf(threadId) === -1) {
           uniqueThreadIds.push(threadId);
@@ -103,6 +99,7 @@ export class ImapConnector {
       for await (let message of this.client.fetch(
         { uid: range, ...searchObject },
         {
+          uid: true,
           source: true,
           envelope: true,
           threadId: true,
@@ -110,11 +107,12 @@ export class ImapConnector {
           labels: true
         }
       )) {
-        const { source, envelope, threadId, flags, labels } = message;
+        const { uid, source, envelope, threadId, flags, labels } = message;
         const parsedMessage = await simpleParser(source);
-        const { messageId, html, text } = parsedMessage;
+        const { messageId, text } = parsedMessage;
         const { inReplyTo, date, subject, from, to, cc, bcc } = envelope;
         messages.push({
+          uid,
           messageId,
           inReplyTo,
           date,
@@ -124,7 +122,6 @@ export class ImapConnector {
           bcc,
           subject,
           text,
-          html: html || '',
           flags: Array.from(flags),
           labels: Array.from(labels),
           threadId
@@ -137,12 +134,11 @@ export class ImapConnector {
     }
   }
 
-  // async setSeen(range: string) {
-  //   try {
-  //     console.log('seTsern:', range);
-  //     await this.client.messageFlagsAdd(range, ['\Seen'], {uid: true});
-  //   } catch (error) {
-  //     throw error;
-  //   }
-  // }
+  async setSeen(range: string) {
+    try {
+      await this.client.messageFlagsAdd(range, ['\\Seen'], { uid: true });
+    } catch (error) {
+      throw error;
+    }
+  }
 }

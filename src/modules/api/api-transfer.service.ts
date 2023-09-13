@@ -9,7 +9,7 @@ import { ResponseHandler } from '../../utils/response-handler/response-handler';
 import { ApiImport } from './interfaces/api-import.interface';
 import { Transfer } from '../transfers/interfaces/transfer.interface';
 import { ConnectionState } from './enums/connection-state.enum';
-import { TransferStatus } from '../transfers/enums/transfer-status.enum';
+// import { TransferStatus } from '../transfers/enums/transfer-state.enum';
 import { Context } from '../imports/interfaces/context.interface';
 import { ContextAction } from '../imports/enums/context-action-enum';
 import { ApiConnection } from './interfaces/api-connection.interface';
@@ -67,8 +67,8 @@ export class ApiTransferService {
       const updatedImport = await this.processesRepository.load(importId);
 
       const reloadedTransfer = await this.transfersRepository.update({
-        id: transferId,
-        status: TransferStatus.PENDING
+        id: transferId
+        // status: TransferStatus.PENDING
       });
 
       this.apiImportHelper.import({

@@ -1,25 +1,23 @@
-import { TransferStatus } from '../enums/transfer-status.enum';
+import { TransferState } from '../enums/transfer-state.enum';
 import { TransferMethod } from '../enums/transfer-method.enum';
-import { TransferType } from '../../transfers/enums/transfer-type.enum';
 import { TransferReference } from './transfer-reference.interface';
 
 export interface Transfer {
   id: number;
 
-  type: TransferType;
   method: TransferMethod;
-  status: TransferStatus;
+  state: TransferState;
 
   offset: number;
   cursor?: string;
 
-  //used for chunk transfer by references
-  references?: string[];
+  references?: any[];
 
-  datasetsCount?: number;
-  transferedDatasetsCount: number;
+  total?: number;
+  transfered: number;
 
-  log?: string;
+  log?: string[];
+
   retryAttempts: number;
 
   __: TransferReference;

@@ -1,4 +1,4 @@
-export enum TransferStatus {
+export enum TransferState {
   PENDING = 'Pending',
   PAUSING = 'Pausing',
   PAUSED = 'Paused',

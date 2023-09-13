@@ -1,13 +1,9 @@
-import { CursorPagination } from './cursor-pagination.interface';
+// import { CursorPagination } from './cursor-pagination.interface';
+// import { FetchFunctionResult } from './fetch-function-result.interface';
 
-interface CursorPaginationFunctionResult {
-  cursor?: string;
-  datasets: object[];
-}
-
-export interface CursorPaginationFunction {
-  (
-    pagination: CursorPagination,
-    ...params: any[]
-  ): Promise<CursorPaginationFunctionResult>;
-}
+// export interface CursorPaginationFunction {
+//   (
+//     pagination: CursorPagination,
+//     ...params: any[]
+//   ): Promise<FetchFunctionResult>;
+// }

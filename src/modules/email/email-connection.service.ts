@@ -32,7 +32,7 @@ export class EmailConnectionService {
       responseHandler.setSuccess(200, createdConnection);
       return responseHandler;
     } catch (error) {
-      console.error(error);
+      // console.error(error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }
@@ -54,7 +54,7 @@ export class EmailConnectionService {
       responseHandler.setSuccess(200, updateConnection);
       return responseHandler;
     } catch (error) {
-      console.error(error);
+      // console.error(error);
       responseHandler.setError(500, error.message);
       return responseHandler;
     }

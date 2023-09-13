@@ -3,7 +3,7 @@ import { ApiImportHelper } from '../../api/helpers/api-import.helper';
 import { EmailImportHelper } from '../../email/helpers/email-import.helper';
 import { TransfersRepository } from '../transfers.repository';
 import { Source } from '../../imports/enums/source.enum';
-import { TransferStatus } from '../enums/transfer-status.enum';
+import { TransferState } from '../enums/transfer-state.enum';
 import { ProcessesRepository } from '../../processes/process.repository';
 
 export class PendingTransfersReloader {
@@ -32,7 +32,7 @@ export class PendingTransfersReloader {
       {
         type: 'equals',
         property: 'status',
-        value: TransferStatus.PENDING
+        value: TransferState.PENDING
       },
       {},
       false

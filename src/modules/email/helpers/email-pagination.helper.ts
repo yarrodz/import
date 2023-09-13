@@ -15,11 +15,13 @@ export class EmailPaginationHelper {
     }
   }
 
-  static createRange2(pagination: EmailPagination, uids: number[]): string {
+  static createUidRange(pagination: EmailPagination, uids: number[]): string {
     const { offset, limit } = pagination;
 
     if (typeof offset === 'number' && typeof limit === 'number') {
       return uids.slice(offset, offset + limit).join(',');
+    } else if (typeof offset === 'number' && limit === '*') {
+      //     return `${offset + 1}:${limit}`;
     } else {
       throw new Error(
         `Error while searching emails. Invalid pagination: ${pagination}.`

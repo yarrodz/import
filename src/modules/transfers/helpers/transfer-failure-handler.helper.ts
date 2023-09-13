@@ -3,7 +3,7 @@ import { Server as IO } from 'socket.io';
 import { TransfersRepository } from '../transfers.repository';
 import { OuterTransferFunction } from '../interfaces/outer-transfer-function.interface';
 import { Transfer } from '../interfaces/transfer.interface';
-import { TransferStatus } from '../enums/transfer-status.enum';
+import { TransferState } from '../enums/transfer-state.enum';
 import { sleep } from '../../../utils/sleep/sleep';
 import { TransferFailureHandleParams } from '../interfaces/transfer-failure-handle-params.interface';
 import { SqlImport } from '../../sql/interfaces/sql-import.interface';
@@ -54,7 +54,7 @@ export class TransferFailureHandler {
 
     const failedTransfer = await this.transfersRepository.update({
       id: transferId,
-      status: TransferStatus.FAILED,
+      status: TransferState.FAILED,
       log: `Transfer was failed with error: ${error.message}`
     });
     this.io.to(String(unitId)).emit('transfer', failedTransfer);

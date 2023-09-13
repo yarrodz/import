@@ -8,7 +8,7 @@ import { TransfersRepository } from '../transfers/transfers.repository';
 import { Scheduler } from './interfaces/schedule.interface';
 import { SchedulerPeriod } from './enum/scheduler-period.enum';
 import { Source } from '../imports/enums/source.enum';
-import { TransferStatus } from '../transfers/enums/transfer-status.enum';
+import { TransferState } from '../transfers/enums/transfer-state.enum';
 import { WeekdayNumberMapping } from './enum/weekday.enum';
 import { ProcessesRepository } from '../processes/process.repository';
 
@@ -125,10 +125,7 @@ export class SchedulersCron {
       if (!impt) {
         return;
       }
-      const { inUnit: unit } = impt.__;
-
-      const pendingUnitTransfer = await this.findUnitPendingTransfer(unit.id);
-      if (pendingUnitTransfer === undefined) {
+      if (impt.fields === undefined) {
         return;
       }
 
@@ -161,7 +158,7 @@ export class SchedulersCron {
           {
             type: 'equals',
             property: 'status',
-            value: TransferStatus.PENDING
+            value: TransferState.PENDING
           },
           {
             type: 'hasEdge',

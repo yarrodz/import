@@ -18,7 +18,7 @@ export class TransfersRepository {
         firstOnly
       );
     } catch (error) {
-      console.error(error);
+      // console.error(error);
       throw new error(`Error while querying transfers: ${error}`);
     }
   }
@@ -29,7 +29,7 @@ export class TransfersRepository {
         .load(id)
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      console.error('Load: ', error);
+      // console.error('Load: ', error);
       throw new error(`Error while loading a transfer: ${error}`);
     }
   }
@@ -40,7 +40,7 @@ export class TransfersRepository {
         .insert(input)
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      console.error('Create: ', error);
+      // console.error('Create: ', error);
       throw new error(`Error while creating a transfer: ${error}`);
     }
   }
@@ -51,7 +51,7 @@ export class TransfersRepository {
         .save()
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      console.error('Update: ', error);
+      // console.error('Update: ', error);
       throw new error(`Error while updating a transfer: ${error}`);
     }
   }

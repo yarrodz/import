@@ -1,6 +1,6 @@
 import { TransfersRepository } from '../../transfers/transfers.repository';
 import { TransferType } from '../../transfers/enums/transfer-type.enum';
-import { TransferStatus } from '../../transfers/enums/transfer-status.enum';
+import { TransferState } from '../../transfers/enums/transfer-state.enum';
 import { TransferMethod } from '../../transfers/enums/transfer-method.enum';
 import { EmailImport } from '../interfaces/email-import.interace';
 import { Transfer } from '../../transfers/interfaces/transfer.interface';
@@ -21,7 +21,7 @@ export class EmailTransferHelper {
     return await this.transfersRepository.create({
       type: TransferType.IMPORT,
       method: TransferMethod.OFFSET_PAGINATION,
-      status: TransferStatus.PENDING,
+      status: TransferState.PENDING,
       offset: 0,
       transferedDatasetsCount: 0,
       log: 'Transfer was started',
@@ -45,7 +45,7 @@ export class EmailTransferHelper {
   ): Promise<Transfer> {
     return await this.transfersRepository.update({
       id,
-      status: TransferStatus.PENDING,
+      status: TransferState.PENDING,
       offset: target === EmailImportTarget.EMAILS ? 1 : 0,
       transferedDatasetsCount: 0,
       retryAttempts: 0,
