@@ -1,8 +1,8 @@
-import { SqlConnector } from '../connector/sql.connector';
+import { SqlConnector } from '../connectors/sql.connector';
 import { SqlConnection } from '../interfaces/sql.connection.interface';
 
 export class SqlConnectionHelper {
-  public checkConnection = async (connection: SqlConnection): Promise<void> => {
+  public async checkConnection(connection: SqlConnection): Promise<void> {
     let sqlConnector: SqlConnector;
     try {
       const { config } = connection;

@@ -1,8 +1,8 @@
-import { Context } from '../../imports/interfaces/context.interface';
+import { Context } from './context.interface';
 import { OAuth2SessionCallbackParams } from './oauth2-session-callback-params.interface';
 
 export interface OAuth2CallbackProcess {
-  state: string;
+  status: string;
   context: Context;
   params: OAuth2SessionCallbackParams;
 }

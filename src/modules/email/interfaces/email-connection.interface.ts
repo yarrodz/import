@@ -1,13 +1,6 @@
-import { ConnectionReference } from '../../connections/interfaces/connection.reference.interface';
-import { Source } from '../../imports/enums/source.enum';
+import { Connection } from "../../connections/interfaces/connection.inteface";
 
-export interface EmailConnection {
-  id: number;
-
-  name: string;
-
-  source: Source.EMAIL;
-
+export interface EmailConnection extends Connection {
   config: {
     auth: {
       user: string;
@@ -16,6 +9,4 @@ export interface EmailConnection {
     host: string;
     port: number;
   };
-
-  __: ConnectionReference;
 }

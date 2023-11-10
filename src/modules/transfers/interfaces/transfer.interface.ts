@@ -1,24 +1,16 @@
-import { TransferState } from '../enums/transfer-state.enum';
-import { TransferMethod } from '../enums/transfer-method.enum';
+import { TransferRetryOptions } from './transfer-retry-options.interace';
 import { TransferReference } from './transfer-reference.interface';
 
 export interface Transfer {
   id: number;
 
-  method: TransferMethod;
-  state: TransferState;
+  name: string;
 
-  offset: number;
-  cursor?: string;
+  source: string;
 
-  references?: any[];
+  fields: any;
 
-  total?: number;
-  transfered: number;
-
-  log?: string[];
-
-  retryAttempts: number;
+  retryOptions: TransferRetryOptions;
 
   __: TransferReference;
 }

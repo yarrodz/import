@@ -5,7 +5,7 @@ export interface OAuth2AuthUriParams {
   code_challenge?: string;
   code_verifier?: string;
   scope?: string;
-  state: string;
+  status: string;
   prompt: string;
   access_type: string;
   response_type: string;

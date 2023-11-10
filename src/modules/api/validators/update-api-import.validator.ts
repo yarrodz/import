@@ -1,12 +1,12 @@
 import Joi from 'joi';
 
 import { ProcessType } from '../../processes/enums/process.type.enum';
-import { Source } from '../../imports/enums/source.enum';
-import { TransferMethod } from '../../transfers/enums/transfer-method.enum';
+import { Source } from '../../oauth2/enums/source.enum';
+import { TransferMethod } from '../../transfer-processes/enums/transfer-method.enum';
 import { PaginationOptionsValidator } from './pagination-options.validator';
 import { RequestValidator } from './request.validator';
-import { ImportFieldValidator } from '../../imports/validators/import-field.validator';
-import { OutReferenceValidator } from '../../imports/validators/out-reference.validator';
+import { ImportFieldValidator } from '../../transfers/validators/transfer-field.validator';
+import { OutReferenceValidator } from '../../transfers/validators/out-reference.validator';
 
 // export const UpdateApiImportValidator = Joi.object({
 //   id: Joi.number().integer().required(),

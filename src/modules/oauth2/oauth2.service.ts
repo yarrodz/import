@@ -6,7 +6,7 @@ import { OAuth2CallbackProcess } from './interfaces/oauth2-callback-process.inte
 import { OAuth2CallbackBody } from './interfaces/oauth2-callback-body.interface';
 import { OAuth2SessionCallbackParams } from './interfaces/oauth2-session-callback-params.interface';
 import { ResponseHandler } from '../../utils/response-handler/response-handler';
-import { ContextAction } from '../imports/enums/context-action-enum';
+import { ContextAction } from './enums/context-action-enum';
 import { OAuth2SessionHelper } from './helpers/oauth2-session.helper';
 
 const GRANT_TYPE = 'authorization_code';
@@ -31,13 +31,13 @@ export class OAuth2Service {
     let callbackProcess: OAuth2CallbackProcess;
     try {
       const { session, query } = req;
-      const { code, state } = query;
+      const { code, status } = query;
 
       const oAuth2SessionHelper = new OAuth2SessionHelper(session);
       callbackProcess = oAuth2SessionHelper.findCallbackProcess(
-        state as string
+        status as string
       );
-      oAuth2SessionHelper.removeCallbackProcess(state as string);
+      oAuth2SessionHelper.removeCallbackProcess(status as string);
 
       const { params, context } = callbackProcess;
       const { token_uri, client_id, client_secret } = params;

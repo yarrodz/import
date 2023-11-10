@@ -1,18 +1,19 @@
-import { ImapConnector } from '../connector/imap.connector';
+import { ImapConnector } from '../connectors/imap.connector';
 import { EmailConnection } from '../interfaces/email-connection.interface';
 
 export class EmailConnectionHelper {
-  public checkConnection = async (
+  public async checkConnection(
     connection: EmailConnection
-  ): Promise<void> => {
-    let imapConnector: ImapConnector;
+  ): Promise<void> {
     try {
       const { config } = connection;
-      const imapConnector = new ImapConnector(config);
+      var imapConnector = new ImapConnector(config);
       await imapConnector.connect();
       imapConnector.disconnect();
     } catch (error) {
-      imapConnector && imapConnector.disconnect();
+      if (imapConnector !== undefined) {
+        imapConnector.disconnect();
+      }
       throw error;
     }
   };

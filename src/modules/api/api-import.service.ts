@@ -6,12 +6,12 @@ import { ApiColumnsHelper } from './helpers/api-columns.helper';
 import { ApiImportHelper } from './helpers/api-import.helper';
 import { OAuth2AuthUriHelper } from '../oauth2/helpers/oauth2-auth-uri.helper';
 import { ResponseHandler } from '../../utils/response-handler/response-handler';
-import { ApiImport } from './interfaces/api-import.interface';
-import { TransferType } from '../transfers/enums/transfer-type.enum';
-// import { TransferStatus } from '../transfers/enums/transfer-state.enum';
-import { ConnectionState } from './enums/connection-state.enum';
-import { Context } from '../imports/interfaces/context.interface';
-import { ContextAction } from '../imports/enums/context-action-enum';
+import { ApiImport } from './interfaces/api-iframe-transfer.interface';
+import { TransferType } from '../transfer-processes/enums/transfer-type.enum';
+// import { TransferStatus } from '../transfers/enums/transfer-status.enum';
+import { Connectionstatus } from './enums/connection-status.enum';
+import { Context } from '../oauth2/interfaces/context.interface';
+import { ContextAction } from '../oauth2/enums/context-action-enum';
 import { ApiConnection } from './interfaces/api-connection.interface';
 import { CreateApiImportValidator } from './validators/create-api-import.validator';
 import { UpdateApiImportValidator } from './validators/update-api-import.validator';
@@ -123,8 +123,8 @@ export class ApiImportService {
         connectionId,
         importId
       };
-      const connectionState = await this.apiConnectionHelper.connect(impt);
-      if (connectionState === ConnectionState.OAUTH2_REQUIRED) {
+      const connectionstatus = await this.apiConnectionHelper.connect(impt);
+      if (connectionstatus === Connectionstatus.OAUTH2_REQUIRED) {
         const oAuth2AuthUri = await this.oAuth2AuthUriHelper.createUri(
           req,
           connection,
@@ -161,8 +161,8 @@ export class ApiImportService {
         connectionId,
         importId
       };
-      const connectionState = await this.apiConnectionHelper.connect(impt);
-      if (connectionState === ConnectionState.OAUTH2_REQUIRED) {
+      const connectionstatus = await this.apiConnectionHelper.connect(impt);
+      if (connectionstatus === Connectionstatus.OAUTH2_REQUIRED) {
         const oAuth2AuthUri = await this.oAuth2AuthUriHelper.createUri(
           req,
           connection,
@@ -197,8 +197,8 @@ export class ApiImportService {
         connectionId,
         importId
       };
-      const connectionState = await this.apiConnectionHelper.connect(impt);
-      if (connectionState === ConnectionState.OAUTH2_REQUIRED) {
+      const connectionstatus = await this.apiConnectionHelper.connect(impt);
+      if (connectionstatus === Connectionstatus.OAUTH2_REQUIRED) {
         const oAuth2AuthUri = await this.oAuth2AuthUriHelper.createUri(
           req,
           connection,

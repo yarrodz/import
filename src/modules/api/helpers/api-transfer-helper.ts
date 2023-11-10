@@ -1,8 +1,8 @@
-import { TransfersRepository } from '../../transfers/transfers.repository';
-import { ApiImport } from '../interfaces/api-import.interface';
-import { Transfer } from '../../transfers/interfaces/transfer.interface';
-import { TransferType } from '../../transfers/enums/transfer-type.enum';
-// import { TransferStatus } from '../../transfers/enums/transfer-state.enum';
+import { TransfersRepository } from '../../transfer-processes/transfer-processes.repository';
+import { ApiImport } from '../interfaces/api-iframe-transfer.interface';
+import { Transfer } from '../../transfer-processes/interfaces/transfer-process.interface';
+import { TransferType } from '../../transfer-processes/enums/transfer-type.enum';
+// import { TransferStatus } from '../../transfers/enums/transfer-status.enum';
 
 export class ApiTransferHelper {
   private transfersRepository: TransfersRepository;

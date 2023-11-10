@@ -1,8 +1,8 @@
-import { Record } from './record.interface';
+// import { BulkSaveRecord } from './transfer-record.interface';
 
-export interface Dataset {
-  records: Record[];
-  sourceId?: string;
-  importId?: number;
-  unitId?: number;
-}
+// export interface Dataset {
+//   records: BulkSaveRecord[];
+//   sourceId?: string;
+//   importId?: number;
+//   unitId?: number;
+// }

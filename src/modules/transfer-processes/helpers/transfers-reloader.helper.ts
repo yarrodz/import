@@ -1,0 +1,87 @@
+// import { SqlImportHelper } from '../../sql/helpers/sql-transfer.helper';
+// import { ApiImportHelper } from '../../api/helpers/api-import.helper';
+// import { EmailImportHelper } from '../../email/helpers/email-transfers.helper';
+// import { TransfersRepository } from '../transfer-processes.repository';
+// import { Source } from '../../oauth2/enums/source.enum';
+// import { TransferStatus } from '../enums/transfer-status.enum';
+// import { ProcessesRepository } from '../../processes/process.repository';
+
+// export class TransfersReloader {
+//   private sqlImportHelper: SqlImportHelper;
+//   private apiImportHelper: ApiImportHelper;
+//   private emailImportHelper: EmailImportHelper;
+//   private transfersRepository: TransfersRepository;
+//   private processesRepository: ProcessesRepository;
+
+//   constructor(
+//     sqlImportHelper: SqlImportHelper,
+//     apiImportHelper: ApiImportHelper,
+//     emailImportHelper: EmailImportHelper,
+//     transfersRepository: TransfersRepository,
+//     processesRepository: ProcessesRepository
+//   ) {
+//     this.sqlImportHelper = sqlImportHelper;
+//     this.apiImportHelper = apiImportHelper;
+//     this.emailImportHelper = emailImportHelper;
+//     this.transfersRepository = transfersRepository;
+//     this.processesRepository = processesRepository;
+//   }
+
+//   async onServerStart() {
+//     const pendingTransfers = await this.transfersRepository.query(
+//       {
+//         type: 'equals',
+//         property: 'status',
+//         value: TransferStatus.PENDING
+//       },
+//       {},
+//       false
+//     );
+
+//     await Promise.all(
+//       pendingTransfers.map(async (transfer) => {
+//         try {
+//           const loadedTransfer = await this.transfersRepository.load(
+//             transfer.id
+//           );
+
+//           const importId = loadedTransfer.__.inImport.id;
+//           const impt = await this.processesRepository.load(importId);
+
+//           const { source } = impt;
+
+//           switch (source) {
+//             case Source.SQL: {
+//               await this.sqlImportHelper.import({
+//                 import: impt,
+//                 transfer
+//               });
+//               break;
+//             }
+//             case Source.API: {
+//               await this.apiImportHelper.import({
+//                 import: impt,
+//                 transfer
+//               });
+//               break;
+//             }
+//             case Source.EMAIL: {
+//               await this.emailImportHelper.import({
+//                 import: impt,
+//                 transfer
+//               });
+//               break;
+//             }
+//             default: {
+//               console.error(
+//                 `Error while reloading pending transfers: Unknown import source: '${source}'.`
+//               );
+//             }
+//           }
+//         } catch (error) {
+//           console.error(`Error while reloading pending transfers: ${error}.`);
+//         }
+//       })
+//     );
+//   }
+// }

@@ -7,7 +7,7 @@ import { OAuth2CallbackProcess } from '../interfaces/oauth2-callback-process.int
 import { OAuth2AuthUriParams } from '../interfaces/oauth2-auth-uri-params.interface';
 import { ApiConnection } from '../../api/interfaces/api-connection.interface';
 import { OAuth2 } from '../interfaces/oauth2.interface';
-import { Context } from '../../imports/interfaces/context.interface';
+import { Context } from '../interfaces/context.interface';
 
 const PROMPT = 'consent';
 const ACCESS_TYPE = 'offline';
@@ -30,11 +30,11 @@ export class OAuth2AuthUriHelper {
     const { oauth2 } = connection;
     const { auth_uri, use_code_verifier } = oauth2;
 
-    const state = crypto.randomBytes(100).toString('base64url');
+    const status = crypto.randomBytes(100).toString('base64url');
 
     const authUriParams: OAuth2AuthUriParams = this.createAuthUriParams(
       oauth2,
-      state
+      status
     );
 
     const callbackParams: OAuth2SessionCallbackParams =
@@ -45,7 +45,7 @@ export class OAuth2AuthUriHelper {
     }
 
     const oAuth2CallbackProcess: OAuth2CallbackProcess = {
-      state,
+      status,
       context,
       params: callbackParams
     };
@@ -58,12 +58,12 @@ export class OAuth2AuthUriHelper {
 
   private createAuthUriParams(
     oAuth2: OAuth2,
-    state: string
+    status: string
   ): OAuth2AuthUriParams {
     const { client_id, scope } = oAuth2;
     const authUriParams: OAuth2AuthUriParams = {
       client_id,
-      state,
+      status,
       prompt: PROMPT,
       access_type: ACCESS_TYPE,
       response_type: RESPONSE_TYPE,

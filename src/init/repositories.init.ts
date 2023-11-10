@@ -3,7 +3,7 @@ import { iFrameDbClient } from 'iFrame-ai';
 import { ConnectionsRepository } from '../modules/connections/connections.repository';
 import { DatasetsRepository } from '../modules/datasets/datasets.repository';
 import { ProcessesRepository } from '../modules/processes/process.repository';
-import { TransfersRepository } from '../modules/transfers/transfers.repository';
+import { TransfersRepository } from '../modules/transfer-processes/transfer-processes.repository';
 import { SchedulersRepository } from '../modules/scheduler/schedulers.repository';
 
 export interface InitRepositoriesResult {

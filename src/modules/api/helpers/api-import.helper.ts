@@ -1,45 +1,17 @@
 import { ApiConnectionHelper } from './api-connection.helper';
-import { TransfersRepository } from '../../transfers/transfers.repository';
-import { TransferFailureHandler } from '../../transfers/helpers/transfer-failure-handler.helper';
+import { TransfersRepository } from '../../transfer-processes/transfer-processes.repository';
+import { TransferFailureHandler } from '../../transfer-processes/helpers/transfer-failure-handler.helper';
 // import { ChunkTransferHelper } from '../../transfers/helpers/chunk-transfer.helper';
 // import { OffsetPaginationTransferHelper } from '../../transfers/helpers/offset-pagination-transfer.helper';
-// import { CursorPaginationTransferHelper } from '../../transfers/helpers/cursor-pagination-transfer.helper';
-import {
-  OuterTransferFunction,
-  OuterTransferFunctionParams
-} from '../../transfers/interfaces/outer-transfer-function.interface';
-import { ApiImport } from '../interfaces/api-import.interface';
-import { Transfer } from '../../transfers/interfaces/transfer.interface';
-import { ApiConnector } from '../connector/api-connector';
-import { ChunkTransferParams } from '../../transfers/interfaces/chunk-transfer-params.interface';
-import { OffsetPagination } from '../../transfers/interfaces/offset-pagination.interface';
-// import { OffsetPaginationFunction } from '../../transfers/interfaces/offset-pagination-function.interface';
-// import { OffsetPaginationTransferParams } from '../../transfers/interfaces/offset-pagination-transfer-params.interface';
-import { CursorPagination } from '../../transfers/interfaces/cursor-pagination.interface';
-// import { CursorPaginationFunction } from '../../transfers/interfaces/cursor-pagination-function.interface';
-// import { CursorPaginationTransferParams } from '../../transfers/interfaces/cursor-pagination-transfer-params.interface';
-import { ConnectionState } from '../enums/connection-state.enum';
-// import { TransferStatus } from '../../transfers/enums/transfer-state.enum';
-import { TransferMethod } from '../../transfers/enums/transfer-method.enum';
-import { resolvePath } from '../../../utils/resolve-path/resolve-path';
-import { ApiTransferHelper } from './api-transfer-helper';
-
-export class ApiImportHelper {
+export class ApiTransferHelper {
   private apiTransferHelper: ApiTransferHelper;
   private apiConnectionHelper: ApiConnectionHelper;
   private transferFailureHandler: TransferFailureHandler;
-  // private chunkTransferHelper: ChunkTransferHelper;
-  // private offsetPaginationTransferHelper: OffsetPaginationTransferHelper;
-  // private cursorPaginationTransferHelper: CursorPaginationTransferHelper;
   private transfersRepository: TransfersRepository;
 
   constructor(
     apiTransferHelper: ApiTransferHelper,
     apiConnectionHelper: ApiConnectionHelper,
-    transferFailureHandler: TransferFailureHandler,
-    // chunkTransferHelper: ChunkTransferHelper,
-    // offsetPaginationTransferHelper: OffsetPaginationTransferHelper,
-    // cursorPaginationTransferHelper: CursorPaginationTransferHelper,
     transfersRepository: TransfersRepository
   ) {
     this.apiTransferHelper = apiTransferHelper;
@@ -62,8 +34,8 @@ export class ApiImportHelper {
       //     transfer = await this.apiTransferHelper.createStartedTransfer(impt);
       //   }
       //   const { id: transferId } = transfer;
-      //   const connectionState = await this.apiConnectionHelper.connect(impt);
-      //   if (connectionState === ConnectionState.OAUTH2_REQUIRED) {
+      //   const connectionstatus = await this.apiConnectionHelper.connect(impt);
+      //   if (connectionstatus === Connectionstatus.OAUTH2_REQUIRED) {
       //     await this.transfersRepository.update({
       //       id: transferId,
       //       status: TransferStatus.PAUSED,

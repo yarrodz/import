@@ -1,9 +1,9 @@
 import { ConnectionsRepository } from './connections.repository';
 import { ResponseHandler } from '../../utils/response-handler/response-handler';
-import { Source } from '../imports/enums/source.enum';
-import { SqlConnectionService } from '../sql/sql-connection.service';
+import { Source } from '../oauth2/enums/source.enum';
+import { SqlConnectionService } from '../sql/services/sql-connection.service';
 import { ApiConnectionService } from '../api/api-conection.service';
-import { EmailConnectionService } from '../email/email-connection.service';
+import { EmailConnectionService } from '../email/services/email-connection.service';
 import { ProcessesRepository } from '../processes/process.repository';
 
 export class ConnectionsService {

@@ -12,14 +12,13 @@ export class TransfersRepository {
 
   async query(select: any, sortings: any, firstOnly: boolean) {
     try {
-      return await new iFrameTransfer(this.client).qq(
+      return await new iFrameTransfer(this.client).query(
         select,
         sortings,
         firstOnly
       );
     } catch (error) {
-      // console.error(error);
-      throw new error(`Error while querying transfers: ${error}`);
+      throw new error(`Error while querying processes: ${error}`);
     }
   }
 
@@ -29,19 +28,18 @@ export class TransfersRepository {
         .load(id)
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      // console.error('Load: ', error);
-      throw new error(`Error while loading a transfer: ${error}`);
+      throw new error(`Error while loading a process: ${error}`);
     }
   }
 
   async create(input: any) {
     try {
-      return await new iFrameTransfer(this.client)
+      const result = await new iFrameTransfer(this.client)
         .insert(input)
         .then((result) => transformIFrameInstance(result));
+      return result;
     } catch (error) {
-      // console.error('Create: ', error);
-      throw new error(`Error while creating a transfer: ${error}`);
+      throw new error(`Error while creating a process: ${error}`);
     }
   }
 
@@ -51,8 +49,7 @@ export class TransfersRepository {
         .save()
         .then((result) => transformIFrameInstance(result));
     } catch (error) {
-      // console.error('Update: ', error);
-      throw new error(`Error while updating a transfer: ${error}`);
+      throw new error(`Error while updating a process: ${error}`);
     }
   }
 
@@ -60,7 +57,7 @@ export class TransfersRepository {
     try {
       return await new iFrameTransfer(this.client).delete(id);
     } catch (error) {
-      throw new error(`Error while deleting a transfer: ${error}`);
+      throw new error(`Error while deleting a process: ${error}`);
     }
   }
 }

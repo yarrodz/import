@@ -1,7 +1,7 @@
 import { InitServicesResult } from './services.init';
 import { OAuth2Controller } from '../modules/oauth2/oauth2.controller';
-import { TransfersController } from '../modules/transfers/transfers.controller';
-import { ImportsController } from '../modules/imports/imports.controller';
+import { TransfersController } from '../modules/transfer-processes/transfer-processes.controller';
+import { ImportsController } from '../modules/transfers/transfers.controller';
 import { ConnectionsController } from '../modules/connections/connections.controller';
 import { SchedulersController } from '../modules/scheduler/schedulers.controller';
 

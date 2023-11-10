@@ -1,5 +1,6 @@
 export enum FeatureType {
   JSON = 'json',
+  AI = 'ai',
   TIME = 'time',
   DATE = 'date',
   DATETIME = 'datetime',

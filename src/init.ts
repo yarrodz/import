@@ -6,7 +6,7 @@ import { initRepositories } from './init/repositories.init';
 import { initServices } from './init/services.init';
 import { initControllers } from './init/controllers.init';
 import { initRouters } from './init/routers.init';
-import { PendingTransfersReloader } from './modules/transfers/helpers/transfers-reloader.helper';
+import { PendingTransfersReloader } from './modules/transfer-processes/helpers/transfers-reloader.helper';
 import { SchedulersCron } from './modules/scheduler/schedulers.cron';
 
 export interface InitParams {

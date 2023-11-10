@@ -1,13 +1,13 @@
 import axios, { AxiosRequestConfig } from 'axios';
 
-import { AuthRequestHelper } from './auth-request.helper';
-import { PaginateRequestHelper } from './paginate-request.helper';
-import { TransferMethod } from '../../transfers/enums/transfer-method.enum';
+import { AuthRequestHelper } from '../helpers/auth-request.helper';
+import { PaginateRequestHelper } from '../helpers/paginate-request.helper';
+import { TransferMethod } from '../../transfer-processes/enums/transfer-method.enum';
 import { RequestPaginationOptions } from '../interfaces/request-pagination-options.interface';
 import { ApiConnection } from '../interfaces/api-connection.interface';
-import { ApiImport } from '../interfaces/api-import.interface';
-import { OffsetPagination } from '../../transfers/interfaces/offset-pagination.interface';
-import { CursorPagination } from '../../transfers/interfaces/cursor-pagination.interface';
+import { OffsetPagination } from '../../transfer-processes/interfaces/offset-pagination.interface';
+import { CursorPagination } from '../../transfer-processes/interfaces/cursor-pagination.interface';
+import { ApiIframeTransfer } from '../interfaces/api-iframe-transfer.interface';
 
 export class ApiConnector {
   private request: AxiosRequestConfig;
@@ -15,9 +15,15 @@ export class ApiConnector {
   private paginationType?: TransferMethod;
   private paginationOptions?: RequestPaginationOptions;
 
-  constructor(impt: ApiImport) {
-    const { request, transferMethod, paginationOptions } = impt;
-    const connection = impt.__.hasConnection as ApiConnection;
+  constructor(transfer: ApiIframeTransfer) {
+    const {
+      request,
+      transferMethod,
+      paginationOptions,
+      __: relations
+    } = transfer;
+    
+    const connection = relations.connection as ApiConnection;
 
     this.request = { ...request, data: request.body };
     this.auth = connection;

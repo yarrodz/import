@@ -1,10 +1,10 @@
 import Joi from 'joi';
 
 import { ProcessType } from '../../processes/enums/process.type.enum';
-import { Source } from '../../imports/enums/source.enum';
+import { Source } from '../../oauth2/enums/source.enum';
 import { SqlImportTarget } from '../enums/sql-import-target.enum';
-import { ImportFieldValidator } from '../../imports/validators/import-field.validator';
-import { OutReferenceValidator } from '../../imports/validators/out-reference.validator';
+import { ImportFieldValidator } from '../../transfers/validators/transfer-field.validator';
+import { OutReferenceValidator } from '../../transfers/validators/out-reference.validator';
 
 // export const CreateSqlImportValidator = Joi.object({
 //   name: Joi.string().min(1).max(128).required(),

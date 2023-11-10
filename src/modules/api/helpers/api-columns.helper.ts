@@ -1,48 +1,27 @@
 import { ApiConnector } from '../connector/api-connector';
 import { resolvePath } from '../../../utils/resolve-path/resolve-path';
-import { Column } from '../../imports/interfaces/column.interface';
-import { ApiImport } from '../interfaces/api-import.interface';
-import { TransferMethod } from '../../transfers/enums/transfer-method.enum';
-import { OffsetPagination } from '../../transfers/interfaces/offset-pagination.interface';
-import { CursorPagination } from '../../transfers/interfaces/cursor-pagination.interface';
+import { Column } from '../../transfers/interfaces/column.interface';
+import { TransferMethod } from '../../transfer-processes/enums/transfer-method.enum';
+import { ApiIframeTransfer } from '../interfaces/api-iframe-transfer.interface';
+import { baseOffsetPagination } from '../../transfer-processes/constants/base-offset-pagination.constant';
+import { baseCursorPagination } from '../../transfer-processes/constants/base-cursor-pagination.constnt';
+import { Pagination } from '../../transfer-processes/interfaces/pagination.type';
 
 export class ApiColumnsHelper {
-  public async find(impt: ApiImport): Promise<Column[]> {
+  public async get(transfer: ApiIframeTransfer): Promise<Column[]> {
     try {
-      const { transferMethod, datasetsPath } = impt;
+      const { transferMethod, datasetsPath } = transfer;
 
-      const apiConnector = new ApiConnector(impt);
+      const apiConnector = new ApiConnector(transfer);
       await apiConnector.authRequest();
 
-      let response: any;
-      switch (transferMethod) {
-        case TransferMethod.CHUNK: {
-          response = await apiConnector.sendRequest();
-          break;
-        }
-        case TransferMethod.OFFSET_PAGINATION: {
-          const pagination: OffsetPagination = {
-            offset: 0,
-            limit: 1
-          };
-          apiConnector.paginateRequest(pagination);
-          response = await apiConnector.sendRequest();
-          break;
-        }
-        case TransferMethod.CURSOR_PAGINATION: {
-          const pagination: CursorPagination = {
-            limit: 1
-          };
-          apiConnector.paginateRequest(pagination);
-          response = await apiConnector.sendRequest();
-          break;
-        }
-        default: {
-          throw new Error(
-            `Error wlile searching for columns. Unknown transfer method: '${transferMethod}'.`
-          );
-        }
-      }
+      const cases = {
+        [TransferMethod.OFFSET_PAGINATION]: baseOffsetPagination,
+        [TransferMethod.CURSOR_PAGINATION]: baseCursorPagination
+      };
+      const pagination: Pagination = cases[transferMethod];
+      apiConnector.paginateRequest(pagination);
+      const response = await apiConnector.sendRequest();
 
       const datasets = resolvePath(response, datasetsPath);
       const dataset = datasets[0];
@@ -51,36 +30,6 @@ export class ApiColumnsHelper {
     } catch (error) {
       throw new Error(
         `Error while searching columns for API: ${error.message}`
-      );
-    }
-  }
-
-  public async checkIdColumnUniqueness(impt: ApiImport) {
-    try {
-      const { transferMethod, datasetsPath, idKey } = impt;
-
-      const apiConnector = new ApiConnector(impt);
-      await apiConnector.authRequest();
-
-      switch (transferMethod) {
-        case TransferMethod.CHUNK: {
-          const response = await apiConnector.sendRequest();
-          const datasets = resolvePath(response, datasetsPath) as object[];
-          return this.checkKeyValuesUniqueness(datasets, idKey);
-        }
-        case TransferMethod.OFFSET_PAGINATION: {
-          return true;
-        }
-        case TransferMethod.CURSOR_PAGINATION: {
-          return true;
-        }
-        default: {
-          throw new Error(`Unknown transfer method: ${transferMethod}`);
-        }
-      }
-    } catch (error) {
-      throw new Error(
-        `Error while checking column uniqueness: ${error.message}`
       );
     }
   }
@@ -106,16 +55,53 @@ export class ApiColumnsHelper {
       return [];
     }
   }
-
-  private checkKeyValuesUniqueness(array: object[], key: string) {
-    const uniqueValues = [];
-
-    array.forEach(function (object) {
-      if (!uniqueValues.includes(object)) {
-        uniqueValues.push(object[key]);
-      }
-    });
-
-    return uniqueValues.length === array.length;
-  }
 }
+
+
+// case TransferMethod.CHUNK: {
+        //   response = await apiConnector.sendRequest();
+        //   break;
+        // }
+
+        
+  // public async checkIdColumnUniqueness(transfer: ApiIframeTransfer) {
+  //   try {
+  //     const { transferMethod, datasetsPath, idKey } = transfer;
+
+  //     const apiConnector = new ApiConnector(transfer);
+  //     await apiConnector.authRequest();
+
+  //     switch (transferMethod) {
+  //       case TransferMethod.CHUNK: {
+  //         const response = await apiConnector.sendRequest();
+  //         const datasets = resolvePath(response, datasetsPath) as object[];
+  //         return this.checkKeyValuesUniqueness(datasets, idKey);
+  //       }
+  //       case TransferMethod.OFFSET_PAGINATION: {
+  //         return true;
+  //       }
+  //       case TransferMethod.CURSOR_PAGINATION: {
+  //         return true;
+  //       }
+  //       default: {
+  //         throw new Error(`Unknown transfer method: ${transferMethod}`);
+  //       }
+  //     }
+  //   } catch (error) {
+  //     throw new Error(
+  //       `Error while checking column uniqueness: ${error.message}`
+  //     );
+  //   }
+  // }
+
+  // private checkKeyValuesUniqueness(array: object[], key: string) {
+  //   const uniqueValues = [];
+
+  //   array.forEach(function (object) {
+  //     if (!uniqueValues.includes(object)) {
+  //       uniqueValues.push(object[key]);
+  //     }
+  //   });
+
+  //   return uniqueValues.length === array.length;
+  // }

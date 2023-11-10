@@ -5,8 +5,8 @@ import { ApiKeyValidator } from './connection-validators/api-key.validator';
 import { BasicDigestValidator } from './connection-validators/basic-digest.validator';
 import { BearerValidator } from './connection-validators/bearer.validator';
 import { OAuth2Validator } from '../../oauth2/validators/oauth2.validator';
-import { Source } from '../../imports/enums/source.enum';
-import { OutReferenceValidator } from '../../imports/validators/out-reference.validator';
+import { Source } from '../../oauth2/enums/source.enum';
+import { OutReferenceValidator } from '../../transfers/validators/out-reference.validator';
 
 // export const UpdateApiConnectionValidator = Joi.object({
 //   id: Joi.number().integer().required(),

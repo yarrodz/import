@@ -22,13 +22,13 @@ export class OAuth2SessionHelper {
     this.session.oAuth2CallbackProcesses.push(process);
   }
 
-  public findCallbackProcess(state: string): OAuth2CallbackProcess | undefined {
+  public findCallbackProcess(status: string): OAuth2CallbackProcess | undefined {
     if (this.session.oAuth2CallbackProcesses === undefined) {
       throw new Error('Callback process was not found in session.');
     }
 
     const callbackProcess = this.session.oAuth2CallbackProcesses.find(
-      (p) => p.state === state
+      (p) => p.status === status
     );
 
     if (callbackProcess === undefined) {
@@ -37,8 +37,8 @@ export class OAuth2SessionHelper {
     return callbackProcess;
   }
 
-  public removeCallbackProcess(state: string): void {
+  public removeCallbackProcess(status: string): void {
     this.session.oAuth2CallbackProcesses =
-      this.session.oAuth2CallbackProcesses.filter((p) => p.state !== state);
+      this.session.oAuth2CallbackProcesses.filter((p) => p.status !== status);
   }
 }

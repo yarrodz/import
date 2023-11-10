@@ -1,6 +1,6 @@
 import { iFrameDbClient, iFrameDataset } from 'iframe-ai';
 
-import { Dataset } from './interfaces/dataset.interface';
+import { TransferDataset } from './interfaces/transfer-dataset.interace';
 
 export class DatasetsRepository {
   private client: iFrameDbClient;
@@ -9,7 +9,7 @@ export class DatasetsRepository {
     this.client = client;
   }
 
-  async bulkSave(datasets: Dataset[]): Promise<void> {
+  async bulkSave(datasets: TransferDataset[]): Promise<void> {
     try {
       await new iFrameDataset(this.client).bulkSave(datasets);
     } catch (error) {

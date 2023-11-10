@@ -1,59 +1,29 @@
-import { SqlConnector } from '../connector/sql.connector';
+import { SqlConnector } from '../connectors/sql.connector';
 import { SqlImportTarget } from '../enums/sql-import-target.enum';
-import {
-  createCheckSqlTableIdColumnUniquenessQuery,
-  createSqlTableFindColumnsQuery,
-  createSqlTableFindDataQuery
-} from '../connector/sql-table.query-builder';
-import { paginateSqlSelect } from '../connector/sql-select.query-builder';
-import { Column } from '../../imports/interfaces/column.interface';
-import { SqlImport } from '../interfaces/sql-import.interface';
+import { Column } from '../../transfers/interfaces/column.interface';
 import { SqlConnection } from '../interfaces/sql.connection.interface';
+import { SelectQueryHelper } from './select-query.helper';
+import { TableQueryHelper } from './table-query.helper';
+import { SqlIframeTransfer } from '../interfaces/sql-iframe-transfer.interface';
+import { OffsetPagination } from '../../transfer-processes/interfaces/offset-pagination.interface';
 
 export class SqlColumnsHelper {
-  public async find(impt: SqlImport): Promise<Column[]> {
+  public async get(transfer: SqlIframeTransfer): Promise<Column[]> {
     let sqlConnector: SqlConnector;
     try {
-      const { idKey, target, table, select } = impt;
-      const connection = impt.__.hasConnection as SqlConnection;
+      const { target } = transfer;
+      const connection = transfer.__.connection as SqlConnection;
       const { config } = connection;
-      const { dialect } = config;
 
       sqlConnector = new SqlConnector(config);
       await sqlConnector.connect();
 
-      let columns: Column[] = [];
-
-      switch (target) {
-        case SqlImportTarget.TABLE: {
-          try {
-            columns = await this.selectColumnsFromSchema(
-              sqlConnector,
-              table,
-              dialect
-            );
-            //Maybe user have no access to information schema, then we receive columns from dataset
-          } catch (error) {
-            const query = createSqlTableFindDataQuery(
-              dialect,
-              table,
-              idKey,
-              0,
-              1
-            );
-            columns = await this.selectColumnsFromDataset(sqlConnector, query);
-          }
-          break;
-        }
-        case SqlImportTarget.SELECT: {
-          const query = paginateSqlSelect(select, idKey, 0, 1);
-          columns = await this.selectColumnsFromDataset(sqlConnector, query);
-          break;
-        }
-        default: {
-          throw new Error(`Unknown sql import target: ${target}`);
-        }
+      const cases = {
+        [SqlImportTarget.TABLE]: this.tableColumns,
+        [SqlImportTarget.SELECT]: this.selectColumns
       }
+
+      const columns: Column[] = await cases[target](transfer, sqlConnector);
       sqlConnector.disconnect();
       return columns;
     } catch (error) {
@@ -62,36 +32,104 @@ export class SqlColumnsHelper {
     }
   }
 
-  public async checkIdColumnUniqueness(impt: SqlImport) {
+  private async tableColumns(
+    transfer: SqlIframeTransfer,
+    sqlConnector: SqlConnector
+  ): Promise<Column[]> {
+    const { idKey, table } = transfer;
+    const connection = transfer.__.connection as SqlConnection;
+    const { config } = connection;
+    const { dialect } = config;
+    
+    try {
+      return await this.selectColumnsFromSchema(
+        sqlConnector,
+        table,
+        dialect
+      );
+      //Maybe user have no access to information schema, then we receive columns from dataset
+    } catch (error) {
+      const pagination: OffsetPagination = { offset: 0, limit: 1 };
+      const query = TableQueryHelper.createSelectQuery(
+        table,
+        idKey,
+        pagination
+      );
+      return await this.selectColumnsFromQuery(
+        sqlConnector,
+        query
+      );
+    }
+  }
+
+  private async selectColumns(
+    transfer: SqlIframeTransfer,
+    sqlConnector: SqlConnector
+  ): Promise<Column[]> {
+    const { idKey, select } = transfer;
+    const pagination: OffsetPagination = { offset: 0, limit: 1 };
+    const query = SelectQueryHelper.paginateSelect(
+      select,
+      idKey,
+      pagination
+    );
+    return await this.selectColumnsFromQuery(sqlConnector, query);
+  }
+
+  private async selectColumnsFromSchema(
+    sqlConnector: SqlConnector,
+    table: string,
+    dialect: string
+  ): Promise<Column[]> {
+    const columnsQuery = TableQueryHelper.createColumnsQuery(
+      table,
+      dialect
+    );
+    const columns = await sqlConnector.queryRows(columnsQuery);
+    
+    return columns.map((column) => {
+      return {
+        name: column['column_name'] || column['COLUMN_NAME'],
+        type: column['data_type'] || column['DATA_TYPE']
+      };
+    });
+  }
+
+  private async selectColumnsFromQuery(
+    sqlConnector: SqlConnector,
+    query: string
+  ): Promise<Column[]> {
+    const datasets = await sqlConnector.queryRows(query);
+
+    if (datasets.length === 0) {
+      throw new Error('Error while quering columns: table is empty');
+    }
+
+    const dataset = datasets[0];
+    return Object.entries(dataset).map(([key, value]) => {
+      return {
+        name: key,
+        type: typeof value
+      };
+    });
+  }
+
+  public async checkIdColumnUniqueness(transfer: SqlIframeTransfer) {
     let sqlConnector: SqlConnector;
     try {
-      const { idKey, target, table } = impt;
-      const connection = impt.__.hasConnection as SqlConnection;
+      const { target } = transfer;
+      const connection = transfer.__.connection as SqlConnection;
       const { config } = connection;
-      const { dialect } = config;
 
       sqlConnector = new SqlConnector(config);
       await sqlConnector.connect();
 
-      let isUnique: boolean;
-      switch (target) {
-        case SqlImportTarget.TABLE: {
-          const query = createCheckSqlTableIdColumnUniquenessQuery(
-            dialect,
-            idKey,
-            table
-          );
-          isUnique = await sqlConnector.queryResult(query);
-          break;
-        }
-        case SqlImportTarget.SELECT: {
-          isUnique = true;
-          break;
-        }
-        default: {
-          throw new Error(`Unknown sql import target: ${target}`);
-        }
-      }
+      const cases = {
+        [SqlImportTarget.TABLE]: this.tableIdColumnUniqueness,
+        [SqlImportTarget.SELECT]: this.selectIdColumnUniqueness
+      } 
+
+      const isUnique = await cases[target](transfer, sqlConnector);
       sqlConnector.disconnect();
       return isUnique;
     } catch (error) {
@@ -102,35 +140,39 @@ export class SqlColumnsHelper {
     }
   }
 
-  private async selectColumnsFromSchema(
-    sqlConnector: SqlConnector,
-    table: string,
-    dialect: string
-  ): Promise<Column[]> {
-    const columnsQuery = createSqlTableFindColumnsQuery(table, dialect);
-    const retrievedColumns = await sqlConnector.queryRows(columnsQuery);
-    return retrievedColumns.map((column) => {
-      return {
-        name: column['column_name'] || column['COLUMN_NAME'],
-        type: column['data_type'] || column['DATA_TYPE']
-      };
-    });
+  private async tableIdColumnUniqueness(
+    transfer: SqlIframeTransfer,
+    sqlConnector: SqlConnector
+  ) {
+    const { idKey, table } = transfer;
+    const connection = transfer.__.connection as SqlConnection;
+    const { config } = connection;
+    const { dialect } = config;
+
+    const query = SelectQueryHelper.createCheckIdColumnUniquenessQuery(
+      table,
+      dialect,
+      idKey,
+    );
+
+    return await sqlConnector.queryResult(query);
   }
 
-  private async selectColumnsFromDataset(
-    sqlConnector: SqlConnector,
-    query: string
-  ): Promise<Column[]> {
-    const retrievedDatasets = await sqlConnector.queryRows(query);
-    if (retrievedDatasets.length === 0) {
-      throw new Error('Error while quering columns: table is empty');
-    }
-    const dataset = retrievedDatasets[0];
-    return Object.entries(dataset).map(([key, value]) => {
-      return {
-        name: key,
-        type: typeof value
-      };
-    });
+  private async selectIdColumnUniqueness(
+    transfer: SqlIframeTransfer,
+    sqlConnector: SqlConnector
+  ) {
+    const { select, idKey } = transfer;
+    const connection = transfer.__.connection as SqlConnection;
+    const { config } = connection;
+    const { dialect } = config
+
+    const query = TableQueryHelper.createCheckIdColumnUniquenessQuery(
+      select,
+      dialect,
+      idKey,
+    );
+
+    return await sqlConnector.queryResult(query);
   }
 }

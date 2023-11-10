@@ -1,3 +1,3 @@
 export interface ConnectionReference {
-  inUnit?: any;
+  unit?: any;
 }

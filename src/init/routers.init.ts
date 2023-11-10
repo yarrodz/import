@@ -1,8 +1,8 @@
 import { InitControllersResult } from './controllers.init';
 import { ConnectionsRouter } from '../modules/connections/connections.router';
-import { ImportsRouter } from '../modules/imports/imports.router';
+import { ImportsRouter } from '../modules/transfers/transfers.router';
 import { OAuth2Router } from '../modules/oauth2/oauth2.router';
-import { TransfersRouter } from '../modules/transfers/transfers.router';
+import { TransfersRouter } from '../modules/transfer-processes/transfer-processes.router';
 import { SchedulersRouter } from '../modules/scheduler/shcedulers.router';
 
 export interface InitRoutersResult {

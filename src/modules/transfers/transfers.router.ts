@@ -1,21 +1,29 @@
 import { Router } from 'express';
-import { TransfersController } from './transfers.controller';
+
+import { ImportsController } from './transfers.controller';
 
 export class TransfersRouter {
   public router: Router;
-  private transfersController: TransfersController;
+  private importsController: ImportsController;
 
-  constructor(transfersController: TransfersController) {
+  constructor(ImportsController: ImportsController) {
     this.router = Router();
-    this.transfersController = transfersController;
+    this.importsController = ImportsController;
     this.initializeRoutes();
   }
 
   private initializeRoutes() {
-    this.router.post('/getAll', this.transfersController.getAll);
-    this.router.delete('/:id', this.transfersController.delete);
-    this.router.post('/pause', this.transfersController.pause);
-    this.router.post('/reload', this.transfersController.reload);
-    this.router.post('/restart', this.transfersController.restart);
+    this.router.post('/getAll', this.importsController.getAll);
+    this.router.get('/:id', this.importsController.get);
+    this.router.post('/', this.importsController.create);
+    this.router.patch('/', this.importsController.update);
+    this.router.delete('/:id', this.importsController.delete);
+    this.router.post('/columns', this.importsController.getColumns);
+    this.router.post(
+      '/idColumnUniqueness',
+      this.importsController.checkIdColumnUniqueness
+    );
+    this.router.post('/check', this.importsController.checkImport);
+    this.router.post('/import', this.importsController.startImport);
   }
 }

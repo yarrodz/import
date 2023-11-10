@@ -1,14 +1,14 @@
 import { CronJob } from 'cron';
 
-import { SqlImportHelper } from '../sql/helpers/sql-import.helper';
+import { SqlImportHelper } from '../sql/helpers/sql-transfer.helper';
 import { ApiImportHelper } from '../api/helpers/api-import.helper';
-import { EmailImportHelper } from '../email/helpers/email-import.helper';
+import { EmailImportHelper } from '../email/helpers/email-transfers.helper';
 import { SchedulersRepository } from './schedulers.repository';
-import { TransfersRepository } from '../transfers/transfers.repository';
+import { TransfersRepository } from '../transfer-processes/transfer-processes.repository';
 import { Scheduler } from './interfaces/schedule.interface';
 import { SchedulerPeriod } from './enum/scheduler-period.enum';
-import { Source } from '../imports/enums/source.enum';
-import { TransferState } from '../transfers/enums/transfer-state.enum';
+import { Source } from '../oauth2/enums/source.enum';
+import { TransferStatus } from '../transfer-processes/enums/transfer-status.enum';
 import { WeekdayNumberMapping } from './enum/weekday.enum';
 import { ProcessesRepository } from '../processes/process.repository';
 
@@ -158,7 +158,7 @@ export class SchedulersCron {
           {
             type: 'equals',
             property: 'status',
-            value: TransferState.PENDING
+            value: TransferStatus.PENDING
           },
           {
             type: 'hasEdge',
